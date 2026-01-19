@@ -391,7 +391,7 @@ Class.cruiser = {
     GUNS: weaponMirror({
         POSITION: [7, 7.5, 0.6, 7, 4, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm]),
+            SHOOT_SETTINGS: combineStats([g.swarm, g.cruiser]),
             TYPE: "swarm",
             STAT_CALCULATOR: "swarm"
         }
@@ -1524,7 +1524,7 @@ Class.battleship = {
         ...weaponMirror({
             POSITION: [7, 7.5, 0.6, 7, 4, 270, 0],
             PROPERTIES: {
-                SHOOT_SETTINGS: combineStats([g.swarm]),
+                SHOOT_SETTINGS: combineStats([g.swarm, g.battleship]),
                 TYPE: "autoswarm",
                 STAT_CALCULATOR: "swarm",
                 LABEL: "Autonomous"

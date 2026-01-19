@@ -80,9 +80,8 @@ module.exports = ({ Config }) => {
 
     const originalConnect = socketManager.connect.bind(socketManager);
     socketManager.connect = (socket, req) => {
-        const wasEmpty = socketManager.clients.length === 0;
         originalConnect(socket, req);
-        if (wasEmpty && socketManager.clients.length) {
+        if (socketManager.clients.length && !gameHandler._lazyIntervals) {
             cancelIdleStop();
             startLoops();
         }

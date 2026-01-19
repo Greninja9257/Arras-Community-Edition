@@ -559,6 +559,11 @@ class gameServer {
                 this.views = [];
                 this.minimap = [];
                 this.walls = [];
+                this.clients = [];
+                this.socketManager.clients = this.clients;
+                this.socketManager.players = [];
+                this.socketManager.playersReceived = [];
+                this.socketManager.disconnections = [];
                 this.gameHandler.bots = [];
                 this.gameHandler.foods = [];
                 this.gameHandler.nestFoods = [];
