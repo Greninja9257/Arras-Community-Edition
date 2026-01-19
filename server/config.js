@@ -1,8 +1,24 @@
+const parseNumber = (value, fallback) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const PUBLIC_HOST = process.env.PUBLIC_HOST || process.env.HOST || "localhost";
+const WEB_PORT = parseNumber(process.env.PORT, 3000);
+const GAME_HOST = process.env.GAME_HOST || PUBLIC_HOST;
+const GAME_PORT_BASE = parseNumber(process.env.GAME_PORT_BASE, 3001);
+
+const withPort = (host, port) => {
+    if (!host) return `localhost:${port}`;
+    if (host.includes(":") && !host.startsWith("[")) return host;
+    return `${host}:${port}`;
+};
+
 module.exports = {
     // Main Menu
     main_menu: "index.html", // Where the main menu is located (in the /public folder).
-    host: "localhost:3000", // Game server domain. If the host is 'localhost:NUMBER', the NUMBER must be the port setting.
-    port: 3000, // Which port to run the web server on.
+    host: withPort(PUBLIC_HOST, WEB_PORT), // Game server domain. If the host is 'localhost:NUMBER', the NUMBER must be the port setting.
+    port: WEB_PORT, // Which port to run the web server on.
 
     // Server
     visible_list_interval: 250, // How often to update the list of the entities that players can see. Has effects of when entities are activated.
@@ -13,8 +29,8 @@ module.exports = {
     servers: [ // Make sure to change the HOST, PORT and SERVER_ID between servers!
         {
             share_client_server: false,
-            host: "localhost:3001",
-            port: 3001,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 0),
+            port: GAME_PORT_BASE + 0,
             id: "ffa",
             featured: false,
             region: "local",
@@ -24,8 +40,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3002",
-            port: 3002,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 1),
+            port: GAME_PORT_BASE + 1,
             id: "tdm",
             featured: false,
             region: "local",
@@ -35,8 +51,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3003",
-            port: 3003,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 2),
+            port: GAME_PORT_BASE + 2,
             id: "domination",
             featured: false,
             region: "local",
@@ -46,8 +62,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3004",
-            port: 3004,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 3),
+            port: GAME_PORT_BASE + 3,
             id: "mothership",
             featured: false,
             region: "local",
@@ -57,8 +73,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3005",
-            port: 3005,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 4),
+            port: GAME_PORT_BASE + 4,
             id: "tag",
             featured: false,
             region: "local",
@@ -68,8 +84,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3006",
-            port: 3006,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 5),
+            port: GAME_PORT_BASE + 5,
             id: "maze",
             featured: false,
             region: "local",
@@ -79,8 +95,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3007",
-            port: 3007,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 6),
+            port: GAME_PORT_BASE + 6,
             id: "sandbox",
             featured: false,
             region: "local",
@@ -90,8 +106,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3008",
-            port: 3008,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 7),
+            port: GAME_PORT_BASE + 7,
             id: "growth",
             featured: false,
             region: "local",
@@ -101,8 +117,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3009",
-            port: 3009,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 8),
+            port: GAME_PORT_BASE + 8,
             id: "space",
             featured: false,
             region: "local",
@@ -112,8 +128,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3010",
-            port: 3010,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 9),
+            port: GAME_PORT_BASE + 9,
             id: "blackout",
             featured: false,
             region: "local",
@@ -123,8 +139,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3011",
-            port: 3011,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 10),
+            port: GAME_PORT_BASE + 10,
             id: "classic",
             featured: false,
             region: "local",
@@ -134,8 +150,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3012",
-            port: 3012,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 11),
+            port: GAME_PORT_BASE + 11,
             id: "opentdm",
             featured: false,
             region: "local",
@@ -145,8 +161,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3013",
-            port: 3013,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 12),
+            port: GAME_PORT_BASE + 12,
             id: "trainwars",
             featured: false,
             region: "local",
@@ -156,8 +172,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3014",
-            port: 3014,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 13),
+            port: GAME_PORT_BASE + 13,
             id: "clanwars",
             featured: false,
             region: "local",
@@ -167,8 +183,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3015",
-            port: 3015,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 14),
+            port: GAME_PORT_BASE + 14,
             id: "outbreak",
             featured: false,
             region: "local",
@@ -178,8 +194,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3016",
-            port: 3016,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 15),
+            port: GAME_PORT_BASE + 15,
             id: "siege",
             featured: false,
             region: "local",
@@ -189,8 +205,8 @@ module.exports = {
         },
         {
             share_client_server: false,
-            host: "localhost:3017",
-            port: 3017,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 16),
+            port: GAME_PORT_BASE + 16,
             id: "assault",
             featured: false,
             region: "local",

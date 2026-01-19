@@ -54,6 +54,12 @@ Recommended:
 - Keep `server/data/` backed up
 - Rotate API keys if exposed
 
+Quick hosting config (set in `server/.env`):
+- `PUBLIC_HOST`: public domain or IP (no port)
+- `PORT`: web server port (client HTTP)
+- `GAME_HOST`: public domain or IP for game servers (defaults to `PUBLIC_HOST`)
+- `GAME_PORT_BASE`: starting port for game servers (defaults to 3001)
+
 ## Configuration Guide
 All main settings live in `server/config.js`. Common sections:
 
@@ -208,4 +214,3 @@ See `credits.md`.
 
 ## Community
 - Discord: https://discord.gg/arras
-
