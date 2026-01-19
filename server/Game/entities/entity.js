@@ -954,6 +954,10 @@ class Entity extends EventEmitter {
             this.damageReceived = 0;
             return 0;
         }
+        if (this.settings.noHit) {
+            this.damageReceived = 0;
+            return 0;
+        }
         if (this.damageReceived > 0) {
             let damageInflictor = []
             let damageTool = []

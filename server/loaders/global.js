@@ -178,6 +178,13 @@ global.bringToLife = (() => {
 })();
 global.runMove = (() => {
     return my => {
+        if (my.settings?.noMove) {
+            my.accel.x = 0;
+            my.accel.y = 0;
+            my.control.goal.x = my.x;
+            my.control.goal.y = my.y;
+            return;
+        }
         let g = { x: my.control.goal.x - my.x, y: my.control.goal.y - my.y },
             gactive = (g.x !== 0 || g.y !== 0),
             engine = { x: 0, y: 0, },
