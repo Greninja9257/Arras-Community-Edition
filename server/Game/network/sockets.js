@@ -1849,13 +1849,18 @@ class socketManager {
                 )) {
                     const x = Config.blackout ? Math.floor(Math.random() * global.gameManager.room.width - global.gameManager.room.width / 2) : my.x;
                     const y = Config.blackout ? Math.floor(Math.random() * global.gameManager.room.height - global.gameManager.room.height / 2) : my.y;
+                    const isClanTank = Config.clan_wars && my.type === "tank" && my.master === my;
+                    const baseColor = my.minimapColor
+                        ? my.minimapColor + " 0 1 0 false"
+                        : my.color.compiled;
+                    const minimapColor = isClanTank ? "10 0 1 0 false" : baseColor;
                     all.push({
                         id: my.id,
                         data: [
                             Config.blackout ? 0 : my.type === "wall" || my.isMothership ? my.shape === 4 ? 2 : 1 : 0,
                             util.clamp(Math.floor((256 * x) / global.gameManager.room.width), -128, 127),
                             util.clamp(Math.floor((256 * y) / global.gameManager.room.height), -128, 127),
-                            Config.blackout ? Config.blackout_minimap_color + " 0 1 0 false" : my.minimapColor ? my.minimapColor + " 0 1 0 false" : my.color.compiled,
+                            Config.blackout ? Config.blackout_minimap_color + " 0 1 0 false" : minimapColor,
                             Math.round(my.SIZE),
                         ],
                     });
@@ -1867,12 +1872,18 @@ class socketManager {
             let all = [];
             for (const my of entities.values())
                 if (my.type === "tank" && my.team === args[0] && my.master === my && my.allowedOnMinimap) {
+                    const teammateColor = "10 0 1 0 false";
+                    const defaultColor = Config.groups || (Config.mode == 'ffa' || Config.mode == 'clan' && !Config.tag)
+                        ? '10 0 1 0 false'
+                        : my.color.compiled;
+                    const color = Config.clan_wars ? teammateColor : defaultColor;
+                    const isClanTank = Config.clan_wars;
                     all.push({
                         id: my.id,
                         data: [
                             util.clamp(Math.floor((256 * my.x) / global.gameManager.room.width), -128, 127),
                             util.clamp(Math.floor((256 * my.y) / global.gameManager.room.height), -128, 127),
-                            my.minimapColor ? my.minimapColor + " 0 1 0 false" : Config.groups || (Config.mode == 'ffa' || Config.mode == 'clan' && !Config.tag) ? '10 0 1 0 false' : my.color.compiled,
+                            isClanTank ? color : (my.minimapColor ? my.minimapColor + " 0 1 0 false" : color),
                         ],
                     });
                 }
