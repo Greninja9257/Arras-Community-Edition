@@ -1,3 +1,9 @@
 node_modules/
 package-lock.json
 *.lnk
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+server/data/users.json
+server/data/sessions.json
