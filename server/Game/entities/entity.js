@@ -894,6 +894,13 @@ class Entity extends EventEmitter {
         this.velocity.y += this.accel.y;
         // Reset acceleration
         this.accel.null();
+        if (this.wallBlock) {
+            if (this.wallBlock.posX && this.velocity.x > 0) this.velocity.x = 0;
+            if (this.wallBlock.negX && this.velocity.x < 0) this.velocity.x = 0;
+            if (this.wallBlock.posY && this.velocity.y > 0) this.velocity.y = 0;
+            if (this.wallBlock.negY && this.velocity.y < 0) this.velocity.y = 0;
+            this.wallBlock = null;
+        }
         // Apply motion
         this.stepRemaining = 1;
         this.x += this.stepRemaining * this.velocity.x / global.gameManager.roomSpeed;
@@ -958,6 +965,30 @@ class Entity extends EventEmitter {
                 damageTool.push(instance)
             }
             this.emit('damage', { body: this, damageInflictor, damageTool });
+        }
+        if (Config.wall_crush_damage && this.health && !this.passive && !this.isInvulnerable) {
+            let hasLeft = false;
+            let hasRight = false;
+            let hasUp = false;
+            let hasDown = false;
+            for (let i = 0; i < this.collisionArray.length; i++) {
+                const wall = this.collisionArray[i];
+                if (wall.type !== "wall") continue;
+                const dx = wall.x - this.x;
+                const dy = wall.y - this.y;
+                if (Math.abs(dx) >= Math.abs(dy)) {
+                    if (dx < 0) hasLeft = true;
+                    if (dx > 0) hasRight = true;
+                } else {
+                    if (dy < 0) hasDown = true;
+                    if (dy > 0) hasUp = true;
+                }
+                if ((hasLeft && hasRight) || (hasUp && hasDown)) break;
+            }
+            if ((hasLeft && hasRight) || (hasUp && hasDown)) {
+                const perTick = (this.health.max * Config.wall_crush_damage) / (30 * global.gameManager.roomSpeed);
+                this.damageReceived += perTick;
+            }
         }
         // Life-limiting effects
         if (this.settings.diesAtRange) {

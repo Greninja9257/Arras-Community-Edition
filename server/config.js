@@ -224,6 +224,7 @@ module.exports = {
     run_speed: 1.5, // General multiplier for acceleration and max speeds.
     max_heartbeat_interval: 300_000, // How long (in milliseconds) a socket can be disconnected before their tank self-destructs.
     respawn_delay: 0, // How long you have to wait to respawn in seconds. Set to 0 to disable.
+    wall_crush_damage: 0.1, // Percent of max health per second when stuck between walls (0 disables).
 
     bullet_spawn_offset: 1, // Where the bullet spawns, where 1 is fully outside the barrel and -1 is fully inside the barrel, and 0 is halfway between.
     bullet_speed_scale: 0.8, // Global multiplier for projectile speed.

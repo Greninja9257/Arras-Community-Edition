@@ -1075,6 +1075,38 @@ class io_wanderAroundMap extends IO {
         }
     }
 }
+class io_wallAvoidGoal extends IO {
+    constructor(body, opts = {}) {
+        super(body);
+        this.sideStepScale = opts.sideStepScale ?? 6;
+        this.minStep = opts.minStep ?? 60;
+    }
+    think(input) {
+        if (!input.goal) return;
+        if (!wouldHitWall(this.body, input.goal)) return;
+        const dx = input.goal.x - this.body.x;
+        const dy = input.goal.y - this.body.y;
+        const dist = Math.hypot(dx, dy);
+        if (!dist) return;
+        const step = Math.min(dist, Math.max(this.minStep, this.body.size * this.sideStepScale));
+        const baseAngle = Math.atan2(dy, dx);
+        const candidateAngles = [
+            baseAngle + Math.PI / 2,
+            baseAngle - Math.PI / 2,
+            baseAngle + Math.PI / 4,
+            baseAngle - Math.PI / 4,
+        ];
+        for (const angle of candidateAngles) {
+            const candidate = {
+                x: this.body.x + Math.cos(angle) * step,
+                y: this.body.y + Math.sin(angle) * step,
+            };
+            if (!wouldHitWall(this.body, candidate)) {
+                return { goal: candidate };
+            }
+        }
+    }
+}
 // returns deviation from origin angle in radians
 let io_formulaTarget_sineDefault = (frame, body) => Math.sin(frame / 30);
 class io_formulaTarget extends IO {
@@ -1276,6 +1308,7 @@ let ioTypes = {
     hangOutNearMaster: io_hangOutNearMaster,
     fleeAtLowHealth: io_fleeAtLowHealth,
     wanderAroundMap: io_wanderAroundMap,
+    wallAvoidGoal: io_wallAvoidGoal,
 };
 
 module.exports = { ioTypes, IO };
