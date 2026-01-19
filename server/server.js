@@ -89,9 +89,11 @@ server = require("http").createServer((req, res) => {
     // Handle specific API endpoints based on the request URL
     switch (req.url) {
         case "/getServers.json": {
+            const forwardedHost = (req.headers["x-forwarded-host"] || req.headers.host || "").split(",")[0].trim();
+            const hostOnly = forwardedHost ? forwardedHost.split(":")[0] : "";
             // Serve a list of active servers (excluding hidden ones)
             readString = JSON.stringify(servers.filter((s) => s && !s.hidden).map((server) => ({
-                    ip: server.ip,
+                    ip: (!server.ip || ["localhost", "127.0.0.1", "::1"].includes(server.ip)) && hostOnly ? hostOnly : server.ip,
                     players: server.players,
                     maxPlayers: server.maxPlayers,
                     id: server.id,
