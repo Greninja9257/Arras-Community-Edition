@@ -1,0 +1,21 @@
+{
+  "users": {
+    "Greninja9257": {
+      "passwordHash": "761bbd22513e4efe2fecccf8eb6d48fce097a0eaa789d59a1e62e089c565a7e5950260525429570d7c5272dfde02578a7ea0cecc5279d92ca7b3af26d146e070",
+      "salt": "e9b73cc9d4e2ab80079e066e19ca08d5",
+      "created": 1768799377491,
+      "lastLogin": 1768799566329,
+      "friends": [],
+      "friendRequests": [],
+      "xp": 93,
+      "level": 1,
+      "stats": {
+        "totalKills": 117,
+        "totalDeaths": 14,
+        "totalScore": 2514342.026566206,
+        "gamesPlayed": 33,
+        "highestScore": 643890
+      }
+    }
+  }
+}
