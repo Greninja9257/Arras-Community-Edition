@@ -17,6 +17,18 @@ This project is a fork of https://github.com/AE0hello/open-source-arras/.
 - UI/UX updates (skill bar visuals, chat input behavior, blackout rendering)
 - QoL and stability fixes (leaderboard colors, tag teams, login inputs, playtime leveling)
 
+## Contributing (GitHub)
+Arras Community Edition welcomes contributions via GitHub.
+
+### How to contribute
+- Fork this repository on GitHub.
+- Create a feature branch for your change.
+- Keep changes focused and explain the why in your commit messages.
+- Open a pull request with a clear summary and screenshots or videos for UI/gameplay changes.
+
+### Reporting issues
+- Use GitHub Issues with steps to reproduce, expected vs actual behavior, and any logs or screenshots.
+
 ## Setup Guide (Localhost)
 
 This guide covers setting up your server on your own hardware and only supports devices running up-to-date versions of Windows/macOS/Linux.
