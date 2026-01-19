@@ -87,6 +87,12 @@ module.exports = ({ Config }) => {
         }
     };
 
+    const originalStop = gameHandler.stop.bind(gameHandler);
+    gameHandler.stop = () => {
+        originalStop();
+        stopLoops();
+    };
+
     const originalClose = socketManager.close.bind(socketManager);
     socketManager.close = (socket) => {
         originalClose(socket);
