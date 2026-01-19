@@ -230,7 +230,8 @@ class Gun extends EventEmitter {
             }
         }
         // Firing routines
-        if (this.autofire || (this.altFire ? this.body.control.alt : this.body.control.fire)) {
+        const wantsFire = this.altFire ? (this.body.control.alt || this.body.control.fire) : this.body.control.fire;
+        if (this.autofire || wantsFire) {
             if (this.body.settings.hasNoReloadDelay && shootPermission) return (
                 this.shoot(),
                 this.cycleTimer = this.maxCycleTimer

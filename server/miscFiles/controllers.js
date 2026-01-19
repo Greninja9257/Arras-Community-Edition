@@ -1075,6 +1075,136 @@ class io_wanderAroundMap extends IO {
         }
     }
 }
+class io_ecosystem extends IO {
+    constructor(body, opts = {}) {
+        super(body);
+        this.farmRadius = opts.farmRadius ?? 700;
+        this.home = null;
+        this.nextHomeAt = 0;
+        this.lastTargetId = null;
+        this.lastSwitchAt = 0;
+        this.lastDisengageAt = 0;
+    }
+    think(input) {
+        if (!this.body.isBot) return;
+        if (Config.tag || Config.clan_wars || Config.domination || Config.mothership || Config.ASSAULT || Config.teams) return;
+        const body = this.body;
+        const myDanger = body.dangerValue ?? 1;
+        const myHealth = body.health?.amount && body.health?.max ? body.health.amount / body.health.max : 1;
+        const cautious = myHealth < 0.7;
+        const lowHealth = myHealth < 0.45;
+        const now = performance.now();
+        const enemies = [];
+        const foods = [];
+        const maxScan = Math.max(body.fov || 1, 1) * 900;
+        const maxScanSq = maxScan * maxScan;
+
+        for (const e of entities.values()) {
+            if (e === body || !e.master) continue;
+            const dx = e.x - body.x;
+            const dy = e.y - body.y;
+            const distSq = dx * dx + dy * dy;
+            if (distSq > maxScanSq) continue;
+            if (e.isFood) {
+                foods.push({ e, distSq });
+                continue;
+            }
+            if (e.isPlayer || e.isBot) {
+                enemies.push({ e, distSq });
+            }
+        }
+
+        let enemy = null;
+        let bestScore = Infinity;
+        let currentScore = Infinity;
+        for (const entry of enemies) {
+            const e = entry.e;
+            if (e.invuln || e.godmode || e.master.master?.passive) continue;
+            const danger = e.dangerValue ?? 1;
+            const healthRatio = e.health?.amount && e.health?.max ? e.health.amount / e.health.max : 1;
+            const dist = Math.sqrt(entry.distSq);
+            const wallPenalty = wouldHitWall(body, e) ? 1.6 : 1;
+            const score = dist * (0.6 + danger) * (0.4 + healthRatio) * wallPenalty;
+            if (score < bestScore) {
+                bestScore = score;
+                enemy = e;
+            }
+            if (this.lastTargetId && e.id === this.lastTargetId) {
+                currentScore = score;
+            }
+        }
+
+        if (enemy) {
+            const enemyDanger = enemy.dangerValue ?? 1;
+            const dx = enemy.x - body.x;
+            const dy = enemy.y - body.y;
+            if (this.lastTargetId && this.lastTargetId !== enemy.id) {
+                const canSwitch = now - this.lastSwitchAt > 3500 || bestScore < currentScore * 0.7;
+                if (canSwitch) {
+                    this.lastTargetId = enemy.id;
+                    this.lastSwitchAt = now;
+                } else {
+                    enemy = enemies.find(e => e.e.id === this.lastTargetId)?.e ?? enemy;
+                }
+            } else if (!this.lastTargetId) {
+                this.lastTargetId = enemy.id;
+                this.lastSwitchAt = now;
+            }
+            if (enemyDanger > myDanger * 1.3 && (lowHealth || ran.chance(0.75))) {
+                return {
+                    goal: { x: body.x - dx, y: body.y - dy },
+                    main: false,
+                    fire: false,
+                };
+            }
+            const dist = Math.hypot(dx, dy);
+            const desired = Math.min(600, Math.max(200, body.size * 15));
+            const strafeDir = ran.chance(0.5) ? 1 : -1;
+            const strafe = {
+                x: -dy / Math.max(1, dist) * strafeDir,
+                y: dx / Math.max(1, dist) * strafeDir,
+            };
+            let goal;
+            if (dist < desired * 0.75 || (lowHealth && dist < desired * 1.2)) {
+                goal = { x: body.x - dx + strafe.x * 120, y: body.y - dy + strafe.y * 120 };
+            } else if (dist > desired * 1.2 && !lowHealth) {
+                goal = { x: enemy.x + strafe.x * 120, y: enemy.y + strafe.y * 120 };
+            } else {
+                goal = { x: body.x + strafe.x * 160, y: body.y + strafe.y * 160 };
+            }
+            const lead = Math.min(1, dist / 400);
+            const target = {
+                x: dx + (enemy.velocity?.x || 0) * lead * 20,
+                y: dy + (enemy.velocity?.y || 0) * lead * 20,
+            };
+            const shouldFire = !lowHealth && !ran.chance(0.15);
+            return {
+                target,
+                goal,
+                main: shouldFire,
+                fire: shouldFire,
+            };
+        }
+
+        if (foods.length && (lowHealth || cautious || ran.chance(0.7))) {
+            foods.sort((a, b) => a.distSq - b.distSq);
+            const food = foods[0].e;
+            return {
+                target: { x: food.x - body.x, y: food.y - body.y },
+                goal: { x: food.x, y: food.y },
+                main: true,
+                fire: true,
+            };
+        }
+
+        this.lastTargetId = null;
+        if (!this.home || util.getDistance(body, this.home) < 80 || performance.now() > this.nextHomeAt) {
+            this.home = ran.choose(global.gameManager.room.spawnableDefault).randomInside();
+            this.nextHomeAt = performance.now() + 5000;
+        }
+        return { goal: this.home };
+    }
+}
 class io_wallAvoidGoal extends IO {
     constructor(body, opts = {}) {
         super(body);
@@ -1309,6 +1439,7 @@ let ioTypes = {
     fleeAtLowHealth: io_fleeAtLowHealth,
     wanderAroundMap: io_wanderAroundMap,
     wallAvoidGoal: io_wallAvoidGoal,
+    ecosystem: io_ecosystem,
 };
 
 module.exports = { ioTypes, IO };
