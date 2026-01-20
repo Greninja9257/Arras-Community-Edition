@@ -30,6 +30,24 @@ Arras Community Edition is a self-hostable multiplayer game server with a web cl
 
 If you see an error about `ws`, run `npm install ws`.
 
+## Docker (Local Dev)
+Build the image:
+- `docker build -t arras-ce .`
+
+Run with a bind mount so local edits apply immediately:
+```sh
+docker run -d --name arras \
+  -p 3000-3017:3000-3017 \
+  -v "$(pwd):/usr/src/app" \
+  arras-ce
+```
+
+Stop/remove the container:
+- `docker stop arras`
+- `docker rm arras`
+
+Note: If you run without the bind mount, rebuild the image after code changes.
+
 ## Project Layout
 Key locations for common tasks:
 - `server/server.js`: main entry for the web server and worker game servers
