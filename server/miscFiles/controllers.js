@@ -229,6 +229,47 @@ class io_mapTargetToGoal extends IO {
         }
     }
 }
+class io_keepDistance extends IO {
+    constructor(body, opts = {}) {
+        super(body);
+        this.minDistance = opts.minDistance ?? Math.max(200, body.size * 8);
+        this.maxDistance = opts.maxDistance ?? Math.max(450, body.size * 14);
+        this.strafeDistance = opts.strafeDistance ?? Math.max(120, body.size * 6);
+        this.switchIntervalMs = opts.switchIntervalMs ?? 2000;
+        this.turnwise = ran.chance(0.5) ? 1 : -1;
+        this.nextSwitchAt = 0;
+    }
+    think(input) {
+        if (!input.target) return;
+        const dx = input.target.x;
+        const dy = input.target.y;
+        const dist = Math.hypot(dx, dy);
+        if (!dist) return;
+
+        if (performance.now() > this.nextSwitchAt) {
+            this.turnwise = ran.chance(0.5) ? 1 : -1;
+            this.nextSwitchAt = performance.now() + this.switchIntervalMs;
+        }
+
+        let goal;
+        if (dist < this.minDistance || dist > this.maxDistance) {
+            const desired = dist < this.minDistance ? this.minDistance : this.maxDistance;
+            const scale = 1 - desired / dist;
+            goal = {
+                x: this.body.x + dx * scale,
+                y: this.body.y + dy * scale,
+            };
+        } else {
+            const scale = this.strafeDistance / dist;
+            goal = {
+                x: this.body.x - dy * scale * this.turnwise,
+                y: this.body.y + dx * scale * this.turnwise,
+            };
+        }
+
+        return { goal, power: 1 };
+    }
+}
 class io_boomerang extends IO {
     constructor(b) {
         super(b)
@@ -1426,6 +1467,7 @@ let ioTypes = {
     //movement related
     canRepel: io_canRepel,
     mapTargetToGoal: io_mapTargetToGoal,
+    keepDistance: io_keepDistance,
     bossRushAI: io_bossRushAI,
     moveInCircles: io_moveInCircles,
     boomerang: io_boomerang,
