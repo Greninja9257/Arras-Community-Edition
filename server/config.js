@@ -28,7 +28,7 @@ module.exports = {
 
     servers: [ // Make sure to change the HOST, PORT and SERVER_ID between servers!
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 0),
             port: GAME_PORT_BASE + 0,
             id: "ffa",
@@ -39,7 +39,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 1),
             port: GAME_PORT_BASE + 1,
             id: "tdm",
@@ -50,7 +50,7 @@ module.exports = {
             properties: { teams: 2, bot_cap: 32 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 2),
             port: GAME_PORT_BASE + 2,
             id: "domination",
@@ -61,7 +61,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 3),
             port: GAME_PORT_BASE + 3,
             id: "mothership",
@@ -72,7 +72,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 4),
             port: GAME_PORT_BASE + 4,
             id: "tag",
@@ -83,7 +83,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 5),
             port: GAME_PORT_BASE + 5,
             id: "maze",
@@ -94,7 +94,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 6),
             port: GAME_PORT_BASE + 6,
             id: "sandbox",
@@ -105,7 +105,7 @@ module.exports = {
             properties: { bot_cap: 0 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 7),
             port: GAME_PORT_BASE + 7,
             id: "growth",
@@ -116,7 +116,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 8),
             port: GAME_PORT_BASE + 8,
             id: "space",
@@ -127,7 +127,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 9),
             port: GAME_PORT_BASE + 9,
             id: "blackout",
@@ -138,7 +138,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 10),
             port: GAME_PORT_BASE + 10,
             id: "classic",
@@ -149,7 +149,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 11),
             port: GAME_PORT_BASE + 11,
             id: "opentdm",
@@ -160,7 +160,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 12),
             port: GAME_PORT_BASE + 12,
             id: "trainwars",
@@ -171,7 +171,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 13),
             port: GAME_PORT_BASE + 13,
             id: "clanwars",
@@ -182,7 +182,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 14),
             port: GAME_PORT_BASE + 14,
             id: "outbreak",
@@ -193,7 +193,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 15),
             port: GAME_PORT_BASE + 15,
             id: "siege",
@@ -204,7 +204,7 @@ module.exports = {
             properties: { bot_cap: 16 }
         },
         {
-            share_client_server: false,
+            share_client_server: true,
             host: withPort(GAME_HOST, GAME_PORT_BASE + 16),
             port: GAME_PORT_BASE + 16,
             id: "assault",
