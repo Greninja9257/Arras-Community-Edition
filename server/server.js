@@ -459,10 +459,7 @@ function loadGameServer(loadViaMain = false, host, port, gamemode, region, webPr
     } else {
         global.servers.push({ loadedViaMainServer: true });
         setTimeout(() => { // Space it a little out.
-            if (global.launchedOnMainServer) {
-                console.warn("Only one server can be loaded via through the main server!\nProcess terminated.");
-                process.exit(1);
-            }
+
             global.launchedOnMainServer = true;
             new (require("./game.js").gameServer)(Config.host, Config.port, gamemode, region, webProperties, properties, isFeatured, false);
         }, 10)
@@ -509,14 +506,23 @@ server.listen(Config.port, () => {
 // Upgrade HTTP connections to WebSocket connections if applicable
 server.on("upgrade", (req, socket, head) => {
     wsServer.handleUpgrade(req, socket, head, (ws) => {
-        if (global.launchedOnMainServer) {
-            for (let i = 0; i < global.servers.length; i++) {
-                let server = global.servers[i];
-                if (server.gameManager) server.gameManager.socketManager.connect(ws, req);
-            }
-        } else {
+        if (!global.launchedOnMainServer) {
             ws.close();
+            return;
         }
+        const path = (req.url || "").split("?")[0];
+        const serverId = path.replace(/^\/+/, "");
+        const target = serverId ? global.servers.find(s => s.id === serverId && s.gameManager) : null;
+        if (target) {
+            target.gameManager.socketManager.connect(ws, req);
+            return;
+        }
+        const fallback = global.servers.find(s => s.gameManager);
+        if (fallback) {
+            fallback.gameManager.socketManager.connect(ws, req);
+            return;
+        }
+        ws.close();
     });
 });
 
