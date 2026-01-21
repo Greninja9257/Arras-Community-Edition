@@ -29,13 +29,13 @@ Class.developerBullet = {
 Class.laserBolt = {
     PARENT: "bullet",
     LABEL: "Laser",
-    REFLECTS_WALLS: true,
+    DAMAGE_MULTIPLIER_VS_PLAYERS: 3,
     BODY: {
         PENETRATION: 100,
-        HEALTH: 1,
-        DAMAGE: 0.2,
+        HEALTH: 100,
+        DAMAGE: 0.1,
         RANGE: 14,
-        SPEED: 3,
+        SPEED: 1,
     },
 }
 Class.casing = {

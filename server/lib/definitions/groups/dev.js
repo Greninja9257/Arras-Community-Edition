@@ -303,6 +303,7 @@ Class.menu_fun.UPGRADES_TIER_0 = [
     "tracker3",
     "wifeBeater",
     "worstTank",
+    "hack",
 ]
 
 Class.menu_mapEntities = makeMenu("Map Entities")
@@ -582,6 +583,126 @@ Class.menu_testing.UPGRADES_TIER_0 = [
     "angleseer",
     "backwardsexports",
 ]
+
+Class.hack = {
+    PARENT: "genericTank",
+    LABEL: "Hack",
+    MAX_CHILDREN: 100,
+    GUNS: [
+        {
+            POSITION: [18, 8, 1, 0, 0, 7.5, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, -7.5, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, 172.5, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, -172.5, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, -82.5, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, 82.5, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, -97.5, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, 97.5, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, -90, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, 90, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, 0, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, -180, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "bullet",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, -45, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "drone",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, -135, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "drone",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, 135, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "drone",
+            },
+        },
+        {
+            POSITION: [18, 8, 1, 0, 0, 45, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic]),
+                TYPE: "drone",
+            },
+        },
+    ],
+}
 
 // airblast testing
 Class.airblast = {

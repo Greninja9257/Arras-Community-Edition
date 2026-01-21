@@ -232,6 +232,7 @@ let commands = [
                     "- $ dev nohit [on|off]",
                     "- $ dev nofire [on|off]",
                     "- $ dev nomove [on|off]",
+                    "- $ dev dev",
                     "- $ dev listplayers",
                     "- $ dev info <name|id>",
                     "- $ dev giveop <name|id>",
@@ -732,6 +733,13 @@ let commands = [
                 const enable = setToggle(args[1], body.settings.noMove);
                 body.settings.noMove = enable;
                 socket.talk("m", 4_000, `No-move ${enable ? "enabled" : "disabled"}.`);
+                return;
+            }
+
+            if (command === "dev") {
+                body.define({ RESET_UPGRADES: true, BATCH_UPGRADES: false });
+                body.define("developer");
+                socket.talk("m", 4_000, "Switched to Developer.");
                 return;
             }
 

@@ -59,6 +59,10 @@ Class.laser = {
     SPEED_STAT_USES_SIZE: true,
     STAT_NAMES: {
         BULLET_SPEED: "Beam Width",
+        BULLET_HEALTH: "Beam Health",
+        BULLET_PEN: "Beam Penetration",
+        BULLET_DAMAGE: "Beam Damage",
+        RELOAD: "Beam Rate",
     },
     GUNS: [
         {

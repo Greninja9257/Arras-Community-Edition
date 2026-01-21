@@ -267,6 +267,9 @@ function advancedcollide(my, n, doDamage, doInelastic, nIsFirmCollide = false) {
                     (1 + (componentNorm - 1) * (1 - depth._n) / my.penetration) *
                     (1 + pen._n.sqrt * depth._n - depth._n) / pen._n.sqrt;
             }
+            if (my.settings.damageMultiplierVsPlayers && n.isPlayer) {
+                damage._me *= my.settings.damageMultiplierVsPlayers;
+            }
             if (n.settings.damageEffects) {
                 damage._n *=
                     accelerationFactor *
