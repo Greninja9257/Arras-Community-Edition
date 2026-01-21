@@ -276,6 +276,15 @@ module.exports = {
     // The class that players and bots spawn as.
     spawn_class: "basic",
 
+    daily_tank: {
+        tank: "laser",
+        tier: 3,
+        ads: {
+            enabled: false,
+            source: []
+        }
+    },
+
     // How every entity regenerates their health.
     regenerate_tick: 100,
 

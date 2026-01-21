@@ -253,6 +253,9 @@ class Entity extends EventEmitter {
         if (set.ACCEPTS_SCORE != null) this.settings.acceptsScore = set.ACCEPTS_SCORE;
         if (set.GIVE_KILL_MESSAGE != null) this.settings.givesKillMessage = set.GIVE_KILL_MESSAGE;
         if (set.CAN_GO_OUTSIDE_ROOM != null) this.settings.canGoOutsideRoom = set.CAN_GO_OUTSIDE_ROOM;
+        if (set.INFINITE_MAX_SPEED != null) this.settings.infiniteMaxSpeed = set.INFINITE_MAX_SPEED;
+        if (set.REFLECTS_WALLS != null) this.settings.reflectsWalls = set.REFLECTS_WALLS;
+        if (set.SPEED_STAT_USES_SIZE != null) this.settings.speedStatUsesSize = set.SPEED_STAT_USES_SIZE;
         if (set.HITS_OWN_TYPE != null) this.settings.hitsOwnType = set.HITS_OWN_TYPE;
         if (set.DIE_AT_LOW_SPEED != null) this.settings.diesAtLowSpeed = set.DIE_AT_LOW_SPEED;
         if (set.DIE_AT_RANGE != null) this.settings.diesAtRange = set.DIE_AT_RANGE;

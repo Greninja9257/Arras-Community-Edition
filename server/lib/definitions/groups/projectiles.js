@@ -26,6 +26,18 @@ Class.developerBullet = {
     PARENT: "bullet",
     SHAPE: [[-1, -1], [1, -1], [2, 0], [1, 1], [-1, 1]],
 }
+Class.laserBolt = {
+    PARENT: "bullet",
+    LABEL: "Laser",
+    REFLECTS_WALLS: true,
+    BODY: {
+        PENETRATION: 100,
+        HEALTH: 1,
+        DAMAGE: 0.2,
+        RANGE: 14,
+        SPEED: 3,
+    },
+}
 Class.casing = {
     PARENT: "bullet",
     LABEL: "Shell",

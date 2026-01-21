@@ -282,6 +282,15 @@ class Gun extends EventEmitter {
         }
         if (oldestChild) oldestChild.kill();
     }
+    getSpeedSkill() {
+        const sk = this.bulletStats === "master" ? this.body.skill : this.bulletStats;
+        const speedStatUsesSize = this.body.settings && this.body.settings.speedStatUsesSize;
+        return {
+            sk,
+            speedSkill: speedStatUsesSize ? 1 : sk.spd,
+            sizeSkill: speedStatUsesSize ? sk.spd : 1,
+        };
+    }
     syncChildren() {
         if (this.syncsSkills) {
             let self = this;
@@ -294,11 +303,11 @@ class Gun extends EventEmitter {
             });
         }
     }
-    fire(gx, gy, sk) {
+    fire(gx, gy) {
         // Recoil
-        sk = this.bulletStats === "master" ? this.body.skill : this.bulletStats;
+        const { sk, speedSkill, sizeSkill } = this.getSpeedSkill();
         this.lastShot.time = util.time();
-        this.lastShot.power = 3 * Math.log(Math.sqrt(sk.spd) + this.trueRecoil + 1) + 1;
+        this.lastShot.power = 3 * Math.log(Math.sqrt(speedSkill) + this.trueRecoil + 1) + 1;
         this.motion += this.lastShot.power;
         // Find inaccuracy
         let shudder = 0,
@@ -315,7 +324,7 @@ class Gun extends EventEmitter {
         }
         spread *= Math.PI / 180;
         // Find speed
-        let vecLength = (this.negRecoil ? -1 : 1) * this.settings.speed * global.gameManager.runSpeed * sk.spd * (1 + shudder),
+        let vecLength = (this.negRecoil ? -1 : 1) * this.settings.speed * global.gameManager.runSpeed * speedSkill * (1 + shudder),
           vecAngle = this.angle + this.body.facing + spread,
           s = new Vector(
             vecLength * Math.cos(vecAngle),
@@ -342,7 +351,7 @@ class Gun extends EventEmitter {
             this.bulletInitIndependent(o);
             o.parentID = this.body.id;
             o.color.base = o.color.base ?? this.body.master.color.base;
-            o.SIZE = (this.body.size * this.width * this.settings.size) / 2;
+            o.SIZE = (this.body.size * this.width * this.settings.size * sizeSkill) / 2;
             o.velocity = s;
             o.facing = o.velocity.direction;
             o.refreshBodyAttributes();
@@ -412,6 +421,8 @@ class Gun extends EventEmitter {
             SKILL: this.getSkillRaw(),
         }, false);
 
+        o.SIZE = (this.body.size * this.width * this.settings.size * this.getSpeedSkill().sizeSkill) / 2;
+
         // Keep track of it for child counting
         if (this.countsOwnKids) {
             o.parent = this;
@@ -434,7 +445,7 @@ class Gun extends EventEmitter {
             SKILL: this.getSkillRaw(),
         }, false);
         o.color.base = o.color.base ?? this.body.master.color.base;
-        o.SIZE = (this.body.size * this.width * this.settings.size) / 2;
+        o.SIZE = (this.body.size * this.width * this.settings.size * this.getSpeedSkill().sizeSkill) / 2;
         // Keep track of it and give it the function it needs to deutil.log itself upon death
         if (this.countsOwnKids) {
             o.parent = this;
@@ -586,11 +597,12 @@ class Gun extends EventEmitter {
         }
     }
     getTracking() {
+        const { speedSkill } = this.getSpeedSkill();
         return {
-            speed: global.gameManager.runSpeed * ((this.bulletStats == 'master') ? this.body.skill.spd : this.bulletStats.spd) * 
+            speed: global.gameManager.runSpeed * speedSkill * 
                 this.settings.maxSpeed * 
                 this.bulletBodyStats.SPEED,
-            range:  Math.sqrt((this.bulletStats == 'master') ? this.body.skill.spd : this.bulletStats.spd) * 
+            range:  Math.sqrt(speedSkill) * 
                 this.settings.range * 
                 this.bulletBodyStats.RANGE,
         };
@@ -620,15 +632,15 @@ class Gun extends EventEmitter {
 
         let sizeFactor = this.master.size / this.master.SIZE;
         let shoot = this.settings;
-        let sk = (this.bulletStats == 'master') ? this.body.skill : this.bulletStats;
+        const { sk, speedSkill } = this.getSpeedSkill();
         // Defaults
         let out = {
-            SPEED: shoot.maxSpeed * sk.spd,
+            SPEED: shoot.maxSpeed * speedSkill,
             HEALTH: shoot.health * sk.str,
             RESIST: shoot.resist + sk.rst,
             DAMAGE: shoot.damage * sk.dam,
             PENETRATION: Math.max(1, shoot.pen * sk.pen),
-            RANGE: shoot.range / Math.sqrt(sk.spd),
+            RANGE: shoot.range / Math.sqrt(speedSkill),
             DENSITY: (shoot.density * sk.pen * sk.pen) / sizeFactor,
             PUSHABILITY: 1 / sk.pen,
             HETERO: 3 - 2.8 * sk.ghost,
@@ -637,14 +649,14 @@ class Gun extends EventEmitter {
         // Special cases
         switch (this.calculator) {
             case "thruster":
-                this.trueRecoil = shoot.recoil * Math.sqrt(sk.rld * sk.spd);
+                this.trueRecoil = shoot.recoil * Math.sqrt(sk.rld * speedSkill);
                 break;
             case "sustained":
                 out.RANGE = shoot.range;
                 break;
             case "sustained+lowspeed": // A very special case
                 out.RANGE = shoot.range;
-                out.SPEED = shoot.maxSpeed + sk.spd;
+                out.SPEED = shoot.maxSpeed + speedSkill;
                 break;
             case "swarm":
                 out.PENETRATION = Math.max(1, shoot.pen * (0.5 * (sk.pen - 1) + 1));

@@ -266,6 +266,9 @@ global.runMove = (() => {
                 my.velocity.y = my.source.velocity.y;
                 break;
         }
+        if (my.settings?.infiniteMaxSpeed) {
+            my.maxSpeed = Infinity;
+        }
         my.accel.x += engine.x * my.control.power;
         my.accel.y += engine.y * my.control.power;
     }
