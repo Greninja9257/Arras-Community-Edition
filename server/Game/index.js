@@ -439,7 +439,7 @@ class gameHandler {
         // In clan wars mode, use clan tag instead of [AI] prefix
         if (Config.clan_wars) {
             let clanTag = ran.chooseClanName();
-            botName = clanTag + " " + ran.chooseBotName();
+            botName = "[AI] " + clanTag + " " + ran.chooseBotName();
             // Register clan and get player info
             Config.clan_wars_ft.add(botName);
         } else {

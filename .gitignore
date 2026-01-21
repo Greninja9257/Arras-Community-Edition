@@ -7,3 +7,7 @@ package-lock.json
 Thumbs.db
 server/data/users.json
 server/data/sessions.json
+Caddyfile
+docker-compose.yml
+server/data/sessions.json
+server/data/users.json
