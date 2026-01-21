@@ -306,6 +306,8 @@ class Entity extends EventEmitter {
         if (set.CAN_BE_ON_LEADERBOARD != null) this.settings.leaderboardable = set.CAN_BE_ON_LEADERBOARD;
         if (set.RENDER_ON_LEADERBOARD != null) this.settings.renderOnLeaderboard = set.RENDER_ON_LEADERBOARD;
         if (set.DAMAGE_MULTIPLIER_VS_PLAYERS != null) this.settings.damageMultiplierVsPlayers = set.DAMAGE_MULTIPLIER_VS_PLAYERS;
+        if (set.DAMAGE_MULTIPLIER_VS_PROJECTILES != null) this.settings.damageMultiplierVsProjectiles = set.DAMAGE_MULTIPLIER_VS_PROJECTILES;
+        if (set.DAMAGE_CAP != null) this.settings.damageCap = set.DAMAGE_CAP;
         if (set.INTANGIBLE != null) this.intangibility = set.INTANGIBLE;
         if (set.IS_SMASHER != null) this.settings.reloadToAcceleration = set.IS_SMASHER;
         if (set.STAT_NAMES != null) this.settings.skillNames = {

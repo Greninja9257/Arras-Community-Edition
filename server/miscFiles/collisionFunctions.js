@@ -267,8 +267,23 @@ function advancedcollide(my, n, doDamage, doInelastic, nIsFirmCollide = false) {
                     (1 + (componentNorm - 1) * (1 - depth._n) / my.penetration) *
                     (1 + pen._n.sqrt * depth._n - depth._n) / pen._n.sqrt;
             }
-            if (my.settings.damageMultiplierVsPlayers && n.isPlayer) {
+            if (my.settings.damageMultiplierVsPlayers && (n.isPlayer || n.isBot)) {
                 damage._me *= my.settings.damageMultiplierVsPlayers;
+            }
+            if (n.settings.damageMultiplierVsPlayers && (my.isPlayer || my.isBot)) {
+                damage._n *= n.settings.damageMultiplierVsPlayers;
+            }
+            if (my.settings.damageMultiplierVsProjectiles && ["bullet", "drone", "trap", "swarm", "satellite"].includes(n.type)) {
+                damage._me *= my.settings.damageMultiplierVsProjectiles;
+            }
+            if (n.settings.damageMultiplierVsProjectiles && ["bullet", "drone", "trap", "swarm", "satellite"].includes(my.type)) {
+                damage._n *= n.settings.damageMultiplierVsProjectiles;
+            }
+            if (my.settings.damageCap != null) {
+                damage._me = Math.min(damage._me, my.settings.damageCap);
+            }
+            if (n.settings.damageCap != null) {
+                damage._n = Math.min(damage._n, n.settings.damageCap);
             }
             if (n.settings.damageEffects) {
                 damage._n *=

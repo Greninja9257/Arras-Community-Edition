@@ -68,7 +68,7 @@ Class.laser = {
         {
             POSITION: [22, 6, 1, 0, 0, 0, 0],
             PROPERTIES: {
-                SHOOT_SETTINGS: combineStats([g.basic, { reload: 0.12, damage: 0.085, pen: 1.2, health: 1.2, speed: 4, maxSpeed: 4, range: 1.8, size: 1.8, recoil: 0.08, shudder: 0.1, spray: 0.1 }]),
+                SHOOT_SETTINGS: combineStats([g.basic, { reload: 0.12, damage: 0.18, pen: 1, health: 0.7, speed: 2, maxSpeed: 2, range: 1.2, size: 1.4, recoil: 0.05, shudder: 0.05, spray: 0.05 }]),
                 TYPE: "laserBolt"
             }
         }

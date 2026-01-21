@@ -233,6 +233,8 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
         if (set.DAMAGE_CLASS != null) this.settings.damageClass = set.DAMAGE_CLASS;
         if (set.BUFF_VS_FOOD != null) this.settings.buffVsFood = set.BUFF_VS_FOOD;
         if (set.DAMAGE_MULTIPLIER_VS_PLAYERS != null) this.settings.damageMultiplierVsPlayers = set.DAMAGE_MULTIPLIER_VS_PLAYERS;
+        if (set.DAMAGE_MULTIPLIER_VS_PROJECTILES != null) this.settings.damageMultiplierVsProjectiles = set.DAMAGE_MULTIPLIER_VS_PROJECTILES;
+        if (set.DAMAGE_CAP != null) this.settings.damageCap = set.DAMAGE_CAP;
         if (set.INTANGIBLE != null) this.intangibility = set.INTANGIBLE;
         if (set.IS_SMASHER != null) this.settings.reloadToAcceleration = set.IS_SMASHER;
         if (set.AI != null) this.aiSettings = set.AI;
