@@ -15,6 +15,9 @@ const withPort = (host, port) => {
 };
 
 module.exports = {
+    // Accounts
+    account: false, // Enable the account system (login, registration, friends, stats tracking).
+
     // Main Menu
     main_menu: "index.html", // Where the main menu is located (in the /public folder).
     host: withPort(PUBLIC_HOST, WEB_PORT), // Game server domain. If the host is 'localhost:NUMBER', the NUMBER must be the port setting.

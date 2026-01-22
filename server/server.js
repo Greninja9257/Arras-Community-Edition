@@ -158,8 +158,18 @@ server = require("http").createServer((req, res) => {
             readString = "true";
         } break;
 
-        // User Account API Routes
+        case "/api/config": {
+            readString = JSON.stringify({ account: Config.account });
+        } break;
+
+        // User Account API Routes (only enabled if Config.account is true)
         case "/api/register": {
+            if (!Config.account) {
+                ok = false;
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, error: "Accounts are disabled" }));
+                break;
+            }
             ok = false;
             let body = "";
             req.on("data", c => body += c);
@@ -177,6 +187,12 @@ server = require("http").createServer((req, res) => {
         } break;
 
         case "/api/login": {
+            if (!Config.account) {
+                ok = false;
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, error: "Accounts are disabled" }));
+                break;
+            }
             ok = false;
             let body = "";
             req.on("data", c => body += c);
@@ -194,6 +210,12 @@ server = require("http").createServer((req, res) => {
         } break;
 
         case "/api/logout": {
+            if (!Config.account) {
+                ok = false;
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, error: "Accounts are disabled" }));
+                break;
+            }
             ok = false;
             let body = "";
             req.on("data", c => body += c);
@@ -211,6 +233,12 @@ server = require("http").createServer((req, res) => {
         } break;
 
         case "/api/validate": {
+            if (!Config.account) {
+                ok = false;
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, error: "Accounts are disabled" }));
+                break;
+            }
             ok = false;
             let body = "";
             req.on("data", c => body += c);
@@ -233,6 +261,12 @@ server = require("http").createServer((req, res) => {
         } break;
 
         case "/api/profile": {
+            if (!Config.account) {
+                ok = false;
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, error: "Accounts are disabled" }));
+                break;
+            }
             ok = false;
             let body = "";
             req.on("data", c => body += c);
@@ -255,6 +289,12 @@ server = require("http").createServer((req, res) => {
         } break;
 
         case "/api/friends": {
+            if (!Config.account) {
+                ok = false;
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, error: "Accounts are disabled" }));
+                break;
+            }
             ok = false;
             let body = "";
             req.on("data", c => body += c);
@@ -287,6 +327,12 @@ server = require("http").createServer((req, res) => {
         } break;
 
         case "/api/friends/add": {
+            if (!Config.account) {
+                ok = false;
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, error: "Accounts are disabled" }));
+                break;
+            }
             ok = false;
             let body = "";
             req.on("data", c => body += c);
@@ -310,6 +356,12 @@ server = require("http").createServer((req, res) => {
         } break;
 
         case "/api/friends/accept": {
+            if (!Config.account) {
+                ok = false;
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, error: "Accounts are disabled" }));
+                break;
+            }
             ok = false;
             let body = "";
             req.on("data", c => body += c);
@@ -333,6 +385,12 @@ server = require("http").createServer((req, res) => {
         } break;
 
         case "/api/friends/decline": {
+            if (!Config.account) {
+                ok = false;
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, error: "Accounts are disabled" }));
+                break;
+            }
             ok = false;
             let body = "";
             req.on("data", c => body += c);
@@ -356,6 +414,12 @@ server = require("http").createServer((req, res) => {
         } break;
 
         case "/api/friends/remove": {
+            if (!Config.account) {
+                ok = false;
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ success: false, error: "Accounts are disabled" }));
+                break;
+            }
             ok = false;
             let body = "";
             req.on("data", c => body += c);

@@ -3,10 +3,29 @@ const AccountManager = {
     token: localStorage.getItem('authToken'),
     username: localStorage.getItem('username'),
     isLoggedIn: false,
+    isEnabled: false,
     level: 1,
     xpProgress: 0,
 
     async init() {
+        // Check if accounts are enabled on the server
+        try {
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            this.isEnabled = config.account === true;
+        } catch (e) {
+            this.isEnabled = false;
+        }
+
+        // Hide account UI if accounts are disabled
+        if (!this.isEnabled) {
+            document.getElementById('accountCorner').style.display = 'none';
+            return;
+        }
+
+        // Show account corner since accounts are enabled
+        document.getElementById('accountCorner').style.display = '';
+
         // Check if we have a stored token and validate it
         if (this.token) {
             const valid = await this.validateToken();
@@ -399,9 +418,9 @@ document.addEventListener('DOMContentLoaded', () => {
     AccountManager.init();
 });
 
-// Refresh profile periodically when logged in
+// Refresh profile periodically when logged in and accounts are enabled
 setInterval(() => {
-    if (AccountManager.isLoggedIn) {
+    if (AccountManager.isEnabled && AccountManager.isLoggedIn) {
         AccountManager.loadProfile();
     }
 }, 60000);
