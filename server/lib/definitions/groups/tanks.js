@@ -4180,6 +4180,30 @@ Class.spike = {
         }
     ], 4)
 }
+Class.spikeDaily = {
+    PARENT: "spike",
+    LABEL: "Cushionike",
+    IS_SMASHER: true,
+    SKILL_CAP: [smshskl, dfltskl, dfltskl, dfltskl, dfltskl, smshskl, smshskl, smshskl, smshskl, smshskl],
+    ON: [{
+        event: "tick",
+        handler: ({ body }) => {
+            if (body.cushionAngle == null) body.cushionAngle = 0;
+            body.cushionAngle += 0.035;
+            body.angle = body.cushionAngle;
+            body.dist = 60;
+            body.inverseDist = 60;
+        }
+    }],
+    HAS_NO_RECOIL: true,
+    TURRETS: [
+        ...Class.spike.TURRETS,
+        {
+            POSITION: [6, 0, 0, 0, 360, 1],
+            TYPE: "cushionCore",
+        },
+    ],
+}
 Class.spike_old = {
     PARENT: "genericTank",
     LABEL: "Spike",

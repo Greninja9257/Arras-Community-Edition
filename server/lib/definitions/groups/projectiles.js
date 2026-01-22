@@ -526,6 +526,65 @@ Class.sunchip = {
     },
     DRAW_HEALTH: false,
 }
+Class.sunchipCushion = {
+    PARENT: "satellite",
+    LABEL: "Cushion",
+    SHAPE: 4,
+    COLOR: 12,
+    DRAW_HEALTH: false,
+    ACCEPTS_SCORE: false,
+    GIVE_KILL_MESSAGE: false,
+    HITS_OWN_TYPE: "hardWithBuffer",
+    DAMAGE_EFFECTS: false,
+    MOTION_EFFECTS: false,
+    CONTROLLERS: ["orbit"],
+    MOTION_TYPE: "motor",
+    FACING_TYPE: "spin",
+    BODY: {
+        DAMAGE: 0.8,
+        HEALTH: 40,
+        SHIELD: 0,
+        REGEN: 0.4,
+        SPEED: 0,
+        ACCELERATION: 0,
+        PENETRATION: 2,
+        DENSITY: 6,
+        PUSHABILITY: 0.6,
+    },
+}
+Class.cushionCore = {
+    PARENT: "genericEntity",
+    LABEL: "",
+    DRAW_SELF: false,
+    ACCEPTS_SCORE: false,
+    GIVE_KILL_MESSAGE: false,
+    HITS_OWN_TYPE: "never",
+    DAMAGE_EFFECTS: false,
+    MOTION_EFFECTS: false,
+    INTANGIBLE: true,
+    CONTROLLERS: [["whirlwind", { useOwnMaster: true, minDistance: 65, maxDistance: 65, initialDist: 65 }]],
+    AI: {
+        SPEED: 2,
+    },
+    GUNS: (() => {
+        const output = [];
+        for (let i = 0; i < 16; i++) {
+            output.push({
+                POSITION: { WIDTH: 8, LENGTH: 1, DELAY: i * 0.05 },
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.satellite, { reload: 0.4, size: 2.4 }]),
+                    TYPE: ["sunchipCushion", { ANGLE: i * 22.5 }],
+                    BULLET_STATS: [0, 4, 4, 2, 2, 0, 0, 0, 0, 0],
+                    MAX_CHILDREN: 1,
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: false,
+                    WAIT_TO_CYCLE: true,
+                },
+            });
+        }
+        return output;
+    })(),
+}
 Class.eggchip = {
     PARENT: "sunchip",
     NECRO: [0],
