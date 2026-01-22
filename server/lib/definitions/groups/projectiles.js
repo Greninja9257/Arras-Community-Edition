@@ -530,7 +530,6 @@ Class.sunchipCushion = {
     PARENT: "satellite",
     LABEL: "Cushion",
     SHAPE: 4,
-    COLOR: 12,
     DRAW_HEALTH: false,
     ACCEPTS_SCORE: false,
     GIVE_KILL_MESSAGE: false,
@@ -562,6 +561,7 @@ Class.cushionCore = {
     DAMAGE_EFFECTS: false,
     MOTION_EFFECTS: false,
     INTANGIBLE: true,
+    HAS_NO_RECOIL: true,
     CONTROLLERS: [["whirlwind", { useOwnMaster: true, minDistance: 65, maxDistance: 65, initialDist: 65 }]],
     AI: {
         SPEED: 2,
@@ -572,7 +572,7 @@ Class.cushionCore = {
             output.push({
                 POSITION: { WIDTH: 8, LENGTH: 1, DELAY: i * 0.05 },
                 PROPERTIES: {
-                    SHOOT_SETTINGS: combineStats([g.satellite, { reload: 0.4, size: 2.4 }]),
+                    SHOOT_SETTINGS: combineStats([g.satellite, { reload: 0.4, size: 2.4, recoil: 0 }]),
                     TYPE: ["sunchipCushion", { ANGLE: i * 22.5 }],
                     BULLET_STATS: [0, 4, 4, 2, 2, 0, 0, 0, 0, 0],
                     MAX_CHILDREN: 1,
