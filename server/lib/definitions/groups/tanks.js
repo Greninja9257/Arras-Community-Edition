@@ -4185,26 +4185,36 @@ Class.spikeDaily = {
     LABEL: "Cushionike",
     IS_SMASHER: true,
     SKILL_CAP: {
-        RELOAD: smshskl,
+        RELOAD: 6,
         PENETRATION: 0,
         BULLET_HEALTH: 0,
         BULLET_DAMAGE: 0,
-        BULLET_SPEED: 0,
-        SHIELD_CAPACITY: smshskl,
-        BODY_DAMAGE: smshskl,
-        MAX_HEALTH: smshskl,
-        SHIELD_REGENERATION: smshskl,
-        MOVEMENT_SPEED: smshskl,
+        BULLET_SPEED: 6,
+        SHIELD_CAPACITY: 6,
+        BODY_DAMAGE: 6,
+        MAX_HEALTH: 6,
+        SHIELD_REGENERATION: 6,
+        MOVEMENT_SPEED: 6,
     },
-    STAT_NAMES: statnames.smasher,
+    BODY: {
+        SPEED: base.SPEED * 0.8,
+        DAMAGE: base.DAMAGE * 0.9,
+        HEALTH: base.HEALTH * 0.9,
+    },
+    STAT_NAMES: {
+        RELOAD: 'Engine Acceleration',
+        BULLET_SPEED: 'Spin Speed',
+    },
     ON: [{
         event: "tick",
         handler: ({ body }) => {
             if (body.cushionAngle == null) body.cushionAngle = 0;
-            body.cushionAngle += 0.035;
+            // Base spin 0.015, scales up to ~0.045 with max bullet speed skill
+            const spinSpeed = 0.015 + (body.skill.raw[4] * 0.005);
+            body.cushionAngle += spinSpeed;
             body.angle = body.cushionAngle;
-            body.dist = 60;
-            body.inverseDist = 60;
+            body.dist = 120;
+            body.inverseDist = 120;
         }
     }],
     HAS_NO_RECOIL: true,

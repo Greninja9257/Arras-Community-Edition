@@ -540,15 +540,15 @@ Class.sunchipCushion = {
     MOTION_TYPE: "motor",
     FACING_TYPE: "spin",
     BODY: {
-        DAMAGE: 0.8,
-        HEALTH: 40,
+        DAMAGE: 0.4,
+        HEALTH: 18,
         SHIELD: 0,
-        REGEN: 0.4,
+        REGEN: 0.15,
         SPEED: 0,
         ACCELERATION: 0,
-        PENETRATION: 2,
-        DENSITY: 6,
-        PUSHABILITY: 0.6,
+        PENETRATION: 1,
+        DENSITY: 4,
+        PUSHABILITY: 0.8,
     },
 }
 Class.cushionCore = {
@@ -568,12 +568,12 @@ Class.cushionCore = {
     },
     GUNS: (() => {
         const output = [];
-        for (let i = 0; i < 16; i++) {
+        for (let i = 0; i < 10; i++) {
             output.push({
-                POSITION: { WIDTH: 8, LENGTH: 1, DELAY: i * 0.05 },
+                POSITION: { WIDTH: 8, LENGTH: 1, DELAY: i * 0.08 },
                 PROPERTIES: {
-                    SHOOT_SETTINGS: combineStats([g.satellite, { reload: 0.4, size: 2.4, recoil: 0 }]),
-                    TYPE: ["sunchipCushion", { ANGLE: i * 22.5 }],
+                    SHOOT_SETTINGS: combineStats([g.satellite, { reload: 0.6, size: 1.8, recoil: 0 }]),
+                    TYPE: ["sunchipCushion", { ANGLE: i * 36 }],
                     MAX_CHILDREN: 1,
                     AUTOFIRE: true,
                     SYNCS_SKILLS: false,
