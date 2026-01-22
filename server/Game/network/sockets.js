@@ -1149,19 +1149,25 @@ class socketManager {
             Config.clan_wars_ft.add(name);
             return { player: Config.clan_wars_ft.getPlayerInfo(name), loc: Config.clan_wars_ft.getSpawn(name) };
         }
-        if (Config.mode == "tdm" || Config.tag) {
+        if (Config.mode == "tdm") {
             let team = getWeakestTeam(global.gameManager);
             // Choose from one of the least ones
             if (player.team == null || (player.team !== team && global.defeatedTeams.includes(player.team))) {
                 player.team = team;
             }
-            if (Config.tag) {
-                const allowedTeams = [TEAM_BLUE, TEAM_GREEN, TEAM_RED, TEAM_PURPLE];
-                if (!allowedTeams.includes(player.team)) {
-                    player.team = ran.choose(allowedTeams);
-                }
+        }
+        if (Config.tag) {
+            // In tag mode, use the remembered team (killer's team) or pick a random team
+            const allowedTeams = [TEAM_BLUE, TEAM_GREEN, TEAM_RED, TEAM_PURPLE];
+            console.log("[TAG DEBUG] getSpawnLocation called. rememberedTeam:", rememberedTeam, "allowedTeams:", allowedTeams);
+            if (!allowedTeams.includes(player.team)) {
+                const randomTeam = ran.choose(allowedTeams);
+                console.log("[TAG DEBUG] Team not in allowed list, picking random:", randomTeam);
+                player.team = randomTeam;
+            } else {
+                console.log("[TAG DEBUG] Using remembered team:", player.team);
             }
-        };
+        }
         if (global.spawnPoint) loc = global.spawnPoint;
         else loc = getSpawnableArea(player.team, global.gameManager);
         return { player, loc };
@@ -1206,16 +1212,6 @@ class socketManager {
         body.hasOperator = socket.status.hasOperator;
         socket.status.daily_tank_watched_ad = false;
         socket.status.daily_tank_watched_ad_client = false;
-        if (Config.tag) {
-            const allowedTeams = [TEAM_BLUE, TEAM_GREEN, TEAM_RED, TEAM_PURPLE];
-            if (!allowedTeams.includes(body.team)) {
-                const forcedTeam = ran.choose(allowedTeams);
-                body.team = forcedTeam;
-                player.team = forcedTeam;
-                socket.rememberedTeam = forcedTeam;
-                body.color.base = global.getTeamColor(forcedTeam);
-            }
-        }
         // Decide how to color and team the body
         if (!filter.length) switch (Config.mode) {
             case 'tdm': {
