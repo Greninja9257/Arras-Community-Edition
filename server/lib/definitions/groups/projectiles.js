@@ -562,7 +562,7 @@ Class.cushionCore = {
     MOTION_EFFECTS: false,
     INTANGIBLE: true,
     HAS_NO_RECOIL: true,
-    CONTROLLERS: [["whirlwind", { useOwnMaster: true, minDistance: 65, maxDistance: 65, initialDist: 65 }]],
+    CONTROLLERS: [["whirlwind", { useOwnMaster: true, minDistance: 65, maxDistance: 65, initialDist: 65, spinSpeedMultiplier: 0, spinUsesDegrees: true }]],
     AI: {
         SPEED: 2,
     },
@@ -574,7 +574,6 @@ Class.cushionCore = {
                 PROPERTIES: {
                     SHOOT_SETTINGS: combineStats([g.satellite, { reload: 0.4, size: 2.4, recoil: 0 }]),
                     TYPE: ["sunchipCushion", { ANGLE: i * 22.5 }],
-                    BULLET_STATS: [0, 4, 4, 2, 2, 0, 0, 0, 0, 0],
                     MAX_CHILDREN: 1,
                     AUTOFIRE: true,
                     SYNCS_SKILLS: false,

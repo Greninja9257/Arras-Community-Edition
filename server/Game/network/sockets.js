@@ -822,7 +822,6 @@ class socketManager {
 
     container(player) {
         let vars = [],
-            skills = player.body.skill,
             out = [],
             statnames = ["atk", "hlt", "spd", "str", "pen", "dam", "rld", "mob", "rgn", "shi"];
         // Load everything (b/c I'm too lazy to do it manually)
@@ -833,6 +832,8 @@ class socketManager {
         }
         return {
             update: () => {
+                let skills = player.body?.skill;
+                if (!skills) return;
                 let needsupdate = false,
                     i = 0;
                 // Update the things

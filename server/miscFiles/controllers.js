@@ -1313,10 +1313,17 @@ class io_whirlwind extends IO {
         this.body.dist = opts.initialDist || this.minDistance * this.body.size;
         this.body.inverseDist = this.maxDistance * this.body.size - this.body.dist + this.minDistance * this.body.size;
         this.radiusScalingSpeed = opts.radiusScalingSpeed || 10;
+        this.spinSpeedMultiplier = opts.spinSpeedMultiplier ?? 1;
+        this.spinUsesDegrees = opts.spinUsesDegrees ?? false;
+        this.spinUsesMasterSkill = opts.spinUsesMasterSkill ?? false;
+        this.spinUsesRaw = opts.spinUsesRaw ?? false;
     }
     
     think(input) {
-        this.body.angle += (this.body.skill.spd * 2 + this.body.aiSettings.SPEED) * Math.PI / 180;
+        const skillSource = this.spinUsesMasterSkill && this.body.master?.skill ? this.body.master.skill : this.body.skill;
+        const skillSpeedValue = this.spinUsesRaw ? (skillSource.raw?.[4] ?? 0) : (skillSource.spd * 2);
+        const spinSpeed = (skillSpeedValue * this.spinSpeedMultiplier) + this.body.aiSettings.SPEED;
+        this.body.angle += this.spinUsesDegrees ? spinSpeed : spinSpeed * Math.PI / 180;
         let trueMaxDistance = this.maxDistance * this.body.size;
         let trueMinDistance = this.minDistance * this.body.size;
         if(input.fire){

@@ -4184,7 +4184,19 @@ Class.spikeDaily = {
     PARENT: "spike",
     LABEL: "Cushionike",
     IS_SMASHER: true,
-    SKILL_CAP: [smshskl, dfltskl, dfltskl, dfltskl, dfltskl, smshskl, smshskl, smshskl, smshskl, smshskl],
+    SKILL_CAP: {
+        RELOAD: smshskl,
+        PENETRATION: 0,
+        BULLET_HEALTH: 0,
+        BULLET_DAMAGE: 0,
+        BULLET_SPEED: 0,
+        SHIELD_CAPACITY: smshskl,
+        BODY_DAMAGE: smshskl,
+        MAX_HEALTH: smshskl,
+        SHIELD_REGENERATION: smshskl,
+        MOVEMENT_SPEED: smshskl,
+    },
+    STAT_NAMES: statnames.smasher,
     ON: [{
         event: "tick",
         handler: ({ body }) => {
