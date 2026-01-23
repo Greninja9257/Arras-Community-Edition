@@ -1,94 +1,107 @@
 # Arras Community Edition
 
-<img alt="Logo" src="public/img/round.png" width="100"/>
+<p align="center">
+  <img src="public/img/round.png" alt="Arras Community Edition Logo" width="120">
+</p>
 
-> WARNING: Arras Community Edition is beta software. This build is not representative of the final product. Expect bugs and missing features.
+<p align="center">
+  <img src="https://img.shields.io/badge/node-v18+-green">
+  <img src="https://img.shields.io/github/license/Greninja9257/Arras-Community-Edition">
+  <img src="https://img.shields.io/github/stars/Greninja9257/Arras-Community-Edition">
+  <img src="https://img.shields.io/github/forks/Greninja9257/Arras-Community-Edition">
+</p>
 
-## Fork Notice
-This project is a fork of https://github.com/AE0hello/open-source-arras/.
+> ⚠️ **Beta Warning**  
+> Arras Community Edition is beta software. This build is not representative of the final product. Expect bugs, breaking changes, and incomplete features.
 
-## What Is This
-Arras Community Edition is a self-hostable multiplayer game server with a web client. It provides:
-- A web server for the client (default `http://localhost:3000`)
-- One or more game servers (default ports `3001+`)
-- A modding surface (definitions, addons, room setups)
-- Optional player accounts and stats
+---
 
-## Requirements
-- Node.js 18+ (see `package.json`)
+## 📌 Fork Notice
+
+This project is forked from:  
+https://github.com/AE0hello/open-source-arras/
+
+---
+
+## 🎮 About
+
+Arras Community Edition is a **self-hostable multiplayer Arras game server with a web client**.
+
+It provides:
+
+- Integrated web client server (`http://localhost:3000`)
+- Multi-instance real-time game servers (`3001+`)
+- Modding framework (definitions, addons, room systems)
+- Optional account system with stats and friends
+- Multi-server travel (Nexus portals)
+- Docker support
+
+---
+
+## 📋 Requirements
+
+- Node.js **18+**
 - npm
 
-## Quick Start (Localhost)
-1. Install dependencies:
-   - `npm install`
-2. Run the server:
-   - Windows: `run.bat`
-   - macOS/Linux: `./run.sh`
-   - Alternative: `npm start`
-3. Open the client:
-   - `http://localhost:3000`
+Verify installation:
 
-If you see an error about `ws`, run `npm install ws`.
+```bash
+node -v
+npm -v
+🚀 Quick Start (Localhost)
+Install dependencies
+npm install
+Start the server
+Windows
 
-## Docker (Local Dev)
-Build the image:
-- `docker build -t arras-ce .`
+run.bat
+macOS / Linux
 
-Run with a bind mount so local edits apply immediately:
-```sh
+./run.sh
+Alternative
+
+npm start
+Open the client
+http://localhost:3000
+If you see Package 'ws' is not installed, run:
+
+npm install ws
+🐳 Docker (Local Development)
+Build image
+docker build -t arras-ce .
+Run with live file sync
 docker run -d --name arras \
   -p 3000-3017:3000-3017 \
   -v "$(pwd):/usr/src/app" \
   arras-ce
-```
+Stop / Remove
+docker stop arras
+docker rm arras
+Without volume mounting, rebuild the image after code changes.
 
-Stop/remove the container:
-- `docker stop arras`
-- `docker rm arras`
+📁 Project Structure
+Path	Description
+server/server.js	Main server entry
+server/config.js	Core configuration
+server/.env	Tokens and API keys
+server/data/users.json	Account storage
+server/data/sessions.json	Session storage
+server/Game/	Game logic
+server/lib/definitions/	Entity definitions
+server/Game/addons/	Gameplay addons
+server/Game/room_setup/	Maps and room layouts
+public/	Web client assets
+⚙️ Configuration
+All primary settings are in:
 
-Note: If you run without the bind mount, rebuild the image after code changes.
+server/config.js
+🌐 Web Server Settings
+host: "localhost:3000",
+port: 3000,
+allow_ACAO: true
+🕹 Game Server Setup
+Example configuration:
 
-## Project Layout
-Key locations for common tasks:
-- `server/server.js`: main entry for the web server and worker game servers
-- `server/config.js`: core configuration (ports, servers, gameplay)
-- `server/.env`: API keys and tokens
-- `server/data/users.json`: account storage
-- `server/data/sessions.json`: session storage
-- `server/Game/`: game logic
-- `server/lib/definitions/`: entity definitions and addons
-- `server/Game/addons/`: gameplay addons (chat commands, server travel)
-- `server/Game/room_setup/`: room/tiles/maps
-- `public/`: web client assets
-
-## Running In Production
-Minimal approach:
-- Run `npm start` (or your preferred process manager)
-- Reverse proxy `localhost:3000` if hosting externally
-- Ensure your `Config.host` and server `host` values match your public address
-
-Recommended:
-- Use a process manager (pm2, systemd)
-- Keep `server/data/` backed up
-- Rotate API keys if exposed
-
-Quick hosting config (set in `server/.env`):
-- `PUBLIC_HOST`: public domain or IP (no port)
-- `PORT`: web server port (client HTTP)
-- `GAME_HOST`: public domain or IP for game servers (defaults to `PUBLIC_HOST`)
-- `GAME_PORT_BASE`: starting port for game servers (defaults to 3001)
-
-## Configuration Guide
-All main settings live in `server/config.js`. Common sections:
-
-### Web Server
-- `host`: public host or `localhost:3000`
-- `port`: web server port (client connects here)
-- `allow_ACAO`: allow cross-origin requests
-
-### Game Servers
-`Config.servers` defines each game server. Example:
-```js
 servers: [
   {
     share_client_server: false,
@@ -99,49 +112,53 @@ servers: [
     region: "local",
     gamemode: ["ffa"],
     player_cap: 80,
-    properties: { bot_cap: 16 }
+    properties: {
+      bot_cap: 16
+    }
   }
 ]
-```
-
 Notes:
-- `host` can be `localhost:PORT` or a domain.
-- `gamemode` is a list of mode config files from `server/Game/gamemodeconfigs/`.
-- `properties` overrides any `Config` values for that server.
-- `player_cap` is displayed to the client and used for capacity checks.
 
-### API and Tokens
-`server/.env` contains keys used by server travel and permissions:
-- `API_KEY`: used for `/api/sendPlayer` when transferring players.
-- Tokens for permissions (developer, beta tester, etc.)
+gamemode references files from server/Game/gamemodeconfigs/
 
-### Game Tuning
-You can tweak gameplay using settings like:
-- `bot_cap`, `bot_name_prefix`, `bot_ai_settings`
-- `game_speed`, `run_speed`
-- `room_bound_force`, `map_tile_width`, `map_tile_height`
-- `spawn_message`, chat settings, seasonal toggles
+properties override global config values
 
-## Accounts and Sessions
-Account routes are exposed by the web server:
-- `POST /api/register`
-- `POST /api/login`
-- `POST /api/logout`
-- `POST /api/validate`
-- `POST /api/profile`
-- `POST /api/friends` and friends subroutes
+player_cap affects server capacity and UI display
 
-Data is stored in:
-- `server/data/users.json`
-- `server/data/sessions.json`
+🔐 Environment Variables
+Location:
 
-If you delete these files, accounts and sessions reset.
+server/.env
+Common production setup:
 
-## Server Travel (Nexus)
-To enable portals between servers:
-1. In each destination server, set `ALLOW_SERVER_TRAVEL: true` in `properties`.
-2. Add travel settings to a source server:
-```js
+PUBLIC_HOST=yourdomain.com
+PORT=3000
+GAME_HOST=yourdomain.com
+GAME_PORT_BASE=3001
+API_KEY=your_secret_key
+👤 Accounts & Sessions
+API Routes
+POST /api/register
+
+POST /api/login
+
+POST /api/logout
+
+POST /api/validate
+
+POST /api/profile
+
+POST /api/friends
+
+Storage Files
+server/data/users.json
+server/data/sessions.json
+Deleting these files resets all accounts and sessions.
+
+🌐 Server Travel (Nexus)
+Enable on destination server
+ALLOW_SERVER_TRAVEL: true
+Configure source server
 SERVER_TRAVEL_PROPERTIES: {
   LOOP_INTERVAL: 10000,
   AMOUNT: 1
@@ -155,80 +172,80 @@ SERVER_TRAVEL: [
     }
   }
 ]
-```
+🧩 Addons
+Gameplay Addons
+Path:
 
-## Addons (Gameplay)
-Game addons live in `server/Game/addons/`. They can:
-- Register chat commands
-- Hook into global events
-- Modify behavior at runtime
+server/Game/addons/
+Example:
 
-Most addons rely on globals (like `Events`), and may export a function:
-```js
 module.exports = ({ Events, Config }) => {
   Events.on("chatMessage", () => {});
 };
-```
+Entity Addons
+Path:
 
-## Addons (Entities)
-Entity addons live in `server/lib/definitions/entityAddons/`.
-They load after definitions and can modify `Class`:
-```js
+server/lib/definitions/entityAddons/
+Example:
+
 module.exports = ({ Class }) => {
-  Class.myTank = { /* ... */ };
+  Class.customTank = {};
 };
-```
+🗺 Rooms & Maps
+Directory:
 
-## Definitions (Tanks, Projectiles, Walls)
-Definition groups are in `server/lib/definitions/groups/`.
-Entry points include:
-- `generics.js`
-- `misc.js` (walls, rocks, bots)
-- `tanks.js`
-- `projectiles.js`
+server/Game/room_setup/
+Add a new map:
 
-Add new definitions to a group or add a new group file and reference it from `server/lib/definitions/combined.js` if needed.
+Create room file in rooms/
 
-## Rooms and Maps
-Room setups are in `server/Game/room_setup/`.
-- Tiles: `server/Game/room_setup/tiles/`
-- Room definitions: `server/Game/room_setup/rooms/`
-- Mode configs set `room_setup`
+Use tiles from tiles/
 
-To add a new room:
-1. Create a room file in `rooms/`
-2. Use tiles from `tiles/` (or define new tiles)
-3. Add the room setup to a gamemode config
+Assign the room in the gamemode config
 
-## Bots and AI
-Bot behavior is driven by controllers in `server/miscFiles/controllers.js`.
-You can:
-- Change the default bot controllers in `server/lib/definitions/groups/misc.js` (`Class.bot`)
-- Add new IO controllers and attach them to bots
-- Customize bot stats in `server/config.js`
+🤖 Bots & AI
+Controllers:
 
-## Admin and Moderation
-Permissions live in `server/permissions.js` and are tied to tokens in `server/.env`.
-Chat commands are in `server/Game/addons/chatCommands.js` and can be extended.
+server/miscFiles/controllers.js
+Default bot definition:
 
-## Troubleshooting
-Common issues:
-- `Package 'ws' is not installed` -> run `npm install`
-- Port already in use -> change `Config.port` and server ports
-- Client connects but no game servers -> check `Config.servers` array
-- Server travel not working -> verify `API_KEY` and `ALLOW_SERVER_TRAVEL`
+server/lib/definitions/groups/misc.js
+Behavior tuning:
 
-## Contributing
-1. Fork the repository.
-2. Create a feature branch.
-3. Keep changes focused and explain why.
-4. Open a PR with repro steps or screenshots for gameplay/UI changes.
+server/config.js
+🛡 Administration & Moderation
+Permissions file:
 
-## License
-See `LICENSE` for the full text (Unlicense).
+server/permissions.js
+Chat commands:
 
-## Credits
-See `credits.md`.
+server/Game/addons/chatCommands.js
+Tokens are managed in:
 
-## Community
-- Discord: https://discord.gg/arras
+server/.env
+🛠 Troubleshooting
+Problem	Fix
+ws package missing	npm install ws
+Port already in use	Change Config.port
+Client loads but no servers	Check Config.servers
+Server travel broken	Verify API_KEY and flags
+🤝 Contributing
+Workflow:
+
+Fork the repository
+
+Create a feature branch
+
+Commit focused changes
+
+Submit a pull request
+
+Include repro steps or screenshots for gameplay/UI changes
+
+📄 License
+This project uses the Unlicense.
+See LICENSE for full text.
+
+👥 Community
+Discord:
+https://discord.gg/arras
