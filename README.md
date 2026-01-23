@@ -48,60 +48,114 @@ Verify installation:
 ```bash
 node -v
 npm -v
-🚀 Quick Start (Localhost)
-Install dependencies
+```
+
+---
+
+## 🚀 Quick Start (Localhost)
+
+Install dependencies:
+
+```bash
 npm install
-Start the server
-Windows
+```
 
+Start the server:
+
+Windows:
+
+```bash
 run.bat
-macOS / Linux
+```
 
+macOS / Linux:
+
+```bash
 ./run.sh
-Alternative
+```
 
+Alternative:
+
+```bash
 npm start
-Open the client
-http://localhost:3000
-If you see Package 'ws' is not installed, run:
+```
 
+Open the client:
+
+`http://localhost:3000`
+
+If you see `Package 'ws' is not installed`, run:
+
+```bash
 npm install ws
-🐳 Docker (Local Development)
-Build image
+```
+
+---
+
+## 🐳 Docker (Local Development)
+
+Build image:
+
+```bash
 docker build -t arras-ce .
-Run with live file sync
+```
+
+Run with live file sync:
+
+```bash
 docker run -d --name arras \
   -p 3000-3017:3000-3017 \
   -v "$(pwd):/usr/src/app" \
   arras-ce
-Stop / Remove
+```
+
+Stop / Remove:
+
+```bash
 docker stop arras
 docker rm arras
+```
+
 Without volume mounting, rebuild the image after code changes.
 
-📁 Project Structure
-Path	Description
-server/server.js	Main server entry
-server/config.js	Core configuration
-server/.env	Tokens and API keys
-server/data/users.json	Account storage
-server/data/sessions.json	Session storage
-server/Game/	Game logic
-server/lib/definitions/	Entity definitions
-server/Game/addons/	Gameplay addons
-server/Game/room_setup/	Maps and room layouts
-public/	Web client assets
-⚙️ Configuration
+---
+
+## 📁 Project Structure
+
+| Path | Description |
+| --- | --- |
+| server/server.js | Main server entry |
+| server/config.js | Core configuration |
+| server/.env | Tokens and API keys |
+| server/data/users.json | Account storage |
+| server/data/sessions.json | Session storage |
+| server/Game/ | Game logic |
+| server/lib/definitions/ | Entity definitions |
+| server/Game/addons/ | Gameplay addons |
+| server/Game/room_setup/ | Maps and room layouts |
+| public/ | Web client assets |
+
+---
+
+## ⚙️ Configuration
+
 All primary settings are in:
 
-server/config.js
-🌐 Web Server Settings
+`server/config.js`
+
+### 🌐 Web Server Settings
+
+```js
 host: "localhost:3000",
 port: 3000,
 allow_ACAO: true
-🕹 Game Server Setup
+```
+
+### 🕹 Game Server Setup
+
 Example configuration:
 
+```js
 servers: [
   {
     share_client_server: false,
@@ -117,48 +171,65 @@ servers: [
     }
   }
 ]
+```
+
 Notes:
 
-gamemode references files from server/Game/gamemodeconfigs/
+- `gamemode` references files from `server/Game/gamemodeconfigs/`
+- `properties` override global config values
+- `player_cap` affects server capacity and UI display
 
-properties override global config values
+---
 
-player_cap affects server capacity and UI display
+## 🔐 Environment Variables
 
-🔐 Environment Variables
 Location:
 
-server/.env
+`server/.env`
+
 Common production setup:
 
+```bash
 PUBLIC_HOST=yourdomain.com
 PORT=3000
 GAME_HOST=yourdomain.com
 GAME_PORT_BASE=3001
 API_KEY=your_secret_key
-👤 Accounts & Sessions
-API Routes
-POST /api/register
+```
 
-POST /api/login
+---
 
-POST /api/logout
+## 👤 Accounts & Sessions
 
-POST /api/validate
+API Routes:
 
-POST /api/profile
+- POST /api/register
+- POST /api/login
+- POST /api/logout
+- POST /api/validate
+- POST /api/profile
+- POST /api/friends
 
-POST /api/friends
+Storage Files:
 
-Storage Files
-server/data/users.json
-server/data/sessions.json
+- server/data/users.json
+- server/data/sessions.json
+
 Deleting these files resets all accounts and sessions.
 
-🌐 Server Travel (Nexus)
-Enable on destination server
+---
+
+## 🌐 Server Travel (Nexus)
+
+Enable on destination server:
+
+```js
 ALLOW_SERVER_TRAVEL: true
-Configure source server
+```
+
+Configure source server:
+
+```js
 SERVER_TRAVEL_PROPERTIES: {
   LOOP_INTERVAL: 10000,
   AMOUNT: 1
@@ -172,80 +243,119 @@ SERVER_TRAVEL: [
     }
   }
 ]
-🧩 Addons
-Gameplay Addons
+```
+
+---
+
+## 🧩 Addons
+
+Gameplay Addons:
+
 Path:
 
-server/Game/addons/
+`server/Game/addons/`
+
 Example:
 
+```js
 module.exports = ({ Events, Config }) => {
   Events.on("chatMessage", () => {});
 };
-Entity Addons
+```
+
+Entity Addons:
+
 Path:
 
-server/lib/definitions/entityAddons/
+`server/lib/definitions/entityAddons/`
+
 Example:
 
+```js
 module.exports = ({ Class }) => {
   Class.customTank = {};
 };
-🗺 Rooms & Maps
+```
+
+---
+
+## 🗺 Rooms & Maps
+
 Directory:
 
-server/Game/room_setup/
+`server/Game/room_setup/`
+
 Add a new map:
 
-Create room file in rooms/
+- Create room file in `rooms/`
+- Use tiles from `tiles/`
+- Assign the room in the gamemode config
 
-Use tiles from tiles/
+---
 
-Assign the room in the gamemode config
+## 🤖 Bots & AI
 
-🤖 Bots & AI
 Controllers:
 
-server/miscFiles/controllers.js
+`server/miscFiles/controllers.js`
+
 Default bot definition:
 
-server/lib/definitions/groups/misc.js
+`server/lib/definitions/groups/misc.js`
+
 Behavior tuning:
 
-server/config.js
-🛡 Administration & Moderation
+`server/config.js`
+
+---
+
+## 🛡 Administration & Moderation
+
 Permissions file:
 
-server/permissions.js
+`server/permissions.js`
+
 Chat commands:
 
-server/Game/addons/chatCommands.js
+`server/Game/addons/chatCommands.js`
+
 Tokens are managed in:
 
-server/.env
-🛠 Troubleshooting
-Problem	Fix
-ws package missing	npm install ws
-Port already in use	Change Config.port
-Client loads but no servers	Check Config.servers
-Server travel broken	Verify API_KEY and flags
-🤝 Contributing
+`server/.env`
+
+---
+
+## 🛠 Troubleshooting
+
+| Problem | Fix |
+| --- | --- |
+| ws package missing | npm install ws |
+| Port already in use | Change Config.port |
+| Client loads but no servers | Check Config.servers |
+| Server travel broken | Verify API_KEY and flags |
+
+---
+
+## 🤝 Contributing
+
 Workflow:
 
-Fork the repository
+- Fork the repository
+- Create a feature branch
+- Commit focused changes
+- Submit a pull request
+- Include repro steps or screenshots for gameplay/UI changes
 
-Create a feature branch
+---
 
-Commit focused changes
+## 📄 License
 
-Submit a pull request
-
-Include repro steps or screenshots for gameplay/UI changes
-
-📄 License
-This project uses the Unlicense.
+This project uses the Unlicense.  
 See LICENSE for full text.
 
-👥 Community
-Discord:
+---
+
+## 👥 Community
+
+Discord:  
 https://discord.gg/arras
