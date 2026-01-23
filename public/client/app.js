@@ -2666,7 +2666,7 @@ import * as socketStuff from "./socketinit.js";
             let barStart = x + height / 2;
             let barEnd = x + height / 2 + len * ska(cap) - gap;
             let barWidth = Math.max(0, barEnd - barStart);
-            let fillEnd = barStart + barWidth * (level / cap);
+            let fillEnd = barStart + barWidth * Math.min(level, cap) / cap;
             drawBar(barStart, x - height / 2 + len * ska(cap) - 14, y + height / 2, height - 2.8 + config.graphical.barChunk, color.black);
             drawBar(barStart, barEnd, y + height / 2, height - 3, color.grey);
             drawBar(barStart, fillEnd, y + height / 2, height - 5.5 + config.graphical.barChunk, color.black);
@@ -2684,7 +2684,7 @@ import * as socketStuff from "./socketinit.js";
             // Vertical dividers
             ctx[2].strokeStyle = color.black;
             ctx[2].lineWidth = 1;
-            for (let j = 1; j < level + 1; j++) {
+            for (let j = 1; j < level; j++) {
                 drawGuiLine(barStart + barWidth * (j / cap), y + 1.5, barStart + barWidth * (j / cap), y - 3 + height);
             }
 
