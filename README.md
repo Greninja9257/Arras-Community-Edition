@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/node-v18+-green">
-  <img src="https://img.shields.io/github/license/Greninja9257/Arras-Community-Edition">
+  <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue">
   <img src="https://img.shields.io/github/stars/Greninja9257/Arras-Community-Edition">
   <img src="https://img.shields.io/github/forks/Greninja9257/Arras-Community-Edition">
 </p>
@@ -23,6 +23,30 @@ https://github.com/AE0hello/open-source-arras/
 
 ---
 
+## 📚 Table of Contents
+
+- [🎮 About](#-about)
+- [✨ Features](#-features)
+- [📋 Requirements](#-requirements)
+- [🚀 Quick Start (Localhost)](#-quick-start-localhost)
+- [🐳 Docker (Local Development)](#-docker-local-development)
+- [📁 Project Structure](#-project-structure)
+- [⚙️ Configuration](#️-configuration)
+- [🔐 Environment Variables](#-environment-variables)
+- [👤 Accounts & Sessions](#-accounts--sessions)
+- [🌐 Server Travel (Nexus)](#-server-travel-nexus)
+- [🧩 Addons](#-addons)
+- [🗺 Rooms & Maps](#-rooms--maps)
+- [🤖 Bots & AI](#-bots--ai)
+- [🛡 Administration & Moderation](#️-administration--moderation)
+- [🔧 Development Tips](#-development-tips)
+- [🛠 Troubleshooting](#-troubleshooting)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [👥 Community](#-community)
+
+---
+
 ## 🎮 About
 
 Arras Community Edition is a **self-hostable multiplayer Arras game server with a web client**.
@@ -35,6 +59,17 @@ It provides:
 - Optional account system with stats and friends
 - Multi-server travel (Nexus portals)
 - Docker support
+
+---
+
+## ✨ Features
+
+- Web client hosted by the same Node process
+- Room system with configurable maps and modes
+- Entity definitions and addon hooks for modding
+- Optional authentication, sessions, and friends
+- Travel between servers via Nexus portals
+- Dockerfile for local containers
 
 ---
 
@@ -197,6 +232,11 @@ GAME_PORT_BASE=3001
 API_KEY=your_secret_key
 ```
 
+Additional notes:
+
+- `PUBLIC_HOST` affects client connections and share links.
+- `GAME_PORT_BASE` defines the first port in your game server range.
+
 ---
 
 ## 👤 Accounts & Sessions
@@ -322,6 +362,14 @@ Chat commands:
 Tokens are managed in:
 
 `server/.env`
+
+---
+
+## 🔧 Development Tips
+
+- Definitions and addons hot-reload on restart, so keep run scripts handy.
+- When testing new servers, increment `id` values and ports to avoid conflicts.
+- For local multiplayer testing, open multiple browser windows or profiles.
 
 ---
 
