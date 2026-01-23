@@ -350,7 +350,7 @@ Workflow:
 
 ## 📄 License
 
-This project uses the Unlicense.  
+This project uses the PolyForm Noncommercial License 1.0.0.  
 See LICENSE for full text.
 
 ---
