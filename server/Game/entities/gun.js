@@ -339,14 +339,14 @@ class Gun extends EventEmitter {
             s.y += (this.body.velocity.length * extraBoost * s.y) / len;
           }
         }
-    
+
         //create an independent entity
         let spawnOffset = {
             x: this.body.x + this.body.size * gx - s.x,
             y: this.body.y + this.body.size * gy - s.y,
         }
         if (this.independentMaster) {
-            var o = new Entity(spawnOffset);
+            const o = new Entity(spawnOffset);
             o.color.base = undefined;
             this.bulletInitIndependent(o);
             o.parentID = this.body.id;
@@ -367,7 +367,7 @@ class Gun extends EventEmitter {
             return;
         }
         if (this.independentChildren) {
-            var o;
+            let o;
             switch (this.noentitylimit) {
                 case true:
                     o = new Entity(spawnOffset);
@@ -385,9 +385,9 @@ class Gun extends EventEmitter {
             });
             return;
         }
-    
+
         // Create the bullet
-        var o;
+        let o;
         switch (this.noentitylimit) {
             case true:
                 o = new Entity(spawnOffset, this.master.master);
