@@ -1,3 +1,3 @@
 module.exports = {
-    OUTBREAK: true,
+  OUTBREAK: true
 }
