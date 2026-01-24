@@ -1,4 +1,22 @@
 {
   "projectName": "Arras-Community-Edition",
-  "projectOwner": "Greninja9257"
+  "projectOwner": "Greninja9257",
+  "files": [
+    "README.md"
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "Greninja9257",
+      "name": "Greninja9257",
+      "avatar_url": "https://avatars.githubusercontent.com/u/169415895?v=4",
+      "profile": "https://github.com/Greninja9257",
+      "contributions": [
+        "code",
+        "maintenance"
+      ]
+    }
+  ]
 }

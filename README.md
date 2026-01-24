@@ -399,6 +399,13 @@ Workflow:
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Greninja9257"><img src="https://avatars.githubusercontent.com/u/169415895?v=4?s=100" width="100px;" alt="Greninja9257"/><br /><sub><b>Greninja9257</b></sub></a><br /><a href="#code-Greninja9257" title="Code">💻</a> <a href="#maintenance-Greninja9257" title="Maintenance">🚧</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
