@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue">
   <img src="https://img.shields.io/github/stars/Greninja9257/Arras-Community-Edition">
   <img src="https://img.shields.io/github/forks/Greninja9257/Arras-Community-Edition">
-  [![All Contributors](https://img.shields.io/github/all-contributors/projectOwner/projectName?color=ee8449&style=flat-square)](#contributors)
+  <img src="https://img.shields.io/github/all-contributors/Greninja9257/Arras-Community-Edition?color=ee8449&style=flat-square">
 </p>
 
 > ⚠️ **Beta Warning**  
