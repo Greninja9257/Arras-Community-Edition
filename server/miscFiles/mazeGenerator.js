@@ -1242,7 +1242,6 @@ const MazeGenerator = class {
             default:
                 console.log("Invalid maze type! Generating aborded.")
                 return null
-                break
         }
       } catch (e) {
         return null
@@ -1256,8 +1255,8 @@ const MazeGenerator = class {
       return new MazeZone(this.maze)
     }
     placeMinimal() {
-      let bestSquares = null
-  
+      let bestSquares = null  
+
       for (let i = 0; i < 10; i++) {
         let trial = this.runTrial()
         if (!trial) continue
@@ -1267,7 +1266,7 @@ const MazeGenerator = class {
           continue
         }
       }
-  
+      
       for (let i = 0; !bestSquares && i < 500; i++) {
         let trial = this.runTrial()
         if (!trial) continue
