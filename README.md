@@ -403,6 +403,7 @@ Workflow:
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Greninja9257"><img src="https://avatars.githubusercontent.com/u/169415895?v=4?s=100" width="100px;" alt="Greninja9257"/><br /><sub><b>Greninja9257</b></sub></a><br /><a href="#code-Greninja9257" title="Code">💻</a> <a href="#maintenance-Greninja9257" title="Maintenance">🚧</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/DaTa"><img src="https://avatars.githubusercontent.com/u/306267?v=4?s=100" width="100px;" alt="data"/><br /><sub><b>data</b></sub></a><br /><a href="#data-data" title="Data">🔣</a> <a href="#projectManagement-data" title="Project Management">📆</a> <a href="#test-data" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
 </table>
