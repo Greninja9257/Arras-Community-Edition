@@ -17,6 +17,17 @@
         "code",
         "maintenance"
       ]
+    },
+    {
+      "login": "data",
+      "name": "data",
+      "avatar_url": "https://avatars.githubusercontent.com/u/306267?v=4",
+      "profile": "https://github.com/DaTa",
+      "contributions": [
+        "data",
+        "projectManagement",
+        "test"
+      ]
     }
   ]
 }
