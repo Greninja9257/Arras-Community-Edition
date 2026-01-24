@@ -9,6 +9,7 @@
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue">
   <img src="https://img.shields.io/github/stars/Greninja9257/Arras-Community-Edition">
   <img src="https://img.shields.io/github/forks/Greninja9257/Arras-Community-Edition">
+  [![All Contributors](https://img.shields.io/github/all-contributors/projectOwner/projectName?color=ee8449&style=flat-square)](#contributors)
 </p>
 
 > ⚠️ **Beta Warning**  
@@ -393,6 +394,17 @@ Workflow:
 - Commit focused changes
 - Submit a pull request
 - Include repro steps or screenshots for gameplay/UI changes
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 ---
 
