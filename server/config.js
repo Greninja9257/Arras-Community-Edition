@@ -217,6 +217,17 @@ module.exports = {
             player_cap: 80,
             properties: { bot_cap: 16 }
         },
+        {
+            share_client_server: false,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 17),
+            port: GAME_PORT_BASE + 17,
+            id: "celestials",
+            featured: false,
+            region: "local",
+            gamemode: ["celestials"],
+            player_cap: 80,
+            properties: { bot_cap: 8 }
+        },
     ],
 
     // Web Server
@@ -363,7 +374,7 @@ module.exports = {
     use_limited_waves: false,
     mothership: false,
     domination: false,
-    tiered_food: false,
+    tiered_food: true,
     arena_shape: "rect",
     blackout: false,
     space_physics: false,

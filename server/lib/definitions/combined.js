@@ -19,6 +19,11 @@ class definitionCombiner {
         let definitionGroupsLoadEnd = performance.now();
         if (Config.startup_logs && log) console.log("Loaded definitions in " + util.rounder(definitionGroupsLoadEnd - definitionGroupsLoadStart, 3) + " milliseconds. \n");
 
+        // Initialize weapon helpers after core definitions are available.
+        if (!global.WeaponClass) {
+            require("./weapons.js");
+        }
+
         // Now we can load the tank addons
         if (Config.startup_logs && log) console.log(`Loading addons...`);
         this.loadAddons(this.tankAddonLoc, log);

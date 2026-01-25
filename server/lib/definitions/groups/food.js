@@ -1,6 +1,13 @@
-const { basePolygonDamage, basePolygonHealth } = require('../constants.js');
-const { makeRelic, makeCrasher, makeLaby } = require('../facilitators.js');
-const { makeRarities, makePresent } = require("../facilitators");
+const { basePolygonDamage, basePolygonHealth } = require("../constants.js");
+const {
+    makeRelic,
+    makeCrasher,
+    makeLaby,
+    makeRarities,
+    makePresent,
+    encode3d,
+    encode4d
+} = require("../facilitators.js");
 
 // EGGS
 Class.egg = {
@@ -250,6 +257,46 @@ Class.cube = {
     INTANGIBLE: false,
     GIVE_KILL_MESSAGE: true,
 };
+Class.cube3d = {
+    PARENT: "food",
+    LABEL: "Cube",
+    VALUE: 6e7,
+    SIZE: 30,
+    COLOR: "egg",
+    SHAPE: encode3d({
+        VERTEXES: [
+            [1, 1, 1],
+            [-1, 1, 1],
+            [-1, -1, 1],
+            [1, -1, 1],
+            [1, 1, -1],
+            [-1, 1, -1],
+            [-1, -1, -1],
+            [1, -1, -1]
+        ],
+        FACES: [
+            [0, 1, 2, 3],
+            [4, 5, 6, 7],
+            [1, 2, 6, 5],
+            [0, 3, 7, 4],
+            [0, 1, 5, 4],
+            [2, 3, 7, 6]
+        ],
+        SCALE: 7.5,
+        VERTEXES_SCALE: 0.1
+    }),
+    BODY: {
+        DAMAGE: 7.2,
+        DENSITY: 30,
+        HEALTH: 80,
+        RESIST: 1.25,
+        PENETRATION: 21,
+        ACCELERATION: 0.002
+    },
+    DRAW_HEALTH: true,
+    INTANGIBLE: false,
+    GIVE_KILL_MESSAGE: true
+};
 Class.tetrahedron = {
     PARENT: "food",
     LABEL: "The Tetrahedron",
@@ -263,6 +310,49 @@ Class.tetrahedron = {
         HEALTH: 50,
         RESIST: 1.25,
         PENETRATION: 22.5,
+        ACCELERATION: 0.002
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true
+};
+Class.tetrahedron3d = {
+    PARENT: "food",
+    LABEL: "The Tetrahedron",
+    VALUE: 9e7,
+    SIZE: 24,
+    COLOR: "egg",
+    SHAPE: encode3d({
+        FACES: [
+            [
+                [1, 1, 1],
+                [-1, 1, -1],
+                [1, -1, -1]
+            ],
+            [
+                [-1, 1, -1],
+                [-1, -1, 1],
+                [1, -1, -1]
+            ],
+            [
+                [1, 1, 1],
+                [1, -1, -1],
+                [-1, -1, 1]
+            ],
+            [
+                [1, 1, 1],
+                [-1, -1, 1],
+                [-1, 1, -1]
+            ]
+        ],
+        SCALE: 5,
+        VERTEXES_SCALE: 0.1
+    }),
+    BODY: {
+        DAMAGE: 9,
+        DENSITY: 34.5,
+        HEALTH: 100,
+        RESIST: 1.25,
+        PENETRATION: 27,
         ACCELERATION: 0.002
     },
     DRAW_HEALTH: true,
@@ -286,6 +376,41 @@ Class.octahedron = {
     DRAW_HEALTH: true,
     GIVE_KILL_MESSAGE: true
 };
+Class.octahedron3d = {
+    PARENT: "food",
+    LABEL: "The Octahedron",
+    VALUE: 1.2e8,
+    SIZE: 26,
+    COLOR: "egg",
+    SHAPE: encode3d({
+        FACES: (() => {
+            const x = 3 / (2 * Math.sqrt(2));
+            const y = 3 / 2;
+            return [
+                [[-x, 0, x], [-x, 0, -x], [0, y, 0]],
+                [[-x, 0, -x], [x, 0, -x], [0, y, 0]],
+                [[x, 0, -x], [x, 0, x], [0, y, 0]],
+                [[x, 0, x], [-x, 0, x], [0, y, 0]],
+                [[x, 0, -x], [-x, 0, -x], [0, -y, 0]],
+                [[-x, 0, -x], [-x, 0, x], [0, -y, 0]],
+                [[x, 0, x], [x, 0, -x], [0, -y, 0]],
+                [[-x, 0, x], [x, 0, x], [0, -y, 0]]
+            ];
+        })(),
+        SCALE: 7.5,
+        VERTEXES_SCALE: 0.1
+    }),
+    BODY: {
+        DAMAGE: 9.75,
+        DENSITY: 39,
+        HEALTH: 120,
+        RESIST: 1.25,
+        PENETRATION: 36,
+        ACCELERATION: 0.002
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true
+};
 Class.dodecahedron = {
     PARENT: "food",
     LABEL: "The Dodecahedron",
@@ -304,6 +429,124 @@ Class.dodecahedron = {
     DRAW_HEALTH: true,
     GIVE_KILL_MESSAGE: true,
 };
+Class.dodecahedron3d = {
+    PARENT: "food",
+    LABEL: "The Dodecahedron",
+    VALUE: 1.5e8,
+    SIZE: 36,
+    COLOR: "egg",
+    SHAPE: encode3d({
+        FACES: (() => {
+            let phi = (1 + Math.sqrt(5)) / 2;
+            let x = 1;
+            let y = 1 / phi;
+            let z = 2 - phi;
+
+            x *= 1.5;
+            y *= 1.5;
+            z *= 1.5;
+
+            return [
+                [
+                    [z, 0, x],
+                    [-z, 0, x],
+                    [-y, y, y],
+                    [0, x, z],
+                    [y, y, y]
+                ],
+                [
+                    [-z, 0, x],
+                    [z, 0, x],
+                    [y, -y, y],
+                    [0, -x, z],
+                    [-y, -y, y]
+                ],
+                [
+                    [z, 0, -x],
+                    [-z, 0, -x],
+                    [-y, -y, -y],
+                    [0, -x, -z],
+                    [y, -y, -y]
+                ],
+                [
+                    [-z, 0, -x],
+                    [z, 0, -x],
+                    [y, y, -y],
+                    [0, x, -z],
+                    [-y, y, -y]
+                ],
+                [
+                    [0, x, -z],
+                    [0, x, z],
+                    [y, y, y],
+                    [x, z, 0],
+                    [y, y, -y]
+                ],
+                [
+                    [0, x, z],
+                    [0, x, -z],
+                    [-y, y, -y],
+                    [-x, z, 0],
+                    [-y, y, y]
+                ],
+                [
+                    [0, -x, -z],
+                    [0, -x, z],
+                    [-y, -y, y],
+                    [-x, -z, 0],
+                    [-y, -y, -y]
+                ],
+                [
+                    [0, -x, z],
+                    [0, -x, -z],
+                    [y, -y, -y],
+                    [x, -z, 0],
+                    [y, -y, y]
+                ],
+                [
+                    [x, z, 0],
+                    [x, -z, 0],
+                    [y, -y, y],
+                    [z, 0, x],
+                    [y, y, y]
+                ],
+                [
+                    [x, -z, 0],
+                    [x, z, 0],
+                    [y, y, -y],
+                    [z, 0, -x],
+                    [y, -y, -y]
+                ],
+                [
+                    [-x, z, 0],
+                    [-x, -z, 0],
+                    [-y, -y, -y],
+                    [-z, 0, -x],
+                    [-y, y, -y]
+                ],
+                [
+                    [-x, -z, 0],
+                    [-x, z, 0],
+                    [-y, y, y],
+                    [-z, 0, x],
+                    [-y, -y, y]
+                ]
+            ];
+        })(),
+        SCALE: 6.5,
+        VERTEXES_SCALE: 0.1
+    }),
+    BODY: {
+        DAMAGE: 10.5,
+        DENSITY: 42,
+        HEALTH: 140,
+        RESIST: 1.25,
+        PENETRATION: 39,
+        ACCELERATION: 0.002
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true
+};
 Class.icosahedron = {
     PARENT: "food",
     LABEL: "The Icosahedron",
@@ -321,6 +564,56 @@ Class.icosahedron = {
     },
     DRAW_HEALTH: true,
     GIVE_KILL_MESSAGE: true,
+};
+Class.icosahedron3d = {
+    PARENT: "food",
+    LABEL: "The Icosahedron",
+    VALUE: 3e8,
+    SIZE: 40,
+    COLOR: "egg",
+    SHAPE: encode3d({
+        FACES: (() => {
+            let phi = (1 + Math.sqrt(5)) / 2;
+            let x = 1 / 2;
+            let y = 1 / (2 * phi);
+            x *= 3;
+            y *= 3;
+            return [
+                [[0, y, -x], [y, x, 0], [-y, x, 0]],
+                [[0, y, x], [-y, x, 0], [y, x, 0]],
+                [[0, y, x], [0, -y, x], [-x, 0, y]],
+                [[0, y, x], [x, 0, y], [0, -y, x]],
+                [[0, y, -x], [0, -y, -x], [x, 0, -y]],
+                [[0, y, -x], [-x, 0, -y], [0, -y, -x]],
+                [[0, -y, x], [y, -x, 0], [-y, -x, 0]],
+                [[0, -y, -x], [-y, -x, 0], [y, -x, 0]],
+                [[-y, x, 0], [-x, 0, y], [-x, 0, -y]],
+                [[-y, -x, 0], [-x, 0, -y], [-x, 0, y]],
+                [[y, x, 0], [x, 0, -y], [x, 0, y]],
+                [[y, -x, 0], [x, 0, y], [x, 0, -y]],
+                [[0, y, x], [-x, 0, y], [-y, x, 0]],
+                [[0, y, x], [y, x, 0], [x, 0, y]],
+                [[0, y, -x], [-y, x, 0], [-x, 0, -y]],
+                [[0, y, -x], [x, 0, -y], [y, x, 0]],
+                [[0, -y, -x], [-x, 0, -y], [-y, -x, 0]],
+                [[0, -y, -x], [y, -x, 0], [x, 0, -y]],
+                [[0, -y, x], [-y, -x, 0], [-x, 0, y]],
+                [[0, -y, x], [x, 0, y], [y, -x, 0]]
+            ];
+        })(),
+        SCALE: 20,
+        VERTEXES_SCALE: 0.03
+    }),
+    BODY: {
+        DAMAGE: 13.5,
+        DENSITY: 45,
+        HEALTH: 160,
+        RESIST: 1.25,
+        PENETRATION: 42,
+        ACCELERATION: 0.002
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true
 };
 
 // PRESENTS
@@ -384,6 +677,67 @@ Class.tesseract = {
         RESIST: 1.25,
         HEALTH: 200,
         PENETRATION: 50,
+        ACCELERATION: 0.003
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true
+};
+Class.tesseract4d = {
+    PARENT: "food",
+    LABEL: "The Tesseract",
+    VALUE: 1e17,
+    SIZE: 75,
+    COLOR: "egg",
+    SHAPE: encode4d({
+        VERTEXES: [
+            [-1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [1, -1, 1, 1],
+            [-1, -1, 1, 1],
+            [-1, 1, -1, 1],
+            [1, 1, -1, 1],
+            [1, -1, -1, 1],
+            [-1, -1, -1, 1],
+            [-1, 1, 1, -1],
+            [1, 1, 1, -1],
+            [1, -1, 1, -1],
+            [-1, -1, 1, -1],
+            [-1, 1, -1, -1],
+            [1, 1, -1, -1],
+            [1, -1, -1, -1],
+            [-1, -1, -1, -1]
+        ],
+        FACES: [
+            [0, 1, 2, 3],
+            [7, 6, 5, 4],
+            [0, 1, 5, 4],
+            [1, 2, 6, 5],
+            [2, 3, 7, 6],
+            [3, 0, 4, 7],
+            [8, 9, 10, 11],
+            [15, 14, 13, 12],
+            [8, 9, 13, 12],
+            [9, 10, 14, 13],
+            [10, 11, 15, 14],
+            [11, 8, 12, 15],
+            [0, 1, 9, 8],
+            [4, 5, 13, 12],
+            [1, 2, 10, 9],
+            [3, 0, 8, 11],
+            [2, 3, 11, 10],
+            [7, 6, 14, 15],
+            [5, 6, 14, 13],
+            [4, 7, 15, 12]
+        ],
+        VERTEXES_SCALE: 0.1,
+        SCALE: 6
+    }),
+    BODY: {
+        DAMAGE: 30,
+        DENSITY: 200,
+        RESIST: 1.25,
+        HEALTH: 5000,
+        PENETRATION: 65,
         ACCELERATION: 0.003
     },
     DRAW_HEALTH: true,

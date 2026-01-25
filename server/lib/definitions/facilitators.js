@@ -830,10 +830,10 @@ exports.makeCrasher = type => ({
     HAS_NO_MASTER: true,
     VALUE: type.VALUE * 5,
     BODY: {
-        SPEED: 1 + 5 / Math.max(2, (type.PROPS.length ?? 0) + type.SHAPE),
-        HEALTH: Math.pow(type.BODY.HEALTH, 2/3),
-        DAMAGE: Math.pow(type.BODY.HEALTH, 1/3) * type.BODY.DAMAGE,
-        ACCELERATION: 5,
+        SPEED: 1 + 5 / Math.max(2, (type.TURRETS.length ?? 0) + type.SHAPE),
+        HEALTH: Math.pow(type.BODY.HEALTH, 2 / 3),
+        DAMAGE: Math.pow(type.BODY.HEALTH, 1 / 3) * type.BODY.DAMAGE,
+        ACCELERATION: 1,
         PUSHABILITY: 0.5,
         DENSITY: 10
     },
@@ -842,34 +842,47 @@ exports.makeCrasher = type => ({
     }
 });
 
+const rarityColors = ["lightGreen", "teal", "darkGrey", "rainbow", "trans"];
+rarityColors.push(
+    ...Array.from({ length: 95 }, (_, i) => ({
+        BASE: ["lightGreen", "teal", "rainbow"][i % 3],
+        BRIGHTNESS_SHIFT: (i % 2 === 1 ? -1 : 1) * (i / 10),
+        HUE_SHIFT: 20 + 3 * i
+    }))
+);
+
 exports.makeRare = (type, level) => {
     type = ensureIsClass(type);
     return {
         PARENT: "food",
-        LABEL: ["Shiny", "Legendary", "Shadow", "Rainbow", "Trans"][level] + " " + type.LABEL,
-        VALUE: [100, 500, 2000, 4000, 5000][level] * type.VALUE,
+        LABEL:
+            (["Shiny", "Legendary", "Shadow", "Rainbow", "Trans"][level] ??
+                `${level}% Rarity`) +
+            " " +
+            type.LABEL,
+        VALUE:
+            ([100, 500, 2000, 2500, 2500][level] ?? 500 * (level + 1)) *
+            type.VALUE,
         SHAPE: type.SHAPE,
         SIZE: type.SIZE,
-        GLOW:  {
-            RADIUS: 2,
-            STRENGTH: 25,
-            COLOR: ["lightGreen", "teal", "darkGrey", "rainbow", "trans"][level],
-            ALPHA: 0.6
-        },
-        COLOR: ["lightGreen", "teal", "darkGrey", "rainbow", "trans"][level],
-        ALPHA: level == 2 ? 0.25 : 1,
+        COLOR: rarityColors[level],
+        ALPHA: level === 2 ? 0.25 : 1,
         BODY: {
-            DAMAGE: [1, 1, 2, 2.5, 2.5][level] * type.BODY.DAMAGE,
-            DENSITY: [1, 1, 2, 2.5, 2.5][level] * type.BODY.DENSITY,
-            HEALTH: [2, 4, 4, 6, 8][level] * type.BODY.HEALTH,
-            PENETRATION: [1.5, 1.5, 2, 2.5, 2.5][level] * type.BODY.PENETRATION,
+            DAMAGE:
+                ([1, 1, 2, 2.5, 2.5][level] ?? 1.5 + Math.sqrt(level)) *
+                type.BODY.DAMAGE,
+            DENSITY: ([1, 1, 2, 2.5, 2.5][level] ?? 2.5) * type.BODY.DENSITY,
+            HEALTH:
+                ([2, 4, 4, 6, 8][level] ?? (level - 1) * 2) * type.BODY.HEALTH,
+            PENETRATION:
+                ([1.5, 1.5, 2, 2.5, 2.5][level] ?? 3) * type.BODY.PENETRATION,
             ACCELERATION: type.BODY.ACCELERATION
         },
         DRAW_HEALTH: true,
         INTANGIBLE: type.INTANGIBLE,
-        GIVE_KILL_MESSAGE: true,
-    }
-}
+        GIVE_KILL_MESSAGE: true
+    };
+};
 
 const labyTierToHealth = {
     0: 0.25,
@@ -879,73 +892,74 @@ const labyTierToHealth = {
     4: 300
 };
 
-// not accurate values
 const labyRarityToScore = {
-    1: 5,
-    2: 10,
-    3: 40,
-    4: 100,
-    5: 250
-};
-
-const labyRarityToHealth = {
-    1: 2,
-    2: 4,
-    3: 6,
-    4: 8,
-    5: 10
+    0: 1,
+    1: 100,
+    2: 500,
+    3: 2000,
+    4: 2500,
+    5: 2500
 };
 
 exports.makeLaby = (type, tier, rarity, level, baseScale = 1) => {
     type = ensureIsClass(type);
-    let usableSHAPE = Math.max(type.SHAPE, 3),
-        downscale = Math.cos(Math.PI / usableSHAPE),
-        healthMultiplier = Math.pow(5, level) - (level > 2 ? Math.pow(5, level) / Math.pow(5, level - 2) : 0);
+    const usableSHAPE = Math.max(type.SHAPE, 3);
+    const downscale = Math.cos(Math.PI / usableSHAPE);
+    const healthMultiplier =
+        Math.pow(5, level) -
+        (level > 2 ? Math.pow(5, level) / Math.pow(5, level - 2) : 0);
     return {
-        PARENT: 'food',
-        LABEL: ['', 'Beta ', 'Alpha ', 'Omega ', 'Gamma ', 'Delta '][level] + type.LABEL,
+        PARENT: "food",
+        LABEL:
+            (["", "Beta ", "Alpha ", "Omega ", "Gamma ", "Delta "][level] ??
+                `${level}-Layered `) + type.LABEL,
         VALUE: util.getReversedJackpot(
             Math.min(
                 5e6,
-                (tier == 0
+                (tier === 0
                     ? 30 * (level > 1 ? Math.pow(6, level - 1) : level) + 8
                     : 30 * Math.pow(5, tier + level - 1)) *
-                    (labyRarityToScore[rarity] || 1)
+                    (labyRarityToScore[rarity] ||
+                        Math.pow(rarity * 30 + 5, 1.5))
             )
         ),
         SHAPE: type.SHAPE,
-        SIZE: (type.SIZE * baseScale) / downscale ** level,
+        SIZE: (type.SIZE * baseScale) / Math.pow(downscale, level),
         COLOR: type.COLOR,
         ALPHA: type.ALPHA ?? 1,
         BODY: {
-            DAMAGE: type.BODY.DAMAGE,
+            DAMAGE: (type.BODY.DAMAGE || 0) * 2,
             DENSITY: type.BODY.DENSITY,
             HEALTH:
-                (labyTierToHealth[tier] || 1) *
-                healthMultiplier *
-                (labyRarityToHealth[rarity] || 1),
+                ((labyTierToHealth[tier] ??
+                    Math.max(1, Math.sqrt(200_000 * (tier - 5)))) *
+                    healthMultiplier *
+                    Math.max(1, rarity * 2)) /
+                (type.BODY.DAMAGE || 1),
             PENETRATION: type.BODY.PENETRATION,
             PUSHABILITY: type.BODY.PUSHABILITY / (level + 1) || 0,
             ACCELERATION: type.BODY.ACCELERATION,
-            SHIELD: 1e-9,
-            REGEN: 1e-18
+            SHIELD: 0,
+            REGEN: 0
         },
         INTANGIBLE: type.INTANGIBLE,
         VARIES_IN_SIZE: false,
-        DRAW_HEALTH: type.DRAW_HEALTH && tier != 0,
+        DRAW_HEALTH: type.DRAW_HEALTH && tier !== 0,
         GIVE_KILL_MESSAGE: type.GIVE_KILL_MESSAGE || level > 1,
         GUNS: type.GUNS ?? [],
-        TURRETS: type.TURRETS ?? [],
-        PROPS: Array(level).fill().map((_, i) => ({
-            POSITION: [
-                20 * downscale ** (i + 1),
-                0,
-                0,
-                !(i & 1) ? 180 / usableSHAPE : 0,
-                1
-            ],
-            TYPE: [type, { COLOR: 'mirror' }]
-        }))
+        TURRETS: Array(level)
+            .fill()
+            .map((_, i) => ({
+                POSITION: [
+                    20 * downscale ** (i + 1),
+                    0,
+                    0,
+                    !(i & 1) ? 180 / usableSHAPE : 0,
+                    0,
+                    1
+                ],
+                TYPE: [type, { COLOR: "mirror" }]
+            }))
     };
 };
 exports.makeRarities = (type) => {
@@ -983,3 +997,131 @@ exports.makePresent = (outcolor, wrapcolor) => {
         ]
     }
 }
+
+// Facilitate sharing health pools between a bound turret/prop and its master.
+exports.sharedHealth = (type) => {
+    type = ensureIsClass(type);
+    const output = exports.dereference(type);
+    output.SHARED_HEALTH = true;
+    output.DRAW_HEALTH = false;
+    return output;
+};
+
+/**
+ * Encode a 3D polyhedron into a compact string shape representation.
+ * @param {{
+ *   VERTEXES?: [number, number, number][],
+ *   FACES: number[] | [number, number, number][][],
+ *   SCALE?: number,
+ *   VERTEXES_SCALE?: number
+ * }} info
+ * @returns {`3d=${string}`}
+ */
+exports.encode3d = function (info) {
+    let vertexes;
+    let faces;
+
+    if (info.VERTEXES) vertexes = info.VERTEXES;
+
+    if (!info.FACES) {
+        throw new Error("FACES are not set");
+    } else if (!vertexes) {
+        vertexes = [];
+        faces = [];
+        for (const face of info.FACES) {
+            const current = [];
+            for (const vertex of face) {
+                let index = vertexes.findIndex(
+                    (x) => x[0] === vertex[0] && x[1] === vertex[1] && x[2] === vertex[2]
+                );
+                if (index === -1) {
+                    index = vertexes.push(vertex) - 1;
+                }
+                current.push(index);
+            }
+            faces.push(current);
+        }
+    } else {
+        faces = info.FACES;
+    }
+
+    const vertScale = info.VERTEXES_SCALE || 1;
+    if (vertScale !== 1) {
+        vertexes = vertexes.map((x) => [
+            x[0] * vertScale,
+            x[1] * vertScale,
+            x[2] * vertScale
+        ]);
+    }
+
+    return (
+        "3d=" +
+        vertexes.flat().join(",") +
+        "/" +
+        faces.map((i) => i.join(",")).join(";") +
+        "/" +
+        (info.SCALE || 1)
+    );
+};
+
+/**
+ * Encode a 4D polytope into a compact string shape representation.
+ * @param {{
+ *   VERTEXES?: [number, number, number, number][],
+ *   FACES: number[] | [number, number, number, number][][],
+ *   SCALE?: number,
+ *   VERTEXES_SCALE?: number
+ * }} info
+ * @returns {`4d=${string}`}
+ */
+exports.encode4d = function (info) {
+    let vertexes;
+    let faces;
+
+    if (info.VERTEXES) vertexes = info.VERTEXES;
+
+    if (!info.FACES) {
+        throw new Error("FACES are not set");
+    } else if (!vertexes) {
+        vertexes = [];
+        faces = [];
+        for (const face of info.FACES) {
+            const current = [];
+            for (const vertex of face) {
+                let index = vertexes.findIndex(
+                    (x) =>
+                        x[0] === vertex[0] &&
+                        x[1] === vertex[1] &&
+                        x[2] === vertex[2] &&
+                        x[3] === vertex[3]
+                );
+                if (index === -1) {
+                    index = vertexes.push(vertex) - 1;
+                }
+                current.push(index);
+            }
+            faces.push(current);
+        }
+    } else {
+        faces = info.FACES;
+    }
+
+    const vertScale = info.VERTEXES_SCALE || 1;
+    if (vertScale !== 1) {
+        vertexes = vertexes.map((x) => [
+            x[0] * vertScale,
+            x[1] * vertScale,
+            x[2] * vertScale,
+            x[3] * vertScale
+        ]);
+    }
+
+    return (
+        "4d=" +
+        vertexes.flat().join(",") +
+        "/" +
+        faces.map((i) => i.join(",")).join(";") +
+        "/" +
+        (info.SCALE || 1)
+    );
+};

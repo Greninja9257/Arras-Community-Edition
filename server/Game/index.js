@@ -307,11 +307,9 @@ class gameHandler {
             return o;
         };
 
-        if (Math.random() >= 0.1) return; // 1/10 chance to spawn food
-
         let totalFoods = 1;
-        if (Math.random() < 0.2) { // 1/5 chance to spawn a group
-            totalFoods = 1 + Math.floor(Math.random() * Config.food_group_cap);
+        if (Config.food_group_cap && Math.random() < 0.2) {
+            totalFoods += Math.floor(Math.random() * Config.food_group_cap);
         }
 
         // Helper for cleanup interval
@@ -327,7 +325,7 @@ class gameHandler {
         // Nest food/enemy spawn
         if (Math.random() < 1 / 3 && global.gameManager.room.spawnable[TEAM_ENEMIES]) {
             // Enemy spawn
-            if (Math.random() < 1 / 3 && this.enemyFoods.length < Config.enemy_cap_nest) {
+            while (Math.random() < 1 / 3 && this.enemyFoods.length < Config.enemy_cap_nest) {
                 const tile = ran.choose(global.gameManager.room.spawnable[TEAM_ENEMIES]).randomInside();
                 const o = spawnFoodEntity(tile, Config.enemy_types_nest);
                 if (o) {
@@ -336,9 +334,14 @@ class gameHandler {
                 }
             }
             // Nest food spawn
-            if (this.nestFoods.length < Config.food_cap_nest) {
-                const tile = ran.choose(global.gameManager.room.spawnable[TEAM_ENEMIES]).randomInside();
+            while (this.nestFoods.length < Config.food_cap_nest) {
+                let tile;
+                let limit = 20;
+                do {
+                    tile = ran.choose(global.gameManager.room.spawnable[TEAM_ENEMIES]).randomInside();
+                } while (limit-- && dirtyCheck(tile, 50, global.gameManager));
                 for (let i = 0; i < totalFoods; i++) {
+                    if (this.nestFoods.length >= Config.food_cap_nest) break;
                     const o = spawnFoodEntity(tile, Config.food_types_nest);
                     if (o) {
                         this.nestFoods.push(o);
@@ -348,12 +351,19 @@ class gameHandler {
             }
         } else if (this.foods.length < Config.food_cap) {
             // Regular food spawn
-            const tile = ran.choose(global.gameManager.room.spawnableDefault).randomInside();
-            for (let i = 0; i < totalFoods; i++) {
-                const o = spawnFoodEntity(tile, Config.food_types);
-                if (o) {
-                    this.foods.push(o);
-                    setupCleanup(this.foods, o);
+            while (this.foods.length < Config.food_cap) {
+                let tile;
+                let limit = 20;
+                do {
+                    tile = ran.choose(global.gameManager.room.spawnableDefault).randomInside();
+                } while (limit-- && dirtyCheck(tile, 50, global.gameManager));
+                for (let i = 0; i < totalFoods; i++) {
+                    if (this.foods.length >= Config.food_cap) break;
+                    const o = spawnFoodEntity(tile, Config.food_types);
+                    if (o) {
+                        this.foods.push(o);
+                        setupCleanup(this.foods, o);
+                    }
                 }
             }
         }

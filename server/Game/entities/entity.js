@@ -263,6 +263,7 @@ class Entity extends EventEmitter {
         if (set.PERSISTS_AFTER_DEATH != null) this.settings.persistsAfterDeath = set.PERSISTS_AFTER_DEATH;
         if (set.CLEAR_ON_MASTER_UPGRADE != null) this.settings.clearOnMasterUpgrade = set.CLEAR_ON_MASTER_UPGRADE;
         if (set.HEALTH_WITH_LEVEL != null) this.settings.healthWithLevel = set.HEALTH_WITH_LEVEL;
+        if (set.SHARED_HEALTH != null) this.settings.sharedHealth = set.SHARED_HEALTH;
         if (set.OBSTACLE != null) this.settings.obstacle = set.OBSTACLE;
         if (set.CAN_SEE_INVISIBLE_ENTITIES != null) this.settings.canSeeInvisible = set.CAN_SEE_INVISIBLE_ENTITIES;
         if (set.NECRO != null) {
@@ -579,32 +580,33 @@ class Entity extends EventEmitter {
     }
 
     refreshBodyAttributes() {
-        const level = Math.min(Config.growth ? 120 : 45, this.level);
-        let speedReduce = Math.min(
-            Config.growth ? 4 : 2,
-            this.size / (this.coreSize || this.SIZE)
-        );
+        const level = Math.min(45, this.level);
+        let speedReduce = Math.min(2, this.size / (this.coreSize || this.SIZE));
         this.acceleration = (1 * global.gameManager.runSpeed * this.ACCELERATION) / speedReduce;
         if (this.settings.reloadToAcceleration) this.acceleration *= this.skill.acl;
         this.topSpeed = (1 * global.gameManager.runSpeed * this.SPEED * this.skill.mob) / speedReduce;
         if (this.settings.reloadToAcceleration) this.topSpeed /= Math.sqrt(this.skill.acl);
-        this.health.set(
+        let health =
             ((this.settings.healthWithLevel ? 2 * level : 0) + this.HEALTH) *
-                this.skill.hlt *
-                1
-        );
-        this.health.resist = 1 - 1 / Math.max(1, this.RESIST + this.skill.brst);
-        this.shield.set(
+            this.skill.hlt;
+        let shield =
             ((this.settings.healthWithLevel ? 0.6 * level : 0) + this.SHIELD) *
-                this.skill.shi,
-            Math.max(
-                0,
-                ((this.settings.healthWithLevel ? 0.006 * level : 0) + 1) *
-                    this.REGEN *
-                    this.skill.rgn *
-                    1
-            )
+            this.skill.shi;
+        let regen = Math.max(
+            0,
+            ((this.settings.healthWithLevel ? 0.006 * level : 0) + 1) *
+                this.REGEN *
+                this.skill.rgn
         );
+        if (Config.growth && this.settings.healthWithLevel && level === 45) {
+            const growthLevel = Math.min(120, this.level) - 45;
+            health *= 1 + Config.growthStatsMultipliers.health(growthLevel);
+            shield *= 1 + Config.growthStatsMultipliers.shield(growthLevel);
+            regen *= 1 + Config.growthStatsMultipliers.regen(growthLevel);
+        }
+        this.health.set(health);
+        this.health.resist = 1 - 1 / Math.max(1, this.RESIST + this.skill.brst);
+        this.shield.set(shield, regen);
         this.damage = 1 * this.DAMAGE * this.skill.atk;
         this.penetration = 1 * (this.PENETRATION + 1.5 * (this.skill.brst + 0.8 * (this.skill.atk - 1)));
         if (this.settings.diesAtRange || !this.range) this.range = 1 * this.RANGE;
@@ -623,6 +625,12 @@ class Entity extends EventEmitter {
         this.source = bond;
         this.bond.turrets.set(this.id, this);
         this.skill = this.bond.skill;
+        if (this.settings.sharedHealth) {
+            // Share health/shield pools with the master when explicitly requested.
+            this.health = this.bond.health;
+            this.shield = this.bond.shield;
+            this.settings.drawHealth = false;
+        }
         this.label = this.bond.label + " " + this.label;
         this.ignoredByAi = true;
         // It will not be in collision calculations any more nor shall it be seen or continue to run independently.
@@ -673,22 +681,25 @@ class Entity extends EventEmitter {
     get level() {
         return Math.min(this.levelCap ?? Config.level_cap, this.skill.level);
     }
-    // How this works: in 2025 growth a 3.00m player has the same size as a wall (tile)
     get size() {
         let level = this.level;
         if (!Config.growth) level = Math.min(45, level);
         let levelMultiplier = 1;
         if (this.settings.healthWithLevel) {
             levelMultiplier += Math.min(45, level) / 45;
+            if (
+                Config.defineGrowthMultiplier &&
+                (this.underControl || this.isPlayer || this.isBot)
+            ) {
+                levelMultiplier = Config.defineGrowthMultiplier(
+                    levelMultiplier,
+                    this.skill.score,
+                    level,
+                    this
+                );
+            }
         }
-        if (level > 45 && (this.isPlayer || this.isBot)) {
-            const scoreSince45 = this.skill.score - 26263;
-            // wall size is not accurate for some reason lol
-            const multiplier = 1.065;
-            const wallSize = (global.gameManager.room.width / 32 / 2) * Math.SQRT2 * multiplier;
-            levelMultiplier += ((scoreSince45 / 3e6) * wallSize) / Class.genericTank.SIZE / 2;
-        }
-        return (this.coreSize || this.SIZE) * this.sizeMultiplier * levelMultiplier
+        return (this.coreSize || this.SIZE) * this.sizeMultiplier * levelMultiplier;
     }
     get mass() {
         return this.density * (this.size ** 2 + 1);
