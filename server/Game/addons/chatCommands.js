@@ -505,6 +505,38 @@ let commands = [
                 target.socket = socket;
                 socket.player.body = target;
                 socket.player.teamColor = oldTeamColor || "10 0 1 0 false";
+                // Detach from the old body before we kill it. Bullets/drones often keep their
+                // original master/parent/source, and oldBody.destroy() will kill anything that
+                // still references it as a master.
+                try {
+                    if (target.master && target.master.id === oldBody.id) {
+                        target.master = target;
+                    }
+                    if (target.source && target.source.id === oldBody.id) {
+                        target.source = target;
+                    }
+                    if (target.parent && target.parent.id === oldBody.id) {
+                        target.parent = target;
+                    }
+                    if (target.bulletparent && target.bulletparent.id === oldBody.id) {
+                        target.bulletparent = target;
+                    }
+                    if (Array.isArray(oldBody.bulletchildren)) {
+                        const idx = oldBody.bulletchildren.indexOf(target);
+                        if (idx !== -1) oldBody.bulletchildren.splice(idx, 1);
+                    }
+                    // Prevent controlled projectiles/minions from immediately timing out.
+                    if (target.settings) {
+                        target.settings.diesAtRange = false;
+                        target.settings.diesAtLowSpeed = false;
+                        target.settings.persistsAfterDeath = true;
+                    }
+                    if (typeof target.RANGE === "number" && (!target.range || target.range < 1)) {
+                        target.range = target.RANGE;
+                    }
+                } catch (e) {
+                    // If anything goes wrong here, we still want control to succeed.
+                }
                 // Implement become() inline since not all entities have it (e.g. bullets)
                 if (typeof target.become === "function") {
                     target.become(socket.player);
