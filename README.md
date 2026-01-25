@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/node-v18+-green">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue">
   <img src="https://img.shields.io/github/stars/Greninja9257/Arras-Community-Edition">
-  <img src="https://img.shields.io/github/forks/Greninja9257/Arras-Community-Edition">
+  <img src="https://img.shields.io/github/all-contributors/Greninja9257/Arras-Community-Edition?color=ee8449&style=flat-square">   
 </p>
 
 > ⚠️ **Beta Warning**  
@@ -393,6 +393,25 @@ Workflow:
 - Commit focused changes
 - Submit a pull request
 - Include repro steps or screenshots for gameplay/UI changes
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Greninja9257"><img src="https://avatars.githubusercontent.com/u/169415895?v=4?s=100" width="100px;" alt="Greninja9257"/><br /><sub><b>Greninja9257</b></sub></a><br /><a href="#code-Greninja9257" title="Code">💻</a> <a href="#maintenance-Greninja9257" title="Maintenance">🚧</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://allcontributors.org"><img src="https://avatars.githubusercontent.com/u/46410174?v=4?s=100" width="100px;" alt="All Contributors"/><br /><sub><b>All Contributors</b></sub></a><br /><a href="#tool-all-contributors" title="Tools">🔧</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 ---
 
