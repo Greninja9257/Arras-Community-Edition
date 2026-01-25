@@ -477,17 +477,25 @@ let commands = [
                 const oldSkill = body.skill;
                 const oldTeamColor = socket.player.teamColor;
                 // Initialize ALL missing properties on target for player compatibility
-                // These MUST NOT be null - floppyvar doesn't allow null values
+                // These MUST NOT be null/undefined - floppyvar doesn't allow them
                 if (!target.killCount) target.killCount = { solo: 0, assists: 0, bosses: 0 };
                 if (!target.upgrades) target.upgrades = [];
                 if (!target.defs) target.defs = [target.label || "genericEntity"];
                 if (!target.settings) target.settings = { canSeeInvisible: false };
                 if (!target.eastereggs) target.eastereggs = { braindamage: false };
+                if (!target.control) target.control = { target: { x: 0, y: 0 }, goal: { x: 0, y: 0 }, main: false, alt: false, fire: false, power: 0 };
                 target.rerootUpgradeTree = target.rerootUpgradeTree || "";
                 target.index = target.index || target.label || "Unknown";
                 target.acceleration = target.acceleration ?? 1;
                 target.topSpeed = target.topSpeed ?? 1;
                 target.label = target.label || "Entity";
+                target.nameColor = target.nameColor || "#ffffff";
+                target.facingType = target.facingType || "toTarget";
+                target.syncWithTank = target.syncWithTank ?? false;
+                target.borderless = target.borderless ?? false;
+                target.drawFill = target.drawFill ?? true;
+                target.invuln = target.invuln ?? false;
+                target.displayName = target.displayName ?? true;
                 // Copy skill from old body so you keep your level/score
                 target.skill = oldSkill;
                 target.team = oldTeam;
@@ -507,6 +515,19 @@ let commands = [
                     target.sendMessage = (content, displayTime = Config.popup_message_duration) =>
                         socket.talk("m", displayTime, content);
                     target.kick = (reason) => socket.kick(reason);
+                }
+                // Add giveUp method if it doesn't exist (for clean disconnect)
+                if (typeof target.giveUp !== "function") {
+                    target.giveUp = function(player) {
+                        this.controllers = [];
+                        this.underControl = false;
+                        // Create a fake body to kill
+                        let fakeBody = new Entity({ x: this.x, y: this.y });
+                        fakeBody.passive = true;
+                        fakeBody.underControl = true;
+                        player.body = fakeBody;
+                        fakeBody.kill();
+                    };
                 }
                 // Kill old body silently
                 oldBody.dontSendDeathMessage = true;
