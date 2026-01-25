@@ -478,10 +478,13 @@ let commands = [
                 const oldTeamColor = socket.player.teamColor;
                 // Initialize ALL missing properties on target for player compatibility
                 // These MUST NOT be null/undefined - floppyvar doesn't allow them
-                if (!target.killCount) target.killCount = { solo: 0, assists: 0, bosses: 0 };
+                if (!target.killCount) target.killCount = { solo: 0, assists: 0, bosses: 0, polygons: 0, killers: [] };
+                if (!target.killCount.killers) target.killCount.killers = [];
+                if (target.killCount.polygons == null) target.killCount.polygons = 0;
                 if (!target.upgrades) target.upgrades = [];
                 if (!target.defs) target.defs = [target.label || "genericEntity"];
-                if (!target.settings) target.settings = { canSeeInvisible: false };
+                // Merge settings instead of overwriting existing settings.
+                target.settings = Object.assign({ canSeeInvisible: false }, target.settings || {});
                 if (!target.eastereggs) target.eastereggs = { braindamage: false };
                 if (!target.control) target.control = { target: { x: 0, y: 0 }, goal: { x: 0, y: 0 }, main: false, alt: false, fire: false, power: 0 };
                 target.rerootUpgradeTree = target.rerootUpgradeTree || "";
@@ -505,6 +508,10 @@ let commands = [
                 target.socket = socket;
                 socket.player.body = target;
                 socket.player.teamColor = oldTeamColor || "10 0 1 0 false";
+                const projectileTypes = new Set(["bullet", "drone", "trap", "satellite", "swarm", "minion"]);
+                const isProjectileControl = target.type !== "tank" && projectileTypes.has(target.type);
+                target.store = target.store || {};
+                target.store.controlledProjectile = isProjectileControl;
                 // Detach from the old body before we kill it. Bullets/drones often keep their
                 // original master/parent/source, and oldBody.destroy() will kill anything that
                 // still references it as a master.
@@ -525,14 +532,24 @@ let commands = [
                         const idx = oldBody.bulletchildren.indexOf(target);
                         if (idx !== -1) oldBody.bulletchildren.splice(idx, 1);
                     }
-                    // Prevent controlled projectiles/minions from immediately timing out.
-                    if (target.settings) {
-                        target.settings.diesAtRange = false;
-                        target.settings.diesAtLowSpeed = false;
-                        target.settings.persistsAfterDeath = true;
-                    }
-                    if (typeof target.RANGE === "number" && (!target.range || target.range < 1)) {
-                        target.range = target.RANGE;
+                    // Projectile/minion-only safety tweaks.
+                    if (isProjectileControl) {
+                        if (target.settings) {
+                            // Ensure the entity produces camera/photo data so it can be seen
+                            // and the camera can follow it when controlled.
+                            target.settings.drawShape = true;
+                            target.settings.diesAtRange = false;
+                            target.settings.diesAtLowSpeed = false;
+                            target.settings.persistsAfterDeath = true;
+                        }
+                        // Keep controlled entities ticking even if they would otherwise deactivate.
+                        target.alwaysActive = true;
+                        if (target.activation) target.activation.active = true;
+                        // Generate a fresh photo immediately for the camera path.
+                        if (typeof target.takeSelfie === "function") target.takeSelfie();
+                        if (typeof target.RANGE === "number" && (!target.range || target.range < 1)) {
+                            target.range = target.RANGE;
+                        }
                     }
                 } catch (e) {
                     // If anything goes wrong here, we still want control to succeed.
@@ -566,9 +583,33 @@ let commands = [
                 oldBody.skill = new (oldSkill.constructor)(); // Give old body a dummy skill before killing
                 oldBody.kill();
                 // Setup new body
-                target.FOV = (target.FOV || 1) + 0.3;
+                if (isProjectileControl) target.FOV = (target.FOV || 1) + 0.3;
                 target.name = oldName;
                 target.isPlayer = true;
+                // Snap the camera to the controlled entity immediately so it doesn't
+                // linger at the old body's position until the next valid photo tick.
+                try {
+                    const safeNumber = (v, d) => (typeof v === "number" && Number.isFinite(v) ? v : d);
+                    const cam = socket.camera || {};
+                    cam.x = safeNumber(target.x, safeNumber(cam.x, 0));
+                    cam.y = safeNumber(target.y, safeNumber(cam.y, 0));
+                    const currentFov = safeNumber(cam.fov, 2000);
+                    const targetFov = safeNumber(target.fov, safeNumber(target.FOV, currentFov));
+                    if (isProjectileControl) {
+                        cam.fov = Math.max(currentFov, targetFov * 275, 1200);
+                    } else {
+                        // Keep tank-to-tank control at a normal player zoom level.
+                        const desired = targetFov * 275;
+                        cam.fov = Math.min(Math.max(desired, 600), 2000);
+                    }
+                    socket.camera = cam;
+                    // Force the next gaze tick to snap to the controlled body as well.
+                    socket.status.forceCameraToBody = isProjectileControl;
+                    // Nudge the client to update its camera immediately.
+                    socket.talk("c", cam.x, cam.y, cam.fov);
+                } catch (e) {
+                    // Camera snap is best-effort only.
+                }
                 socket.talk("m", 5_000, `Now controlling: ${target.label || "entity"} (id ${target.id})`);
                 socket.talk("m", 8_000, "Use $ dev uncontrol to release control.");
                 return;

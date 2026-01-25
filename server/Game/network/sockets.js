@@ -899,24 +899,44 @@ class socketManager {
         let b = gui.master.body;
         // We can't run if we don't have a body to look at
         if (!b) return 0;
+        const safeNumber = (v, d = 0) => (typeof v === "number" && Number.isFinite(v) ? v : d);
+        const safeString = (v, d = "") => (v == null ? d : String(v));
+        const safeArray = (v) => (Array.isArray(v) ? v : []);
+        const safeObj = (v) => (v && typeof v === "object" ? v : {});
         gui.bodyid = b.id;
         let dailyTank = null;
+        const skill = b.skill;
+        if (!skill) return 0;
+        const killCount = safeObj(b.killCount);
+        const settings = safeObj(b.settings);
+        const defs = safeArray(b.defs);
+        const upgradesList = safeArray(b.upgrades);
         // Update most things
         gui.fps.update(Math.min(1, (global.fps / global.gameManager.roomSpeed / 1000) * 30)); 
         gui.color.update(gui.master.teamColor);
-        gui.label.update(b.index);
-        gui.score.update(JSON.stringify([b.skill.score, b.killCount.solo, b.killCount.assists, b.killCount.bosses]));
-        gui.points.update(b.skill.points);
+        gui.label.update(safeString(b.index ?? b.label, "Unknown"));
+        gui.score.update(JSON.stringify([
+            safeNumber(skill.score, 0),
+            safeNumber(killCount.solo, 0),
+            safeNumber(killCount.assists, 0),
+            safeNumber(killCount.bosses, 0),
+        ]));
+        gui.points.update(safeNumber(skill.points, 0));
         // Update the upgrades
         let upgrades = [];
         let skippedUpgrades = [0];
-        for (let i = 0; i < b.upgrades.length; i++) {
-            let upgrade = b.upgrades[i];
-            if (b.skill.level >= b.upgrades[i].level) {
-                upgrades.push(upgrade.branch.toString() + "_" + upgrade.branchLabel + "_" + upgrade.index);
+        for (let i = 0; i < upgradesList.length; i++) {
+            let upgrade = upgradesList[i];
+            if (!upgrade) continue;
+            const branch = upgrade.branch ?? 0;
+            const branchLabel = upgrade.branchLabel ?? "";
+            const index = upgrade.index ?? "";
+            const level = safeNumber(upgrade.level, Infinity);
+            if (safeNumber(skill.level, 0) >= level) {
+                upgrades.push(branch.toString() + "_" + branchLabel + "_" + index);
             } else {
-                if (upgrade.branch >= skippedUpgrades.length) {
-                    skippedUpgrades[upgrade.branch] = 1;
+                if (branch >= skippedUpgrades.length) {
+                    skippedUpgrades[branch] = 1;
                 } else {
                     skippedUpgrades[skippedUpgrades.length - 1]++;
                 }
@@ -926,21 +946,23 @@ class socketManager {
         gui.upgrades.update(upgrades);
         // Update daily tank
         if (Config.daily_tank) {
-            if (b.skill.level >= Config.tier_multiplier * Config.daily_tank.tier && b.defs.includes(Config.spawn_class)) {
+            if (safeNumber(skill.level, 0) >= Config.tier_multiplier * Config.daily_tank.tier && defs.includes(Config.spawn_class)) {
                 dailyTank = Config.daily_tank_INDEX;
             }
-            gui.dailyTank.update(JSON.stringify([dailyTank, Config.daily_tank.ads.enabled && !b.socket.status.daily_tank_watched_ad ? true : false]));
+            const adEnabled = !!(Config.daily_tank.ads && Config.daily_tank.ads.enabled);
+            const watchedAd = !!(b.socket && b.socket.status && b.socket.status.daily_tank_watched_ad);
+            gui.dailyTank.update(JSON.stringify([dailyTank, adEnabled && !watchedAd ? true : false]));
         }
         // Update the stats and skills
         gui.stats.update();
-        gui.skills.update(this.getstuff(b.skill));
+        gui.skills.update(this.getstuff(skill));
         // Update physics
-        gui.accel.update(b.acceleration);
-        gui.topspeed.update(b.topSpeed);
+        gui.accel.update(safeNumber(b.acceleration, 0));
+        gui.topspeed.update(safeNumber(b.topSpeed, 0));
         // Update other
-        gui.root.update(b.rerootUpgradeTree);
-        gui.class.update(b.label);
-        gui.visibleName.update(b.settings.canSeeInvisible ? 1 : 0);
+        gui.root.update(safeString(b.rerootUpgradeTree, ""));
+        gui.class.update(safeString(b.label, "Entity"));
+        gui.visibleName.update(settings.canSeeInvisible ? 1 : 0);
     }
 
     publish(gui) {
@@ -1390,6 +1412,23 @@ class socketManager {
         // For each turret, add their own output
         output.push(data.turrets.length);
         for (let i = 0; i < data.turrets.length; i++) output.push(...this.flatten(data.turrets[i]));
+        // Sanitize to avoid protocol encode failures from undefined/null/NaN values.
+        // This is especially important when developer commands take control of
+        // non-player entities that may not populate every camera field.
+        for (let i = 0; i < output.length; i++) {
+            const v = output[i];
+            if (v === undefined || v === null) {
+                output[i] = 0;
+                continue;
+            }
+            if (typeof v === "boolean") {
+                output[i] = v ? 1 : 0;
+                continue;
+            }
+            if (typeof v === "number" && !Number.isFinite(v)) {
+                output[i] = 0;
+            }
+        }
         // Return it
         return output;
     }
@@ -1571,25 +1610,34 @@ class socketManager {
                             let newgui = (player) => this.newgui(player);
                             becomeBulletChildren(socket, player, exit, newgui);
                         } else die();
-                    } else if (player.body.photo) { // If we are alive, update camera's position.
+                    } else if (player.body.photo || player.body.underControl || socket.status.forceCameraToBody) { // If we are alive, update camera's position.
+                        const safeNumber = (v, d) => (typeof v === "number" && Number.isFinite(v) ? v : d);
                         // Define X and Y and update the camera's X and Y.
-                        let x = player.body.cameraOverrideX === null ? player.body.photo.x : player.body.cameraOverrideX,
-                            y = player.body.cameraOverrideY === null ? player.body.photo.y : player.body.cameraOverrideY;
+                        const photo = player.body.photo || {};
+                        let x = player.body.cameraOverrideX === null ? (photo.x ?? player.body.x) : player.body.cameraOverrideX,
+                            y = player.body.cameraOverrideY === null ? (photo.y ?? player.body.y) : player.body.cameraOverrideY;
 
-                        camera.x = x;
-                        camera.y = y;
-                        camera.vx = player.body.photo.vx;
-                        camera.vy = player.body.photo.vy;
-                        camera.scoping = player.body.cameraOverrideX !== null; // For scoping.
+                        camera.x = safeNumber(x, safeNumber(camera.x, 0));
+                        camera.y = safeNumber(y, safeNumber(camera.y, 0));
+                        camera.vx = safeNumber(photo.vx, safeNumber(player.body.velocity?.x, 0));
+                        camera.vy = safeNumber(photo.vy, safeNumber(player.body.velocity?.y, 0));
+                        camera.scoping = player.body.cameraOverrideX !== null ? 1 : 0; // For scoping.
                         // Get what we should be able to see
-                        fovNow = player.body.fov;
+                        const fallbackFov = safeNumber(camera.fov, 2000);
+                        fovNow = safeNumber(player.body.fov, safeNumber(player.body.FOV, fallbackFov));
+                        if (player.body.store && player.body.store.controlledProjectile) {
+                            // Only projectiles/minions need a boosted minimum FOV.
+                            fovNow = Math.max(fovNow, fallbackFov, 1200);
+                        }
+                        if (fovNow < 100) fovNow = 100;
                         // Get our body id
                         player.viewId = player.body.id;
+                        if (socket.status.forceCameraToBody) socket.status.forceCameraToBody = false;
                     }
                 } 
                 if (player.body == null) { // if we have no body, then u dead bro.
                     fovNow = 2000;
-                    camera.scoping = false; // No scoping bugs!
+                    camera.scoping = 0; // No scoping bugs!
                     if (socket.spectateEntity != null) { // If we want to spectate someone, we spectate it.
                         if (socket.spectateEntity) {
                             camera.x = socket.spectateEntity.x;
@@ -1598,7 +1646,9 @@ class socketManager {
                     }
                 }
                 // The only reason this exists is because the client is smoothing to its updated fov, and so server does it the same.
-                camera.fov += Math.max((fovNow - camera.fov) / 30, fovNow - camera.fov);
+                const fovTarget = (typeof fovNow === "number" && Number.isFinite(fovNow)) ? fovNow : (Number.isFinite(camera.fov) ? camera.fov : 2000);
+                camera.fov = Number.isFinite(camera.fov) ? camera.fov : fovTarget;
+                camera.fov += Math.max((fovTarget - camera.fov) / 30, fovTarget - camera.fov);
 
                 // Grab entities that we can see
                 if (camera.lastUpdate - lastVisibleUpdate > Config.visible_list_interval) {
@@ -1683,9 +1733,25 @@ class socketManager {
                 } else {
                     // Update the gui
                     player.gui.update();
-                    // Send it to the player
-                    socket.talk(
-                        "u",
+                    const sanitizePacketArgs = (args, context) => {
+                        for (let i = 0; i < args.length; i++) {
+                            const v = args[i];
+                            if (v === undefined || v === null) {
+                                args[i] = 0;
+                                continue;
+                            }
+                            if (typeof v === "boolean") {
+                                args[i] = v ? 1 : 0;
+                                continue;
+                            }
+                            if (typeof v === "number" && !Number.isFinite(v)) {
+                                args[i] = 0;
+                            }
+                        }
+                        return args;
+                    };
+                    const guiData = player.gui.publish() || [];
+                    const packetArgs = sanitizePacketArgs([
                         lastCycle,
                         camera.x,
                         camera.y,
@@ -1693,9 +1759,14 @@ class socketManager {
                         camera.vx,
                         camera.vy,
                         camera.scoping,
-                        ...player.gui.publish(),
+                        ...guiData,
                         visible.length,
-                        ...view
+                        ...view,
+                    ], "u packet");
+                    // Send it to the player
+                    socket.talk(
+                        "u",
+                        ...packetArgs
                     );
                 }
                 logs.network.mark();
