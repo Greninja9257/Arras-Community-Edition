@@ -235,6 +235,8 @@ let commands = [
                     "- $ dev dev",
                     "- $ dev listplayers",
                     "- $ dev info <name|id>",
+                    "- $ dev control <name|id>",
+                    "- $ dev uncontrol",
                     "- $ dev giveop <name|id>",
                     "- $ dev revokeop <name|id>",
                     "- $ dev ban <name|id>",
@@ -445,6 +447,55 @@ let commands = [
                 if (!target?.player?.body) return socket.talk("m", 5_000, "Player not found.");
                 const b = target.player.body;
                 socket.talk("m", 8_000, `${b.name || "unnamed"} id=${b.id} team=${b.team} score=${b.skill.score} lvl=${b.skill.level}`);
+                return;
+            }
+
+            if (command === "control") {
+                if (!ensureBody()) return;
+                const query = args.slice(1).join(" ");
+                if (!query) return socket.talk("m", 5_000, "Usage: $ dev control <name|id>");
+                const lower = query.toLowerCase();
+                const matches = [];
+                for (const e of entities.values()) {
+                    if (String(e.id) === query) {
+                        matches.push(e);
+                        continue;
+                    }
+                    const name = (e.name || e.label || "").toLowerCase();
+                    if (name === lower || name.includes(lower)) {
+                        matches.push(e);
+                    }
+                }
+                if (!matches.length) return socket.talk("m", 5_000, "No entity found with that name.");
+                const target = ran.choose(matches);
+                if (target === body) return socket.talk("m", 5_000, "You can't control yourself!");
+                if (target.underControl) return socket.talk("m", 5_000, "That entity is already being controlled.");
+                // Store old body info
+                const oldBody = body;
+                const oldName = body.name;
+                // Take control of target
+                target.controllers = [];
+                target.underControl = true;
+                socket.player.body = target;
+                target.become(socket.player);
+                // Kill old body silently
+                oldBody.dontSendDeathMessage = true;
+                oldBody.kill();
+                // Setup new body
+                if (!target.dontIncreaseFov) target.FOV = (target.FOV || 1) + 0.3;
+                target.dontIncreaseFov = true;
+                target.name = oldName;
+                target.isPlayer = true;
+                socket.talk("m", 5_000, `Now controlling: ${target.label || target.name || "entity"} (id ${target.id})`);
+                socket.talk("m", 8_000, "Use $ dev uncontrol to release control.");
+                return;
+            }
+
+            if (command === "uncontrol") {
+                if (!ensureBody()) return;
+                if (!body.underControl) return socket.talk("m", 5_000, "You're not controlling anything special.");
+                body.giveUp(socket.player, body.label || "Entity");
+                socket.talk("m", 5_000, "Control released. You have died.");
                 return;
             }
 
