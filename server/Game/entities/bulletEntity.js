@@ -367,7 +367,7 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
         return {
             type: 0x10,
             id: this.id,
-            index: this.index,
+            index: this.index || this.label || "Bullet",
             x: this.x,
             y: this.y,
             vx: this.velocity.x,
