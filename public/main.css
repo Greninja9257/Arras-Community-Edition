@@ -1238,7 +1238,7 @@ i.flag.down::before {
 }
 
 .accountCornerBtn {
-  background: rgba(74, 144, 217, 0.9);
+  background: rgba(180, 180, 180, 0.9);
   color: white;
   padding: 10px 18px;
   border-radius: 5px;
@@ -1250,7 +1250,7 @@ i.flag.down::before {
 }
 
 .accountCornerBtn:hover {
-  background: rgba(58, 123, 200, 0.95);
+  background: rgba(160, 160, 160, 0.95);
 }
 
 .accountCornerInfo {
