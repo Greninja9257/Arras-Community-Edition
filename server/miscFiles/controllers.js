@@ -1259,18 +1259,20 @@ class io_wallAvoidGoal extends IO {
         const dy = input.goal.y - this.body.y;
         const dist = Math.hypot(dx, dy);
         if (!dist) return;
-        const step = Math.min(dist, Math.max(this.minStep, this.body.size * this.sideStepScale));
+        const sideStep = Math.max(this.minStep, this.body.size * this.sideStepScale);
         const baseAngle = Math.atan2(dy, dx);
+        // Use atan to scale angle based on distance - gives smaller angles for farther goals
+        const angleOffset = Math.atan(sideStep / dist);
         const candidateAngles = [
-            baseAngle + Math.PI / 2,
-            baseAngle - Math.PI / 2,
-            baseAngle + Math.PI / 4,
-            baseAngle - Math.PI / 4,
+            baseAngle + angleOffset,
+            baseAngle - angleOffset,
+            baseAngle + angleOffset * 2,
+            baseAngle - angleOffset * 2,
         ];
         for (const angle of candidateAngles) {
             const candidate = {
-                x: this.body.x + Math.cos(angle) * step,
-                y: this.body.y + Math.sin(angle) * step,
+                x: this.body.x + Math.cos(angle) * dist,
+                y: this.body.y + Math.sin(angle) * dist,
             };
             if (!wouldHitWall(this.body, candidate)) {
                 return { goal: candidate };

@@ -11,3 +11,7 @@ Caddyfile
 docker-compose.yml
 server/data/sessions.json
 server/data/users.json
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
