@@ -475,13 +475,18 @@ let commands = [
                 const oldName = body.name;
                 const oldTeam = body.team;
                 const oldSkill = body.skill;
-                // Initialize missing properties on target for player compatibility
+                const oldTeamColor = socket.player.teamColor;
+                // Initialize ALL missing properties on target for player compatibility
+                // These MUST NOT be null - floppyvar doesn't allow null values
                 if (!target.killCount) target.killCount = { solo: 0, assists: 0, bosses: 0 };
                 if (!target.upgrades) target.upgrades = [];
-                if (!target.defs) target.defs = [];
+                if (!target.defs) target.defs = [target.label || "genericEntity"];
                 if (!target.settings) target.settings = { canSeeInvisible: false };
-                if (!target.rerootUpgradeTree) target.rerootUpgradeTree = null;
-                if (!target.index) target.index = target.label || "Unknown";
+                target.rerootUpgradeTree = target.rerootUpgradeTree || "";
+                target.index = target.index || target.label || "Unknown";
+                target.acceleration = target.acceleration ?? 1;
+                target.topSpeed = target.topSpeed ?? 1;
+                target.label = target.label || "Entity";
                 // Copy skill from old body so you keep your level/score
                 target.skill = oldSkill;
                 target.team = oldTeam;
@@ -490,17 +495,17 @@ let commands = [
                 target.underControl = true;
                 target.socket = socket;
                 socket.player.body = target;
+                socket.player.teamColor = oldTeamColor || "10 0 1 0 false";
                 target.become(socket.player);
                 // Kill old body silently
                 oldBody.dontSendDeathMessage = true;
                 oldBody.skill = new (oldSkill.constructor)(); // Give old body a dummy skill before killing
                 oldBody.kill();
                 // Setup new body
-                if (!target.dontIncreaseFov) target.FOV = (target.FOV || 1) + 0.3;
-                target.dontIncreaseFov = true;
+                target.FOV = (target.FOV || 1) + 0.3;
                 target.name = oldName;
                 target.isPlayer = true;
-                socket.talk("m", 5_000, `Now controlling: ${target.label || target.name || "entity"} (id ${target.id})`);
+                socket.talk("m", 5_000, `Now controlling: ${target.label || "entity"} (id ${target.id})`);
                 socket.talk("m", 8_000, "Use $ dev uncontrol to release control.");
                 return;
             }
