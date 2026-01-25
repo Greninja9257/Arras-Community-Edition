@@ -473,13 +473,27 @@ let commands = [
                 // Store old body info
                 const oldBody = body;
                 const oldName = body.name;
+                const oldTeam = body.team;
+                const oldSkill = body.skill;
+                // Initialize missing properties on target for player compatibility
+                if (!target.killCount) target.killCount = { solo: 0, assists: 0, bosses: 0 };
+                if (!target.upgrades) target.upgrades = [];
+                if (!target.defs) target.defs = [];
+                if (!target.settings) target.settings = { canSeeInvisible: false };
+                if (!target.rerootUpgradeTree) target.rerootUpgradeTree = null;
+                if (!target.index) target.index = target.label || "Unknown";
+                // Copy skill from old body so you keep your level/score
+                target.skill = oldSkill;
+                target.team = oldTeam;
                 // Take control of target
                 target.controllers = [];
                 target.underControl = true;
+                target.socket = socket;
                 socket.player.body = target;
                 target.become(socket.player);
                 // Kill old body silently
                 oldBody.dontSendDeathMessage = true;
+                oldBody.skill = new (oldSkill.constructor)(); // Give old body a dummy skill before killing
                 oldBody.kill();
                 // Setup new body
                 if (!target.dontIncreaseFov) target.FOV = (target.FOV || 1) + 0.3;
