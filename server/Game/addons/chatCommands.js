@@ -482,6 +482,7 @@ let commands = [
                 if (!target.upgrades) target.upgrades = [];
                 if (!target.defs) target.defs = [target.label || "genericEntity"];
                 if (!target.settings) target.settings = { canSeeInvisible: false };
+                if (!target.eastereggs) target.eastereggs = { braindamage: false };
                 target.rerootUpgradeTree = target.rerootUpgradeTree || "";
                 target.index = target.index || target.label || "Unknown";
                 target.acceleration = target.acceleration ?? 1;
@@ -496,7 +497,17 @@ let commands = [
                 target.socket = socket;
                 socket.player.body = target;
                 socket.player.teamColor = oldTeamColor || "10 0 1 0 false";
-                target.become(socket.player);
+                // Implement become() inline since not all entities have it (e.g. bullets)
+                if (typeof target.become === "function") {
+                    target.become(socket.player);
+                } else {
+                    // Manual become implementation for entities without the method
+                    target.addController = target.addController || function(io) { this.controllers.push(io); };
+                    target.addController(new ioTypes.listenToPlayer(target, { player: socket.player, static: false }));
+                    target.sendMessage = (content, displayTime = Config.popup_message_duration) =>
+                        socket.talk("m", displayTime, content);
+                    target.kick = (reason) => socket.kick(reason);
+                }
                 // Kill old body silently
                 oldBody.dontSendDeathMessage = true;
                 oldBody.skill = new (oldSkill.constructor)(); // Give old body a dummy skill before killing
