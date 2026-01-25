@@ -1,5 +1,42 @@
 const prefix = "$";
 
+// Lightweight entity tagging system for developer commands.
+// Tags are short numeric handles that persist across commands.
+const devTags = new class {
+    constructor() {
+        /** @type {Map<number, any>} */
+        this.tags = new Map();
+        this.last = 0;
+    }
+    get(tag) {
+        return this.tags.get(tag);
+    }
+    has(entity) {
+        let tag = null;
+        for (const [t, e] of this.tags.entries()) {
+            if (e?.id === entity?.id) {
+                tag = t;
+                break;
+            }
+        }
+        return tag;
+    }
+    add(entity) {
+        const existing = this.has(entity);
+        if (existing !== null) return existing;
+        const id = ++this.last;
+        this.tags.set(id, entity);
+        return id;
+    }
+    pruneDead() {
+        for (const [id, e] of this.tags.entries()) {
+            if (!e || typeof e.isDead !== "function" || e.isDead()) {
+                this.tags.delete(id);
+            }
+        }
+    }
+};
+
 /** COMMANDS **/
 let commands = [
   {
@@ -199,15 +236,36 @@ let commands = [
         description: "Developer commands, go troll some players or just take a look for yourself.",
         level: 3,
         run: ({ socket, args, gameManager }) => {
-            const sendAvailableDevCommandsMessage = () => {
+            const sendAvailableDevCommandsMessage = (pageArg, pageAltArg) => {
                 const lines = [
                     "Dev commands:",
+                    "- $ dev entity [name] - tag yourself or a named entity",
+                    "- $ dev tags [prefix] - list active entity tags",
+                    "- $ dev color <base> [hue=0] [brightness=1] [saturation=0] [invert=0|1] [tag|id|name]",
                     "- $ dev god [on|off]",
                     "- $ dev noclip [on|off]",
                     "- $ dev invisible [on|off]",
                     "- $ dev tp <x> <y>",
+                    "- $ dev tp rel <dx> <dy> [tag|id|name]",
+                    "- $ dev tp grid <gx> <gy> [tag|id|name]",
+                    "- $ dev tp center [dx] [dy] [tag|id|name]",
+                    "- $ dev tp facing <d> [dy] [tag|id|name]",
                     "- $ dev tphere <name|id>",
                     "- $ dev tpall <x> <y>",
+                    "- $ dev size <n> [tag|id|name]",
+                    "- $ dev fov <n> [tag|id|name]",
+                    "- $ dev level <n> [tag|id|name]",
+                    "- $ dev skill <points> [tag|id|name]",
+                    "- $ dev cap <cap> [tag|id|name]",
+                    "- $ dev state <attr> <n|*n|/n> [tag|id|name]",
+                    "- $ dev maxchildren <n> [overrideTurrets=0|1] [tag|id|name]",
+                    "- $ dev guns <attr> <n|*n|/n> [tag|id|name]",
+                    "- $ dev define <class> [tag|id|name]",
+                    "- $ dev team <team> [tag|id|name]",
+                    "- $ dev wall grid [name]",
+                    "- $ dev wall <dx> <dy> [tiles=1] [name]",
+                    "- $ dev me <tag|id|name> <message...>",
+                    "- $ dev edit <message...>",
                     "- $ dev setlevel <n>",
                     "- $ dev setscore <n>",
                     "- $ dev setskill <stat> <n>",
@@ -250,7 +308,28 @@ let commands = [
                     "- $ dev reload <n|inf>",
                     "- $ dev reloadattrs",
                 ];
-                socket.talk("Em", 10_000, JSON.stringify(lines));
+                const pageSize = 12;
+                const totalPages = Math.max(1, Math.ceil(lines.length / pageSize));
+                let rawPage = null;
+                if (pageArg === "page") {
+                    rawPage = parseNumber(pageAltArg);
+                } else {
+                    rawPage = parseNumber(pageArg);
+                    if (rawPage == null && pageArg) {
+                        const cleaned = String(pageArg).replace(/[^\d]/g, "");
+                        rawPage = parseNumber(cleaned);
+                    }
+                }
+                const page = rawPage == null ? 1 : Math.max(1, Math.min(totalPages, rawPage));
+                const start = (page - 1) * pageSize;
+                const chunk = lines.slice(start, start + pageSize);
+                const header = `Dev commands (page ${page}/${totalPages}):`;
+                if (chunk[0] !== "Dev commands:") {
+                    chunk.unshift(header);
+                } else {
+                    chunk[0] = header;
+                }
+                socket.talk("Em", 10_000, JSON.stringify(chunk));
             };
             const command = args[0];
             const body = socket.player?.body;
@@ -261,6 +340,13 @@ let commands = [
                 return null;
             };
             const parseNumber = (value) => Number.isFinite(Number(value)) ? Number(value) : null;
+            const parseBoolean = (value, fallback = false) => {
+                if (value == null) return fallback;
+                const lowered = String(value).toLowerCase();
+                if (["true", "1", "on"].includes(lowered)) return true;
+                if (["false", "0", "off"].includes(lowered)) return false;
+                return fallback;
+            };
             const findPlayer = (query) => {
                 if (!query) return null;
                 const lower = query.toLowerCase();
@@ -283,6 +369,31 @@ let commands = [
                 const parsed = clampToggle(value);
                 return parsed == null ? !fallback : parsed;
             };
+            const resolveEntity = (query, fallback = body, { allowNameSearch = true } = {}) => {
+                if (!query) return fallback;
+                const asNumber = parseNumber(query);
+                if (asNumber != null) {
+                    // Prefer tagged entities first.
+                    const tagged = devTags.get(asNumber);
+                    if (tagged && typeof tagged.isDead === "function" && !tagged.isDead()) return tagged;
+                    // Then try player id.
+                    const player = findPlayer(String(asNumber));
+                    if (player?.player?.body) return player.player.body;
+                    socket.talk("m", 5_000, `Unknown entity reference: ${query}`);
+                    return null;
+                }
+                if (allowNameSearch) {
+                    const player = findPlayer(query);
+                    if (player?.player?.body) return player.player.body;
+                    const lowered = String(query).toLowerCase();
+                    for (const e of entities.values()) {
+                        const name = (e.name || "").toLowerCase();
+                        if (name && name === lowered) return e;
+                    }
+                }
+                socket.talk("m", 5_000, `Unknown entity reference: ${query}`);
+                return null;
+            };
             const statIndex = {
                 atk: 6,
                 hlt: 7,
@@ -296,7 +407,10 @@ let commands = [
                 shi: 5,
             };
 
-            if (!command) return sendAvailableDevCommandsMessage();
+            if (!command) return sendAvailableDevCommandsMessage(args[1], args[2]);
+            if (command === "page" || parseNumber(command) != null || String(command).match(/^\(?\d+\)?$/)) {
+                return sendAvailableDevCommandsMessage(command, args[1]);
+            }
 
             if (command === "reloaddefs" || command === "redefs") {
                 /* IMPORT FROM (defsReloadCommand.js) */
@@ -427,6 +541,42 @@ let commands = [
                     counts[e.type] = (counts[e.type] || 0) + 1;
                 }
                 const lines = ["Entities:", ...Object.entries(counts).map(([k, v]) => `- ${k}: ${v}`)];
+                socket.talk("Em", 10_000, JSON.stringify(lines));
+                return;
+            }
+
+            if (command === "entity" || command === "tag") {
+                if (!ensureBody()) return;
+                devTags.pruneDead();
+                if (!args[1]) {
+                    const tagId = devTags.add(body);
+                    socket.talk("m", 6_000, `Current entity tag: ${tagId}`);
+                    return;
+                }
+                const name = args.slice(1).join(" ").trim();
+                let target = null;
+                for (const e of entities.values()) {
+                    if ((e.name || "") === name) {
+                        target = e;
+                        break;
+                    }
+                }
+                if (!target) return socket.talk("m", 5_000, "No entity with that exact name was found.");
+                const tagId = devTags.add(target);
+                socket.talk("m", 6_000, `${name}'s entity tag: ${tagId}`);
+                return;
+            }
+
+            if (command === "tags") {
+                devTags.pruneDead();
+                const query = args[1] ? String(args.slice(1).join(" ")) : null;
+                const lines = ["Tagged entities:"];
+                for (const [id, e] of devTags.tags.entries()) {
+                    if (!e || typeof e.isDead !== "function" || e.isDead()) continue;
+                    if (query && !(e.name || "").startsWith(query)) continue;
+                    lines.push(`- ${id}: ${e.name || e.label || "unnamed"} (id ${e.id})`);
+                }
+                if (lines.length === 1) lines.push("- none");
                 socket.talk("Em", 10_000, JSON.stringify(lines));
                 return;
             }
@@ -676,11 +826,65 @@ let commands = [
             }
 
             if (command === "tp") {
-                const x = parseNumber(args[1]);
-                const y = parseNumber(args[2]);
-                if (x == null || y == null) return socket.talk("m", 5_000, "Invalid coordinates.");
-                body.x = x;
-                body.y = y;
+                const room = gameManager.room;
+                const type = (args[1] || "pos").toLowerCase();
+                const tileW = room?.tileWidth ?? 30;
+                const tileH = room?.tileHeight ?? 30;
+
+                // Backwards compatibility: "$ dev tp <x> <y>"
+                if (type !== "pos" && parseNumber(args[1]) != null) {
+                    const x = parseNumber(args[1]);
+                    const y = parseNumber(args[2]);
+                    if (x == null || y == null) return socket.talk("m", 5_000, "Invalid coordinates.");
+                    body.x = x;
+                    body.y = y;
+                    socket.talk("m", 4_000, "Teleported.");
+                    return;
+                }
+
+                const x = parseNumber(args[2]);
+                const y = parseNumber(args[3]);
+                const targetRef = args[4];
+                const target = resolveEntity(targetRef, body);
+                if (!target) return;
+
+                if (type !== "center" && x == null && y == null) {
+                    return socket.talk("m", 5_000, "X and Y are required for non-center types.");
+                }
+                if (type !== "facing" && type !== "center" && y == null) {
+                    return socket.talk("m", 5_000, "Y is required for this teleport type.");
+                }
+
+                switch (type) {
+                    case "pos":
+                        if (x == null || y == null) return socket.talk("m", 5_000, "Usage: tp pos <x> <y> [who]");
+                        target.x = x;
+                        target.y = y;
+                        break;
+                    case "grid":
+                        if (x == null || y == null) return socket.talk("m", 5_000, "Usage: tp grid <gx> <gy> [who]");
+                        target.x = x * tileW;
+                        target.y = y * tileH;
+                        break;
+                    case "rel":
+                    case "relative":
+                        target.x += x ?? 0;
+                        target.y += y ?? 0;
+                        break;
+                    case "center":
+                        target.x = room.width / 2 + (x ?? 0);
+                        target.y = room.height / 2 + (y ?? 0);
+                        break;
+                    case "facing": {
+                        const distX = x ?? 0;
+                        const distY = (y ?? x) ?? 0;
+                        target.x = target.x + Math.cos(body.facing) * distX;
+                        target.y = target.y + Math.sin(body.facing) * distY;
+                        break;
+                    }
+                    default:
+                        return socket.talk("m", 6_000, "Invalid type. Use: pos, grid, rel, center, facing.");
+                }
                 socket.talk("m", 4_000, "Teleported.");
                 return;
             }
@@ -777,12 +981,46 @@ let commands = [
             }
 
             if (command === "spawn") {
-                const entity = args[1];
+                // Support two spawn formats:
+                // 1) spawn <entity> [count]
+                // 2) spawn <dx> <dy> <class> [ai=on|off] [name...]
+                const dx = parseNumber(args[1]);
+                const dy = parseNumber(args[2]);
+                const className = args[3];
+
+                if (dx != null && dy != null && className) {
+                    const toggle = clampToggle(args[4]);
+                    const ai = toggle ?? false;
+                    const nameStartIndex = toggle == null ? 4 : 5;
+                    const name = args.slice(nameStartIndex).join(" ").trim() || null;
+                    let classDef;
+                    try {
+                        classDef = ensureIsClass(className);
+                    } catch (e) {
+                        return socket.talk("m", 5_000, "Unknown entity class.");
+                    }
+                    const entity = new Entity({ x: body.x + dx, y: body.y + dy });
+                    entity.define(classDef);
+                    if (ai) {
+                        entity.define({
+                            CONTROLLERS: ["nearestDifferentMaster", "minion", "canRepel"],
+                            AI: { NO_LEAD: true },
+                        });
+                    }
+                    if (name) entity.name = name;
+                    entity.refreshBodyAttributes?.();
+                    entity.life();
+                    const tagId = devTags.add(entity);
+                    socket.talk("m", 6_000, `Spawned ${entity.label || className}. Tag: ${tagId}`);
+                    return;
+                }
+
+                const entityName = args[1];
                 const count = parseNumber(args[2]) ?? 1;
-                if (!entity) return socket.talk("m", 5_000, "No entity specified.");
+                if (!entityName) return socket.talk("m", 5_000, "No entity specified.");
                 let classDef;
                 try {
-                    classDef = ensureIsClass(entity);
+                    classDef = ensureIsClass(entityName);
                 } catch (e) {
                     return socket.talk("m", 5_000, "Unknown entity.");
                 }
@@ -862,17 +1100,26 @@ let commands = [
 
             if (command === "size") {
                 const value = parseNumber(args[1]);
-                if (value == null) return socket.talk("m", 5_000, "Invalid value.");
-                body.SIZE = value;
-                body.coreSize = value;
+                const target = resolveEntity(args[2], body);
+                if (!target) return;
+                if (value == null || value <= 0) {
+                    return socket.talk("m", 6_000, `Current size: ${target.SIZE}`);
+                }
+                target.SIZE = value;
+                target.coreSize = value;
+                target.refreshBodyAttributes?.();
                 socket.talk("m", 4_000, "Size updated.");
                 return;
             }
 
             if (command === "fov") {
                 const value = parseNumber(args[1]);
-                if (value == null) return socket.talk("m", 5_000, "Invalid value.");
-                body.FOV = value;
+                const target = resolveEntity(args[2], body);
+                if (!target) return;
+                if (value == null || value <= 0) {
+                    return socket.talk("m", 6_000, `Current FOV: ${target.FOV}`);
+                }
+                target.FOV = value;
                 socket.talk("m", 4_000, "FOV updated.");
                 return;
             }
@@ -918,6 +1165,295 @@ let commands = [
                 return;
             }
 
+            if (command === "color" || command === "rgb" || command === "colour" || command === "cr") {
+                const colorBase = args[1];
+                const hueShift = parseNumber(args[2]) ?? 0;
+                const brightnessShift = parseNumber(args[3]) ?? 1;
+                const saturationShift = parseNumber(args[4]) ?? 0;
+                const allowInvert = parseBoolean(args[5], false);
+                const target = resolveEntity(args[6], body);
+                if (!target) return;
+                if (!colorBase) {
+                    socket.talk("m", 6_000, `Current color: ${target.color?.compiled ?? target.color}`);
+                    return;
+                }
+                target.color = new Color({
+                    BASE: colorBase,
+                    base: colorBase,
+                    HUE_SHIFT: hueShift,
+                    hueShift,
+                    BRIGHTNESS_SHIFT: brightnessShift,
+                    brightnessShift,
+                    SATURATION_SHIFT: saturationShift,
+                    saturationShift,
+                    ALLOW_BRIGHTNESS_INVERT: allowInvert,
+                    allowBrightnessInvert: allowInvert,
+                });
+                socket.talk("m", 4_000, "Color updated.");
+                return;
+            }
+
+            if (command === "skill") {
+                const points = parseNumber(args[1]);
+                const target = resolveEntity(args[2], body);
+                if (!target) return;
+                if (points == null) return socket.talk("m", 5_000, "Usage: skill <points> [who]");
+                const before = target.skill.points;
+                target.skill.points += points;
+                target.skill.update();
+                target.refreshBodyAttributes?.();
+                socket.talk("m", 6_000, `Skill points: ${before} -> ${target.skill.points}`);
+                return;
+            }
+
+            if (command === "cap") {
+                const cap = parseNumber(args[1]);
+                const target = resolveEntity(args[2], body);
+                if (!target) return;
+                if (cap == null || cap < 0) return socket.talk("m", 5_000, "Usage: cap <cap> [who]");
+                const caps = target.skill.caps.map(c => (c > 0 ? cap : 0));
+                target.skill.setCaps(caps);
+                target.skill.update();
+                target.refreshBodyAttributes?.();
+                socket.talk("m", 4_000, "Skill caps updated.");
+                return;
+            }
+
+            if (command === "level") {
+                const desiredLevel = parseNumber(args[1]);
+                const target = resolveEntity(args[2], body);
+                if (!target) return;
+                if (desiredLevel == null || desiredLevel < 0) {
+                    return socket.talk("m", 6_000, `Current level: ${target.skill.level}`);
+                }
+                const startingLevel = target.skill.level;
+                target.skill.reset();
+                while (target.skill.level < desiredLevel) {
+                    target.skill.score += target.skill.levelScore;
+                    if (!target.skill.maintain()) break;
+                }
+                target.refreshBodyAttributes?.();
+                socket.talk("m", 6_000, `Level: ${startingLevel} -> ${target.skill.level}`);
+                return;
+            }
+
+            const allowedBodyAttributes = ["speed", "acceleration", "health", "regen", "shield", "resist", "range", "pushability", "damage"];
+            if (command === "state" || command === "stat" || command === "body" || command === "attr") {
+                const attrName = (args[1] || "").toLowerCase();
+                const rawValue = args[2];
+                const target = resolveEntity(args[3], body);
+                if (!target) return;
+                if (!allowedBodyAttributes.includes(attrName)) {
+                    return socket.talk("m", 7_000, `Invalid attribute. Use one of: ${allowedBodyAttributes.join(", ")}`);
+                }
+                const key = attrName.toUpperCase();
+                if (!rawValue) {
+                    return socket.talk("m", 6_000, `Current ${attrName}: ${target[key]}`);
+                }
+                const numeric = parseNumber(rawValue);
+                const before = target[key];
+                if (numeric != null) {
+                    target[key] = numeric;
+                } else {
+                    const op = rawValue[0];
+                    const factor = parseNumber(rawValue.slice(1));
+                    if (factor == null || factor <= 0) return socket.talk("m", 5_000, "Invalid value.");
+                    if (op === "*") target[key] *= factor;
+                    else if (op === "/") target[key] /= factor;
+                    else return socket.talk("m", 6_000, "Value must be a number, *n, or /n.");
+                }
+                target.refreshBodyAttributes?.();
+                socket.talk("m", 7_000, `${attrName}: ${before} -> ${target[key]}`);
+                return;
+            }
+
+            const killChildren = (entity) => {
+                let removed = 0;
+                if (Array.isArray(entity.children)) {
+                    for (const child of [...entity.children]) {
+                        if (child && typeof child.kill === "function") {
+                            child.kill();
+                            removed++;
+                        }
+                    }
+                }
+                if (Array.isArray(entity.bulletchildren)) {
+                    for (const child of [...entity.bulletchildren]) {
+                        if (child && typeof child.kill === "function") {
+                            child.kill();
+                            removed++;
+                        }
+                    }
+                }
+                return removed;
+            };
+            const overrideMaxChildren = (entity, recursive = true) => {
+                if (entity.maxChildren !== undefined) entity.maxChildren = 0;
+                if (entity.countsOwnKids === true) entity.countsOwnKids = false;
+                if (recursive) {
+                    if (entity.turrets instanceof Map) {
+                        for (const [, turret] of entity.turrets.entries()) {
+                            overrideMaxChildren(turret, false);
+                        }
+                    }
+                    if (entity.guns instanceof Map) {
+                        for (const [, gun] of entity.guns.entries()) {
+                            if (gun.countsOwnKids != null) gun.countsOwnKids = false;
+                            killChildren(gun);
+                        }
+                    }
+                }
+                return killChildren(entity);
+            };
+            if (command === "maxchildren" || command === "children") {
+                const value = parseNumber(args[1]);
+                const overrideTurrets = parseBoolean(args[2], false);
+                const target = resolveEntity(args[3], body);
+                if (!target) return;
+                if (value == null || value < 0) {
+                    return socket.talk("m", 6_000, `Current maxChildren: ${target.maxChildren ?? 0}`);
+                }
+                const removed = overrideTurrets ? overrideMaxChildren(target, true) : 0;
+                target.maxChildren = value;
+                socket.talk("m", 7_000, `maxChildren set to ${value}${removed ? ` (cleared ${removed} children)` : ""}.`);
+                return;
+            }
+
+            const allowedGunsAttributes = ["reload", "recoil", "shudder", "size", "health", "damage", "pen", "speed", "maxSpeed", "range", "density", "spray", "resist"];
+            if (command === "guns") {
+                const attrName = args[1];
+                const rawValue = args[2];
+                const target = resolveEntity(args[3], body);
+                if (!target) return;
+                if (!allowedGunsAttributes.includes(attrName)) {
+                    return socket.talk("m", 7_000, `Invalid gun attribute. Use one of: ${allowedGunsAttributes.join(", ")}`);
+                }
+                const guns = target.guns instanceof Map ? Array.from(target.guns.values()) : [];
+                if (!guns.length) return socket.talk("m", 5_000, "Target has no guns.");
+                if (!rawValue) {
+                    const values = guns.map(g => g.settings?.[attrName]).filter(v => v != null);
+                    return socket.talk("m", 7_000, `Current ${attrName}: ${values.join(", ") || "n/a"}`);
+                }
+                const numeric = parseNumber(rawValue);
+                let mode = "add";
+                let value = numeric;
+                if (numeric == null) {
+                    mode = rawValue[0];
+                    value = parseNumber(rawValue.slice(1));
+                    if (value == null || value <= 0 || !["*", "/"].includes(mode)) {
+                        return socket.talk("m", 6_000, "Value must be a number, *n, or /n.");
+                    }
+                }
+                for (const gun of guns) {
+                    if (!gun.settings || gun.settings[attrName] == null) continue;
+                    if (mode === "*") gun.settings[attrName] *= value;
+                    else if (mode === "/") gun.settings[attrName] /= value;
+                    else gun.settings[attrName] += value;
+                    gun.interpret?.();
+                }
+                const values = guns.map(g => g.settings?.[attrName]).filter(v => v != null);
+                socket.talk("m", 7_000, `${attrName} updated: ${values.join(", ")}`);
+                return;
+            }
+
+            if (command === "define" || command === "def") {
+                const className = args[1];
+                const target = resolveEntity(args[2], body);
+                if (!target) return;
+                if (!className) return socket.talk("m", 5_000, "Usage: define <class> [who]");
+                if (!Class[className]) return socket.talk("m", 5_000, "Unknown class.");
+                const previousColor = target.color;
+                target.define(className);
+                if (!Class[className].COLOR && previousColor) {
+                    target.color = previousColor;
+                }
+                target.refreshBodyAttributes?.();
+                socket.talk("m", 4_000, `Defined as ${className}.`);
+                return;
+            }
+
+            const teams = ["BLUE", "GREEN", "RED", "PURPLE", "YELLOW", "ORANGE", "BROWN", "CYAN", "ROOM", "ENEMIES"];
+            if (command === "team") {
+                const teamArg = args[1];
+                const target = resolveEntity(args[2], body);
+                if (!target) return;
+                if (!teamArg) return socket.talk("m", 6_000, `Current team: ${target.team}`);
+                let teamValue = parseNumber(teamArg);
+                if (teamValue == null) {
+                    const upper = teamArg.toUpperCase();
+                    if (!teams.includes(upper)) return socket.talk("m", 6_000, `Invalid team. Use: ${teams.join(", ")}`);
+                    teamValue = global[`TEAM_${upper}`];
+                }
+                const before = target.team;
+                target.team = teamValue;
+                socket.talk("m", 6_000, `Team: ${before} -> ${teamValue}`);
+                return;
+            }
+
+            if (command === "wall" || command === "w") {
+                const room = gameManager.room;
+                const tileSize = room?.tileWidth ?? 30;
+                const wallSize = tileSize / 2;
+                const spawnWall = (x, y, name = null, size = wallSize) => {
+                    const e = new Entity({ x, y });
+                    e.define("wall");
+                    e.SIZE = size;
+                    e.team = TEAM_ROOM;
+                    if (name) e.name = name;
+                    e.protect?.();
+                    e.life();
+                    return e;
+                };
+                const type = args[1];
+                if (type === "grid") {
+                    const name = args[2] ?? null;
+                    const gx = (Math.floor(body.x / tileSize) + 0.5) * tileSize;
+                    const gy = (Math.floor(body.y / tileSize) + 0.5) * tileSize;
+                    const e = spawnWall(gx, gy, name);
+                    const tagId = devTags.add(e);
+                    socket.talk("m", 6_000, `Spawned wall at grid. Tag: ${tagId}`);
+                    return;
+                }
+                const dx = parseNumber(args[1]);
+                const dy = parseNumber(args[2]);
+                if (dx == null || dy == null) return socket.talk("m", 6_000, "Usage: wall <dx> <dy> [tiles=1] [name]");
+                const tiles = parseNumber(args[3]) ?? 1;
+                const name = args.slice(4).join(" ") || null;
+                const size = tiles > 0 ? tiles * wallSize : wallSize;
+                const e = spawnWall(body.x + dx, body.y + dy, name, size);
+                const tagId = devTags.add(e);
+                socket.talk("m", 6_000, `Spawned wall. Tag: ${tagId}`);
+                return;
+            }
+
+            if (command === "me") {
+                const targetRef = args[1];
+                const message = args.slice(2).join(" ").trim();
+                if (!targetRef || !message) return socket.talk("m", 6_000, "Usage: me <tag|id|name> <message...>");
+                const target = resolveEntity(targetRef, null);
+                if (!target) return;
+                if (typeof target.sendMessage === "function") {
+                    target.sendMessage(message);
+                }
+                socket.talk("m", 4_000, "Message sent.");
+                return;
+            }
+
+            if (command === "edit") {
+                const message = args.slice(1).join(" ").trim();
+                if (!message) return socket.talk("m", 6_000, "Usage: edit <message...>");
+                const chatList = chats[body.id];
+                if (!chatList?.length) return socket.talk("m", 6_000, "You have no recent messages.");
+                const current = chatList.shift();
+                if (!current || current.expires < Date.now()) return socket.talk("m", 6_000, "Your message has expired.");
+                const edited = { message: `${message}*`, expires: Date.now() + Config.chat_message_duration };
+                chatList.unshift(edited);
+                util.log(`${body.name || "unnamed"} (edited): ${edited.message}`);
+                gameManager.socketManager.chatLoop();
+                socket.talk("m", 3_000, "Last message edited.");
+                return;
+            }
+
             if (command === "reload") {
                 const raw = args[1];
                 if (!raw) return socket.talk("m", 5_000, "Usage: reload <n|inf>");
@@ -945,7 +1481,7 @@ let commands = [
                 return;
             }
 
-            sendAvailableDevCommandsMessage();
+            sendAvailableDevCommandsMessage(command, args[1]);
         },
     },
 ]
