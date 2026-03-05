@@ -108,7 +108,6 @@ Class.director = {
                 ASPECT: 1.3,
                 X: 7
             },
-            POSITION: [6, 11, 1.3, 7, 0, 0, 0],
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.drone]),
                 TYPE: "drone",
