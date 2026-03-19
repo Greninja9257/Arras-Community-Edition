@@ -4018,8 +4018,9 @@ import * as socketStuff from "./socketinit.js";
         //if (menuEase <= 0.001) return; // fully hidden
         const mainMenuAnim = global.optionsMenu_Anim.mainMenu.get();
         const PANEL_WIDTH = 460;
-        const PANEL_HEIGHT = 730;
         const PANEL_Y = 75;
+        const MAX_PANEL_HEIGHT = global.screenHeight - PANEL_Y - 25;
+        const PANEL_HEIGHT = Math.min(global.optionsMenu_Anim.mainMenuHeight.get(), MAX_PANEL_HEIGHT);
 
         // slide from off-screen left → visible
         const PANEL_VISIBLE_X = mainMenuAnim;
@@ -4184,10 +4185,157 @@ import * as socketStuff from "./socketinit.js";
                 ctx[2].globalAlpha = 1;
             }
             gameDraw.setColor(ctx[2], color.black);
+<<<<<<< HEAD
             drawGuiRect(x, y, BOX_SIZE, BOX_SIZE, true);
             // checkmark
             if (isOn) {
                 ctx[2].strokeStyle = "#ffffff";
+=======
+            drawGuiRect(tabX, TAB_Y, TAB_WIDTH, TAB_HEIGHT, true);
+        }
+
+        // Sliding tab background and border (above borders, below text)
+        const currentTab = global.optionsMenu_Anim.tabOffset.get();
+        const bgX = panelX + currentTab * TAB_WIDTH * 1.162 + 50;
+        gameDraw.setColor(ctx[2], color.grey);
+        drawGuiRect(bgX, TAB_Y, TAB_WIDTH, TAB_HEIGHT + 3); // Extend height to cover bottom border
+        // Draw border without bottom
+        ctx[2].strokeStyle = color.black;
+        ctx[2].lineWidth = 3;
+        ctx[2].beginPath();
+        ctx[2].moveTo(bgX, TAB_Y);
+        ctx[2].lineTo(bgX + TAB_WIDTH, TAB_Y); // top
+        ctx[2].moveTo(bgX, TAB_Y);
+        ctx[2].lineTo(bgX, TAB_Y + TAB_HEIGHT); // left
+        ctx[2].moveTo(bgX + TAB_WIDTH, TAB_Y);
+        ctx[2].lineTo(bgX + TAB_WIDTH, TAB_Y + TAB_HEIGHT); // right
+        ctx[2].stroke();
+
+        // Draw tabs labels
+        for (let tabIndex = 0; tabIndex < TAB_NAMES.length; tabIndex++) {
+            const x = panelX + tabIndex * TAB_WIDTH * 1.162;
+            
+            // Tab label
+            const cx = x + TAB_WIDTH - 11;
+            const cy = TAB_Y + TAB_HEIGHT - 18;
+            drawText(TAB_NAMES[tabIndex][0], cx, cy, 16, color.guiwhite, "center");
+        }
+
+        // Draw tab content with fade animation
+        const fadeOptions = Math.max(0, 1 - Math.abs(0 - currentTab));
+        const fadeTheme = Math.max(0, 1 - Math.abs(1 - currentTab));
+        const fadeKeybinds = Math.max(0, 1 - Math.abs(2 - currentTab));
+
+        ctx[2].save();
+        ctx[2].globalAlpha *= fadeOptions;
+        ctx[2].beginPath();
+        ctx[2].rect(panelX, PANEL_Y, PANEL_WIDTH, PANEL_HEIGHT - 15);
+        ctx[2].clip();
+        if (fadeOptions > 0.01) {
+
+            // OPTIONS TAB
+
+            drawText("Game Appearance", panelX + PANEL_WIDTH / 2, PANEL_Y + 30, 15.5, color.guiwhite, "center");
+            drawText("UI Elements",     panelX + PANEL_WIDTH / 2, PANEL_Y + 310, 15.5, color.guiwhite, "center");
+            drawText("Extra",           panelX + PANEL_WIDTH / 2, PANEL_Y + 470, 15.5, color.guiwhite, "center");
+            drawText("Performance",     panelX + PANEL_WIDTH / 2, PANEL_Y + 670, 15.5, color.guiwhite, "center");
+
+            if (!global.optionsCheckboxes) {
+                global.optionsCheckboxes = [
+                    // Game Appearance
+                    { id: "optRenderNames",         label: "Player Names",          column: 0, row: 0, section: "appearance", tooltip: "Show player names." },
+                    { id: "optRenderScores",        label: "Player Scores",         column: 0, row: 1, section: "appearance", tooltip: "Show player scores." },
+                    { id: "optNoGrid",              label: "Background Grid",       column: 0, row: 2, section: "appearance", tooltip: "Show the background grid.", reverseCheck: true },
+                    { id: "optPointy",              label: "Sharp Traps",           column: 0, row: 3, section: "appearance", tooltip: "Sharpen the corners of traps." },
+                    { id: "optSharpEdges",          label: "Sharp Polygons",        column: 0, row: 4, section: "appearance", tooltip: "Sharpen the corners of all polygons.\n" + "May slightly lower the frame rate." },
+                    { id: "optSecretOptions",       label: "Secret Options",        column: 0, row: 5, section: "appearance", tooltip: "Unlock the secret options tab.\n" + "Note: Some of these options are hidden for a reason. They can cause glitches, and may get removed at any time." },
+
+                    { id: "optChatMessages",        label: "Chat Messages",         column: 1, row: 0, section: "appearance", tooltip: "Show chat messages." },
+                    { id: "optRenderHealth",        label: "Health Bars",           column: 1, row: 1, section: "appearance", tooltip: "Show health bars." },
+                    { id: "separatedHealthbars",    label: "Separate Shield Bar",   column: 1, row: 2, section: "appearance", tooltip: "Separate the shield bar from the health bar." },
+                    { id: "optCurvyTraps",          label: "Curvy Traps",           column: 1, row: 3, section: "appearance", tooltip: "Add curvature to the sides of traps.\n" + "May slightly lower the frame rate." },
+                    { id: "optTankSkins",           label: "Tank Skins",            column: 1, row: 4, section: "appearance", tooltip: "Show tank skins.\n" + "May slightly lower the frame rate." },
+                    { id: "coloredHealthbars",      label: "Colored Health Bars",   column: 1, row: 5, section: "appearance", tooltip: "Make the health and shield bar(s) of entities match their body color." },
+
+                    // UI Elements
+                    { id: "optRenderUpgrades",      label: "Upgrades",              column: 0, row: 0, section: "ui", tooltip: "Toggle the visibility of the class and skill upgrade menus." },
+                    { id: "optRenderPlayerBars",    label: "Player Bars",           column: 0, row: 1, section: "ui", tooltip: "Toggle the visibility of the score and level bars." },
+                    { id: "optRenderKillbar",       label: "Kill Bar",              column: 0, row: 2, section: "ui", tooltip: "Toggle the visibility of the kill bar, which shows the number of kills, assists and boss kills." },
+
+                    { id: "optRenderLeaderboard",   label: "Leaderboard",           column: 1, row: 0, section: "ui", tooltip: "Toggle the visibility of the leaderboard." },
+                    { id: "optRenderMinimap",       label: "Minimap",               column: 1, row: 1, section: "ui", tooltip: "Toggle the visibility of the minimap." },
+                    { id: "optReducedInfo",         label: "Extra Info",            column: 1, row: 2, section: "ui", tooltip: "Show various extra information in the bottom right corner.", reverseCheck: true },
+
+                    // Extra
+                    { id: "smoothCamera",           label: "Smooth Camera",         column: 0, row: 0, section: "extra", tooltip: "Make the camera follow your tank instead of being fixed at it." },
+                    { id: "autoLevelUp",            label: "Auto-Level Up",         column: 0, row: 1, section: "extra", tooltip: "Automatically level you up to level 45 upon joining the game." },
+
+                    { id: "optFancy",               label: "Fading Animation",      column: 1, row: 0, section: "extra", tooltip: "Make dying entities fade out instead of shrinking until disappearing.\n" + "May slightly lower the frame rate." },
+                    { id: "optIncognitoMode",       label: "Incognito Mode",        column: 1, row: 1, section: "extra", tooltip: "Hide you from the leaderboard and make your score appear low to other players." },
+
+                    // Performance
+                    { id: "optLowResolution",       label: "Low Resolution",        column: 1, row: 0, section: "perf", tooltip: "Lower the game's resolution.\n" + "May help to improve the frame rate." },
+                ];
+
+                for (const cb of global.optionsCheckboxes) {
+                    let doc = document.getElementById(cb.id);
+                    if (doc) cb.value = doc.checked, cb.lastValue = cb.value;
+                }
+            }
+
+            const BOX_SIZE = 25;
+            const LINE_HEIGHT = 40;
+
+            for (let i = 0; i < global.optionsCheckboxes.length; i++) {
+                const cb = global.optionsCheckboxes[i];
+                let baseY = PANEL_Y + 45;
+                if (cb.section === "ui")    baseY = PANEL_Y + 325;
+                if (cb.section === "extra") baseY = PANEL_Y + 525;
+                if (cb.section === "perf")  baseY = PANEL_Y + 685;
+
+                const baseXLeft  = panelX + 20;
+                const baseXRight = panelX + PANEL_WIDTH / 2 + 7.5;
+
+                const x = (cb.column === 0 ? baseXLeft : baseXRight);
+                const y = baseY + cb.row * LINE_HEIGHT;
+                const hitX = x * clickableRatio;
+                const hitY = y * clickableRatio;
+                const hitSize = BOX_SIZE * clickableRatio;
+
+                if (!cb.tooltipService) {
+                    global.optionsCheckboxes[i].tooltipService = {
+                        text: cb.tooltip,
+                        targetAlpha: 0,
+                        alpha: Smoothbar(0, 2, 3, 0.06, 0.025, true),
+                        x: 0,
+                        y: 0
+                    }
+                }
+
+                cb.tooltipService.x = hitX;
+                cb.tooltipService.y = hitY + hitSize + 10;
+                if (fadeOptions > 0.2) {
+                    global.clickables.optionsMenu.toggleBoxes.place(i, hitX, hitY, hitSize, hitSize);
+                    global.clickables.optionsMenu.HoverBoxes.place(i, hitX, hitY, hitSize + measureText(cb.label, BOX_SIZE) * 0.65, hitSize);
+                } else {
+                    global.clickables.optionsMenu.toggleBoxes.hide();
+                    global.clickables.optionsMenu.HoverBoxes.hide();
+                }
+                let clickHover = global.clickables.optionsMenu.toggleBoxes.check(mpos);
+                let hovered = global.clickables.optionsMenu.HoverBoxes.check(mpos);
+
+                if (hovered !== -1) {
+                    global.optionsCheckboxes[hovered].tooltipService.targetAlpha = 1;
+                } else global.optionsCheckboxes[i].tooltipService.targetAlpha = 0;
+
+                if (cb.lastValue !== cb.value) {
+                    cb.lastValue = cb.value;
+                    loadSettings();
+                    if (cb.id === "optLowResolution") resizeEvent();
+                }
+
+                const isOn = (cb.reverseCheck && !cb.value) || (!cb.reverseCheck && cb.value);
+>>>>>>> 5a0ce64 (Add max panel height)
                 ctx[2].lineWidth = 3;
                 ctx[2].beginPath();
                 ctx[2].moveTo(x + 5.5, y + BOX_SIZE / 1.8);
