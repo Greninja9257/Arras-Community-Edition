@@ -15,6 +15,10 @@ const withPort = (host, port) => {
 };
 
 module.exports = {
+    // Open Source Arras
+    version: "v2.0.11.3", // The current OSA version. Changing this will likely confuse addons.
+    devBuild: false, // Whether this is marked as a development build.
+
     // Accounts
     account: false, // Enable the account system (login, registration, friends, stats tracking).
 
