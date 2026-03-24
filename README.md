@@ -155,6 +155,29 @@ Without volume mounting, rebuild the image after code changes.
 
 ---
 
+## ☁️ GitHub Codespaces
+
+This repo now includes a Codespaces devcontainer at `.devcontainer/devcontainer.json`.
+
+Quick setup:
+
+```bash
+npm start
+```
+
+Then open the forwarded `3000` port in Codespaces.
+
+Important:
+
+- Codespaces is suitable for development and temporary testing
+- This project uses many ports (`3000` to `3017`)
+- Codespaces assigns separate public URLs per forwarded port
+- Because of that, Codespaces is not the best production host for this repo's current networking model
+
+For a practical public deployment, use a VPS with Docker and a domain. Full instructions are in `docs/codespaces-and-hosting.md`.
+
+---
+
 ## 📁 Project Structure
 
 | Path | Description |

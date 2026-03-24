@@ -1,0 +1,86 @@
+{
+  "name": "Arras Community Edition",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "forwardPorts": [
+    3000,
+    3001,
+    3002,
+    3003,
+    3004,
+    3005,
+    3006,
+    3007,
+    3008,
+    3009,
+    3010,
+    3011,
+    3012,
+    3013,
+    3014,
+    3015,
+    3016,
+    3017
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "Arras Web",
+      "onAutoForward": "openBrowser"
+    },
+    "3001": {
+      "label": "Arras Game 1"
+    },
+    "3002": {
+      "label": "Arras Game 2"
+    },
+    "3003": {
+      "label": "Arras Game 3"
+    },
+    "3004": {
+      "label": "Arras Game 4"
+    },
+    "3005": {
+      "label": "Arras Game 5"
+    },
+    "3006": {
+      "label": "Arras Game 6"
+    },
+    "3007": {
+      "label": "Arras Game 7"
+    },
+    "3008": {
+      "label": "Arras Game 8"
+    },
+    "3009": {
+      "label": "Arras Game 9"
+    },
+    "3010": {
+      "label": "Arras Game 10"
+    },
+    "3011": {
+      "label": "Arras Game 11"
+    },
+    "3012": {
+      "label": "Arras Game 12"
+    },
+    "3013": {
+      "label": "Arras Game 13"
+    },
+    "3014": {
+      "label": "Arras Game 14"
+    },
+    "3015": {
+      "label": "Arras Game 15"
+    },
+    "3016": {
+      "label": "Arras Game 16"
+    },
+    "3017": {
+      "label": "Arras Game 17"
+    }
+  },
+  "postCreateCommand": "npm install",
+  "remoteUser": "root"
+}
