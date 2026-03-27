@@ -232,6 +232,17 @@ module.exports = {
             player_cap: 80,
             properties: { bot_cap: 8 }
         },
+        {
+            share_client_server: false,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 18),
+            port: GAME_PORT_BASE + 18,
+            id: "harvest",
+            featured: false,
+            region: "local",
+            gamemode: ["harvest"],
+            player_cap: 80,
+            properties: { bot_cap: 16 }
+        },
     ],
 
     // Web Server

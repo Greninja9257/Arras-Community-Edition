@@ -1,9 +1,9 @@
 module.exports = {
-	BOT_START_LEVEL: 90,
-	LEVEL_CHEAT_CAP: 90,
-	SPAWN_CLASS: 'proc_celestial',
-	TIER_MULTIPLIER: 45,
-	LEVEL_SKILL_POINT_FUNCTION: level => {
+	bot_start_level: 90,
+	level_cap_cheat: 90,
+	spawn_class: 'proc_celestial',
+	tier_multiplier: 45,
+	defineLevelSkillPoints: level => {
 		if (level == 45) return 42;
 		return 0;
 	}
