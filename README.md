@@ -201,6 +201,23 @@ All primary settings are in:
 
 `server/config.js`
 
+### 🎯 Skill Point Algorithm
+
+Controls how many skill points players earn per level:
+
+```js
+level_skill_algorithm: "arras", // or "improved"
+```
+
+| Mode | Behavior | Total at level 45 |
+| --- | --- | --- |
+| `"arras"` (default) | 1 point/level for levels 2–40, then 1 point every 2 levels (41, 43, 45) | 42 points |
+| `"improved"` | 1 point per level for levels 2–45 | 44 points |
+
+Set in `server/config.js`.
+
+---
+
 ### 🌐 Web Server Settings
 
 ```js

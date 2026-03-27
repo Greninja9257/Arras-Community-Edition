@@ -222,8 +222,8 @@ class Gun extends EventEmitter {
         if (this.body.master.maxBullets !== undefined && this.body.master.maxBullets < (this.body.master.bulletchildren.length + 1)) {
             shootPermission = false;
         }
-        // Cycle up if we should
-        if (shootPermission || !this.waitToCycle) {
+        // Cycle up if we should (not during invuln, to keep guns in sync)
+        if (!this.body.master.invuln && (shootPermission || !this.waitToCycle)) {
             let speed = this.fixedReload ? global.gameManager.roomSpeed : global.gameManager.runSpeed;
             if (this.cycleTimer < 1) {
                 this.cycleTimer += 1 / (this.settings.reload * speed * (this.calculator == "necro" || this.calculator == "fixed reload" ? 1 : sk.rld));

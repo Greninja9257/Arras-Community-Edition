@@ -192,7 +192,7 @@ Class.food = {
     level_cap: 1,
     BODY: {
         STEALTH: 30,
-        PUSHABILITY: 1,
+        PUSHABILITY: 2,
         REGEN: 0
     },
     DAMAGE_EFFECTS: false,

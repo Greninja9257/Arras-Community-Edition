@@ -268,12 +268,21 @@ module.exports = {
     room_bound_force: 0.01,// How strong the force is that confines entities to the map and portals apply to entities.
     soft_max_skill: 0.59, // TODO: Find out what the intention behind the implementation of this configuration is.
 
+    // Which skill point algorithm to use when leveling up.
+    // "arras"    - Matches arras.io: 1 point/level for levels 2-40, then 1 point every 2 levels (42 total at level 45).
+    // "improved" - 1 point per level for levels 2-45 (44 total at level 45).
+    level_skill_algorithm: "arras",
+
     // When an entity reaches a level, this function is called and returns how many skill points that entity gets for reaching that level.
     defineLevelSkillPoints: level => {
         if (level < 2) return 0;
+        if (Config.level_skill_algorithm === "improved") {
+            return level <= Config.level_cap ? 1 : 0;
+        }
+        // arras.io algorithm: 1 point per level up to 40, then 1 point every 2 levels (41, 43, 45...)
+        if (level > Config.level_cap) return 0;
         if (level <= 40) return 1;
-        if (level <= 45 && level && 1 === 1) return 1;
-        return 0;
+        return level % 2 === 1 ? 1 : 0;
     },
 
     level_cap: 45, // Maximum normally achievable level.

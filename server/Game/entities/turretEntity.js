@@ -28,6 +28,7 @@ class turretEntity extends EventEmitter {
         };
         // Initalize.
         this.guns = new Map();
+        this.gunsArrayed = [];
         this.turrets = new Map();
         this.autoOverride = false;
         this.controllers = [];
@@ -189,6 +190,7 @@ class turretEntity extends EventEmitter {
             for (let guns of newGuns) {
                 this.guns.set(guns.id, guns);
             }
+            this.gunsArrayed = newGuns;
         }
         if (set.TURRETS != null) {
             for (let turret of this.turrets.values()) turret.destroy();

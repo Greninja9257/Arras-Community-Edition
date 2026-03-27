@@ -411,7 +411,7 @@ class io_mapFireToAlt extends IO {
         this.onlyIfHasAltFireGun = opts.onlyIfHasAltFireGun;
     }
     think(input) {
-        if (input.fire) for (let i = 0; i < this.body.guns.length; i++) if (!this.onlyIfHasAltFireGun || this.body.guns[i].altFire) return { alt: true }
+        if (input.fire) for (let i = 0; i < this.body.gunsArrayed.length; i++) if (!this.onlyIfHasAltFireGun || this.body.gunsArrayed[i].altFire) return { alt: true }
     }
 }
 class io_onlyAcceptInArc extends IO {
@@ -445,8 +445,8 @@ class io_stackGuns extends IO {
         //find gun that is about to shoot
         let lowestReadiness = Infinity,
             readiestGun;
-        for (let i = 0; i < this.body.guns.length; i++) {
-            let gun = this.body.guns[i];
+        for (let i = 0; i < this.body.gunsArrayed.length; i++) {
+            let gun = this.body.gunsArrayed[i];
             if (!gun.canShoot || !gun.stack) continue;
             let reloadStat = (gun.calculator == "necro" || gun.calculator == "fixed reload") ? 1 : (gun.bulletStats === "master" ? this.body.skill : gun.bulletStats).rld,
                 readiness = (1 - gun.cycle) / (gun.settings.reload * reloadStat);
@@ -575,9 +575,9 @@ class io_nearestDifferentMaster extends IO {
         let tracking = this.body.topSpeed,
             range = this.body.fov;
         // Use whether we have functional guns to decide
-        for (let i = 0; i < this.body.guns.length; i++) {
-            if (this.body.guns[i].canShoot && !this.body.aiSettings.SKYNET) {
-                let v = this.body.guns[i].getTracking();
+        for (let i = 0; i < this.body.gunsArrayed.length; i++) {
+            if (this.body.gunsArrayed[i].canShoot && !this.body.aiSettings.SKYNET) {
+                let v = this.body.gunsArrayed[i].getTracking();
                 if (v.speed == 0 || v.range == 0) continue;
                 tracking = v.speed;
                 range = Math.min(range, (v.speed || 1.5) * (v.range < (this.body.size * 2) ? this.body.fov : v.range));
@@ -725,9 +725,9 @@ class io_healTeamMasters extends IO {
         let tracking = this.body.topSpeed,
             range = this.body.fov;
         // Use whether we have functional guns to decide
-        for (let i = 0; i < this.body.guns.length; i++) {
-            if (this.body.guns[i].canShoot && !this.body.aiSettings.SKYNET) {
-                let v = this.body.guns[i].getTracking();
+        for (let i = 0; i < this.body.gunsArrayed.length; i++) {
+            if (this.body.gunsArrayed[i].canShoot && !this.body.aiSettings.SKYNET) {
+                let v = this.body.gunsArrayed[i].getTracking();
                 if (v.speed == 0 || v.range == 0) continue;
                 tracking = v.speed;
                 range = Math.min(range, (v.speed || 1.5) * (v.range < (this.body.size * 2) ? this.body.fov : v.range));

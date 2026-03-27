@@ -39,6 +39,7 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
         this.settings = {};
         this.aiSettings = {};
         this.guns = new Map();
+        this.gunsArrayed = [];
         this.children = [];
         this.bulletchildren = [];
         this.glow = { radius: null, color: new Color(-1).compiled, alpha: 1, recursion: 1 };
@@ -286,6 +287,7 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
             for (let guns of newGuns) {
                 this.guns.set(guns.id, guns);
             }
+            this.gunsArrayed = newGuns;
         }
         if (set.EXTRA_SKILL != null) this.skill.points += set.EXTRA_SKILL;
         if (set.BODY != null) {
