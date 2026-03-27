@@ -403,6 +403,11 @@ class socketManager {
             player.body.reverseTank = reverseTank;
             // Process the commands
             if (player.command != null) {
+                const previous = {
+                    lmb: player.command.lmb,
+                    mmb: player.command.mmb,
+                    rmb: player.command.rmb,
+                };
                 player.command.up = commands & 1;
                 player.command.down = (commands & 2) >> 1;
                 player.command.left = (commands & 4) >> 2;
@@ -410,6 +415,9 @@ class socketManager {
                 player.command.lmb = (commands & 16) >> 4;
                 player.command.mmb = (commands & 32) >> 5;
                 player.command.rmb = (commands & 64) >> 6;
+                if (!previous.lmb && player.command.lmb) player.body.emit("mousedown", { body: player.body, button: "left" });
+                if (!previous.mmb && player.command.mmb) player.body.emit("mousedown", { body: player.body, button: "middle" });
+                if (!previous.rmb && player.command.rmb) player.body.emit("mousedown", { body: player.body, button: "right" });
             }
             } break;
             case "#": {
@@ -1197,6 +1205,14 @@ class socketManager {
     spawn = (socket, name) => {
         let { player, loc } = this.getSpawnLocation(socket.rememberedTeam, name);
         if (socket.player.loc && !global.spawnPoint && !Config.clan_wars) loc = socket.player.loc;
+        let hideFromHarvestLeaderboard = body => {
+            if (!Config.harvest || !body?.isPlayer) return;
+            if (body._harvestLeaderboardable == null) {
+                body._harvestLeaderboardable = body.settings.leaderboardable ?? true;
+            }
+            body.settings.leaderboardable = false;
+            body.settings.renderOnLeaderboard = false;
+        };
         // Create and bind a body for the player host
         let body;
         const filter = this.disconnections.filter(r => r.ip === socket.ip && r.body && !r.body.isDead());
@@ -1205,6 +1221,7 @@ class socketManager {
             util.remove(this.disconnections, this.disconnections.indexOf(recover));
             clearTimeout(recover.timeout);
             body = recover.body;
+            hideFromHarvestLeaderboard(body);
             util.remove(body.controllers, body.controllers.indexOf(body.controllers.find(rer => rer instanceof ioTypes.listenToPlayer)));
             body.become(player);
             player.team = body.team;
@@ -1214,6 +1231,7 @@ class socketManager {
             body.protect();
             body.isPlayer = true;
             body.define(Config.spawn_class);
+            hideFromHarvestLeaderboard(body);
             if (Class.menu_tanks) {
                 let string = Class.menu_tanks.UPGRADES_TIER_0[0];
                 if (string !== "basic") {
@@ -1278,6 +1296,8 @@ class socketManager {
                 })
             }
         }
+        hideFromHarvestLeaderboard(body);
+        socket.status.forceNewBroadcast = true;
         this.preparePlayer(socket, player, body);
         return player;
     };
@@ -2016,6 +2036,7 @@ class socketManager {
                 return list;
             }
             for (let instance of entities.values()) {
+                if (Config.harvest && instance.isPlayer) continue;
                 if (instance.settings.leaderboardable &&
                     instance.settings.drawShape &&
                     (instance.type === "tank" ||
@@ -2029,6 +2050,7 @@ class socketManager {
         let defaultLeaderboard = new Delta(7, args => {
             let list = [];
             for (const instance of entities.values()) {
+                if (Config.harvest && instance.isPlayer) continue;
                 if (instance.settings.leaderboardable &&
                     instance.settings.drawShape &&
                     instance.type !== "food" &&
@@ -2041,6 +2063,7 @@ class socketManager {
             return makeLeaderboardList(list, args);
         });
         let playerLeaderboard = new Delta(7, args => {
+            if (Config.harvest) return [];
             let list = [];
             for (const instance of entities.values()) {
                 if (

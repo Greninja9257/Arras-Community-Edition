@@ -43,6 +43,7 @@ class Gun extends EventEmitter {
             this.onShoot = info.PROPERTIES.ON_SHOOT == null ? null : info.PROPERTIES.ON_SHOOT;
             this.autofire = info.PROPERTIES.AUTOFIRE == null ? false : info.PROPERTIES.AUTOFIRE;
             this.altFire = info.PROPERTIES.ALT_FIRE == null ? false : info.PROPERTIES.ALT_FIRE;
+            this.strictAltFire = info.PROPERTIES.STRICT_ALT_FIRE == null ? false : info.PROPERTIES.STRICT_ALT_FIRE;
             this.fixedReload = info.PROPERTIES.FIXED_RELOAD == null ? false : info.PROPERTIES.FIXED_RELOAD;
             this.calculator = info.PROPERTIES.STAT_CALCULATOR == null ? "default" : info.PROPERTIES.STAT_CALCULATOR;
             this.waitToCycle = info.PROPERTIES.WAIT_TO_CYCLE == null ? false : info.PROPERTIES.WAIT_TO_CYCLE;
@@ -230,7 +231,9 @@ class Gun extends EventEmitter {
             }
         }
         // Firing routines
-        const wantsFire = this.altFire ? (this.body.control.alt || this.body.control.fire) : this.body.control.fire;
+        const wantsFire = this.altFire
+            ? (this.strictAltFire ? this.body.control.alt : (this.body.control.alt || this.body.control.fire))
+            : this.body.control.fire;
         if (this.body.settings.noFire) {
             if (this.cycleTimer > this.maxCycleTimer) this.cycleTimer = this.maxCycleTimer;
             return;

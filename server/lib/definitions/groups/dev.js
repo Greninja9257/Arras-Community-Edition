@@ -91,14 +91,6 @@ Class.spectator = {
             TYPE: "bullet",
             ALPHA: 0
         }
-    }, {
-        POSITION: [0, 0, 0, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, { reload: 0.25 }, g.fake]),
-            TYPE: "bullet",
-            ALPHA: 0,
-            ALT_FIRE: true,
-        }
     }],
     ON: [{
         event: "fire",
@@ -107,8 +99,11 @@ Class.spectator = {
             body.y = body.y + body.control.target.y
         }
     }, {
-        event: "altFire",
-        handler: ({ body }) => body.FOV = body.y + body.control.target.y < body.y ? body.FOV + 0.5 : Math.max(body.FOV - 0.5, 0.2)
+        event: "mousedown",
+        handler: ({ body, button }) => {
+            if (button !== "right") return;
+            body.FOV = body.y + body.control.target.y < body.y ? body.FOV + 0.5 : Math.max(body.FOV - 0.5, 0.2);
+        }
     }]
 }
 

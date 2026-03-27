@@ -10,6 +10,16 @@ const SHAPE_POOLS = {
     "4d":        { shapes: ["tesseract"],                                                                            cost: 50000 },
 };
 const MAX_ATTACK_SHAPES = 60; // per team
+const TRACKER_INDEX = () => Class.tagMode.index.toString();
+const goalController = getGoal => ({
+    acceptsFromTop: false,
+    think() {
+        return {
+            goal: getGoal(),
+            power: 1,
+        };
+    }
+});
 
 class Harvest {
     constructor() {
@@ -19,6 +29,8 @@ class Harvest {
         this.scoreTrackers = {};
         this.baseMarkers = {};
         this.attackShapes = {};           // team -> Set of ids
+        this.hiddenLeaderboardEntities = new Set();
+        this.leadingTeam = null;
         this.phase = "harvest";
         this.harvestEndTime = 0;
         this.active = false;
@@ -31,18 +43,18 @@ class Harvest {
 
     start() {
         const room = global.gameManager.room;
-        const hw = room.width / 2;
 
         // Exclude TEAM_GREEN so players only get assigned to BLUE and RED
         if (!Array.isArray(global.defeatedTeams)) global.defeatedTeams = [];
         if (!global.defeatedTeams.includes(TEAM_GREEN)) global.defeatedTeams.push(TEAM_GREEN);
 
-        this.bases[TEAM_BLUE] = { x: -hw * 0.82, y: 0 };
-        this.bases[TEAM_RED]  = { x:  hw * 0.82, y: 0 };
+        this.bases[TEAM_BLUE] = this.getBaseCenter(TEAM_BLUE);
+        this.bases[TEAM_RED]  = this.getBaseCenter(TEAM_RED);
         this.scores[TEAM_BLUE]  = 0;
         this.scores[TEAM_RED]   = 0;
         this.attackShapes[TEAM_BLUE] = new Set();
         this.attackShapes[TEAM_RED]  = new Set();
+        this.leadingTeam = null;
         this.phase = "harvest";
         this.harvestEndTime = Date.now() + (Config.harvest_duration ?? 600) * 1000;
         this.active = true;
@@ -52,11 +64,32 @@ class Harvest {
 
         this.spawnBaseMarkers();
         this.spawnTrackers();
+        this.syncLeaderboardEntities(false);
 
         const minutes = Math.round((Config.harvest_duration ?? 600) / 60);
         global.gameManager.socketManager.broadcast(
             `Harvest phase started! Collect shapes and bring them to your base. ${minutes} minutes on the clock!`
         );
+    }
+
+    getBaseTiles(team) {
+        return global.gameManager.room.spawnable[team] || [];
+    }
+
+    getBaseCenter(team) {
+        const tiles = this.getBaseTiles(team);
+        if (!tiles.length) return { x: 0, y: 0 };
+
+        let sumX = 0;
+        let sumY = 0;
+        for (const tile of tiles) {
+            sumX += tile.loc.x;
+            sumY += tile.loc.y;
+        }
+        return {
+            x: sumX / tiles.length,
+            y: sumY / tiles.length,
+        };
     }
 
     spawnBaseMarkers() {
@@ -96,11 +129,34 @@ class Harvest {
             o.color.base = color;
             o.leaderboardColor = color;
             o.name = name;
+            o.index = TRACKER_INDEX();
+            o.label = "";
             o.settings.leaderboardable = true;
-            o.settings.renderOnLeaderboard = false;
+            o.settings.renderOnLeaderboard = true;
             o.godmode = true;
             o.refreshBodyAttributes();
             this.scoreTrackers[team] = o;
+        }
+    }
+
+    syncLeaderboardEntities(restore = false) {
+        for (const entity of entities.values()) {
+            if (!entity || (!entity.isPlayer && !entity.isBot)) continue;
+
+            if (restore) {
+                if (entity._harvestLeaderboardable != null) {
+                    entity.settings.leaderboardable = entity._harvestLeaderboardable;
+                    delete entity._harvestLeaderboardable;
+                }
+                this.hiddenLeaderboardEntities.delete(entity.id);
+                continue;
+            }
+
+            if (entity._harvestLeaderboardable == null) {
+                entity._harvestLeaderboardable = entity.settings.leaderboardable ?? true;
+            }
+            entity.settings.leaderboardable = false;
+            this.hiddenLeaderboardEntities.add(entity.id);
         }
     }
 
@@ -136,10 +192,7 @@ class Harvest {
         o.harvestTeam = team;
         o.harvestValue = harvestValue;
         o.harvestScored = false;
-        o.controllers = [];
-        o.control.goal.x = base.x;
-        o.control.goal.y = base.y;
-        o.control.power = 1;
+        o.controllers = [goalController(() => this.bases[o.harvestTeam] || { x: o.x, y: o.y })];
         o.refreshBodyAttributes();
 
         o.on("dead", ({ killers }) => {
@@ -166,6 +219,27 @@ class Harvest {
         if (tracker && !tracker.isDead()) {
             tracker.skill.score = this.scores[team];
         }
+        this.maybeAnnounceLeadChange();
+    }
+
+    getLeadingTeam() {
+        const blue = this.scores[TEAM_BLUE] || 0;
+        const red = this.scores[TEAM_RED] || 0;
+        if (blue === red) return null;
+        return blue > red ? TEAM_BLUE : TEAM_RED;
+    }
+
+    maybeAnnounceLeadChange() {
+        const leadingTeam = this.getLeadingTeam();
+        if (leadingTeam === this.leadingTeam) return;
+
+        this.leadingTeam = leadingTeam;
+        if (leadingTeam === null) {
+            global.gameManager.socketManager.broadcast("Harvest is tied.");
+            return;
+        }
+
+        global.gameManager.socketManager.broadcast(`${this.teamName(leadingTeam)} takes the lead!`);
     }
 
     // ─── Attack Phase ──────────────────────────────────────────────────────────
@@ -234,10 +308,7 @@ class Harvest {
             });
             o.team = team;
             o.color.base = getTeamColor(team);
-            o.controllers = [];
-            o.control.goal.x = enemyBase.x;
-            o.control.goal.y = enemyBase.y;
-            o.control.power = 1;
+            o.controllers = [goalController(() => this.bases[enemyTeam] || { x: o.x, y: o.y })];
             o.refreshBodyAttributes();
 
             const id = o.id;
@@ -262,6 +333,7 @@ class Harvest {
     endGame(winnerTeam) {
         this.phase = "ended";
         this.active = false;
+        this.syncLeaderboardEntities(true);
         if (winnerTeam === null) {
             global.gameManager.socketManager.broadcast("Draw! Both attack waves destroyed each other.");
         } else {
@@ -272,6 +344,8 @@ class Harvest {
     // ─── Main Loop ─────────────────────────────────────────────────────────────
 
     loop() {
+        if (this.active) this.syncLeaderboardEntities(false);
+
         if (this.phase === "harvest") {
             const remaining = this.harvestEndTime - Date.now();
 
@@ -294,32 +368,20 @@ class Harvest {
                 return;
             }
 
-            // Check harvested shapes reaching base
-            const room = global.gameManager.room;
-            const captureRadius = Math.max(100, Math.min(room.width, room.height) * 0.07);
-
             for (const [id, shape] of this.harvestedShapes) {
                 if (!shape || shape.isDead()) {
                     this.harvestedShapes.delete(id);
                     continue;
                 }
 
-                const base = this.bases[shape.harvestTeam];
-                if (!base) continue;
-
-                const dx = base.x - shape.x;
-                const dy = base.y - shape.y;
-
-                if (dx * dx + dy * dy < captureRadius * captureRadius) {
+                const tile = global.gameManager.room.getAt(shape);
+                if (tile && this.getBaseTiles(shape.harvestTeam).includes(tile)) {
                     this.harvestedShapes.delete(id);
                     shape.harvestScored = true;
                     const value = shape.harvestValue || 0;
                     const team  = shape.harvestTeam;
                     shape.kill();
                     this.addScore(team, value);
-                    global.gameManager.socketManager.broadcast(
-                        `${this.teamName(team)} scored! — Blue: ${Math.round(this.scores[TEAM_BLUE])}  |  Red: ${Math.round(this.scores[TEAM_RED])}`
-                    );
                 }
             }
         } else if (this.phase === "attack") {
@@ -328,6 +390,7 @@ class Harvest {
     }
 
     reset() {
+        this.syncLeaderboardEntities(true);
         this.active = false;
         this.phase = "harvest";
         this.harvestedShapes.clear();
@@ -336,6 +399,8 @@ class Harvest {
         this.baseMarkers = {};
         this.bases = {};
         this.attackShapes = {};
+        this.hiddenLeaderboardEntities.clear();
+        this.leadingTeam = null;
     }
 }
 

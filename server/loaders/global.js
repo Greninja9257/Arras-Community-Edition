@@ -70,6 +70,35 @@ global.getWeakestTeam = () => {
         entries = teamcounts.filter(a => a[1] == lowestTeamCount);
     return parseInt(!entries.length ? -Math.ceil(Math.random() * Config.teams) : ran.choose(entries)[0]);
 };
+global.getWeakestCombinedTeam = () => {
+    let teamcounts = {};
+    for (let i = -Config.teams; i < 0; i++) {
+        if (global.defeatedTeams.includes(i)) continue;
+        teamcounts[i] = 0;
+    }
+    for (let o of global.entities.values()) {
+        if ((o.isBot || o.isPlayer) && o.team in teamcounts && o.team < 0 && isPlayerTeam(o.team)) {
+            teamcounts[o.team]++;
+        }
+    }
+
+    let rankedTeams = Object.entries(teamcounts)
+        .map(([teamId, amount]) => {
+            let weight = teamId in Config.team_weights ? Config.team_weights[teamId] : 1;
+            return {
+                teamId: parseInt(teamId),
+                weightedAmount: amount / weight,
+                amount,
+            };
+        })
+        .sort((a, b) =>
+            a.weightedAmount - b.weightedAmount ||
+            a.amount - b.amount ||
+            Math.abs(a.teamId) - Math.abs(b.teamId)
+        );
+
+    return rankedTeams.length ? rankedTeams[0].teamId : -1;
+};
 global.getRandomTeam = () => -Math.floor(Math.random() * 3000) + 1;
 
 global.Class = {};
