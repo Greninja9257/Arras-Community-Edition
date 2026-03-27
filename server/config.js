@@ -405,6 +405,9 @@ module.exports = {
     arms_race: false,
     clan_wars: false,
     growth: false,
+    harvest: false,
+    harvest_duration: 600,           // Harvest phase length in seconds (default 10 minutes).
+    harvest_attack_mode: "pentagon", // Attack wave shape mode: "pentagon", "big_first", "small_first", "random", "3d", "4d"
     groups: false,
     train: false,
     mode: "ffa",
