@@ -338,6 +338,9 @@ class Harvest {
             global.gameManager.socketManager.broadcast("Draw! Both attack waves destroyed each other.");
         } else {
             global.gameManager.socketManager.broadcast(`${this.teamName(winnerTeam)} wins the Harvest war!`);
+            setTimeout(() => {
+                if (!global.gameManager.arenaClosed) global.gameManager.closeArena();
+            }, 3000);
         }
     }
 
