@@ -1,7 +1,7 @@
 module.exports = {
 	bot_start_level: 0,
 	bot_xp_gain: 0,
-	level_cap_cheat: 45,
+	level_cap_cheat: 0,
 	disable_auto_level: true,
 	spawn_class: 'proc_celestial',
 	tier_multiplier: 9,
