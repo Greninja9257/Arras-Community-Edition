@@ -85,9 +85,9 @@ module.exports = {
             id: "tag",
             featured: false,
             region: "local",
-            gamemode: ["tag"],
+            gamemode: ["tag", "maze"],
             player_cap: 80,
-            properties: { bot_cap: 16 }
+            properties: { bot_cap: 16, server_name: "Tag" }
         },
         {
             share_client_server: false,

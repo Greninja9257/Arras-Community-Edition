@@ -1189,17 +1189,17 @@ class socketManager {
         if (Config.tag) {
             // In tag mode, use the remembered team (killer's team) or pick a random team
             const allowedTeams = [TEAM_BLUE, TEAM_GREEN, TEAM_RED, TEAM_PURPLE];
-            console.log("[TAG DEBUG] getSpawnLocation called. rememberedTeam:", rememberedTeam, "allowedTeams:", allowedTeams);
             if (!allowedTeams.includes(player.team)) {
-                const randomTeam = ran.choose(allowedTeams);
-                console.log("[TAG DEBUG] Team not in allowed list, picking random:", randomTeam);
-                player.team = randomTeam;
-            } else {
-                console.log("[TAG DEBUG] Using remembered team:", player.team);
+                player.team = ran.choose(allowedTeams);
             }
         }
         if (global.spawnPoint) loc = global.spawnPoint;
-        else loc = getSpawnableArea(player.team, global.gameManager);
+        else {
+            let attempts = 50;
+            do {
+                loc = getSpawnableArea(player.team, global.gameManager);
+            } while (attempts-- > 0 && walls.length && walls.some(w => Math.hypot(loc.x - w.x, loc.y - w.y) < w.realSize + 30));
+        }
         return { player, loc };
     }
     spawn = (socket, name) => {

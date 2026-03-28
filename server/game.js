@@ -234,7 +234,7 @@ class gameServer {
                 }
             };
             // Update the server gamemode name
-            this.name = this.gamemode.map(x => getName(x, Config) || (x[0].toUpperCase() + x.slice(1))).join(' ');
+            this.name = Config.server_name || this.gamemode.map(x => getName(x, Config) || (x[0].toUpperCase() + x.slice(1))).join(' ');
             // Activate laby food if enabled
             if (Config.tiered_food) global.activateTieredFood();
             // Initalize the room
