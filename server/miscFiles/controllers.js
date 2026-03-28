@@ -552,7 +552,8 @@ class io_nearestDifferentMaster extends IO {
                 mostDangerous = Math.max(e.dangerValue, mostDangerous);
             }
             finalTargets = wallChecked.filter(e => {
-                if (this.body.aiSettings.farm || e.dangerValue === mostDangerous) {
+                const lowHealth = e.health?.max && (e.health.amount / e.health.max) < 0.35;
+                if (this.body.aiSettings.farm || lowHealth || e.dangerValue === mostDangerous) {
                     if (this.targetLock && e.id === this.targetLock.id) {
                         keepTarget = true;
                     }
@@ -611,11 +612,19 @@ class io_nearestDifferentMaster extends IO {
                 if (this.body.aiSettings.AVOID_SWARM && this.validTargets.length > 1) {
                     let pool = this.validTargets.length > 3 ? ran.chooseN(this.validTargets, 3) : this.validTargets;
                     this.targetLock = ran.choose(pool);
+                } else if (this.validTargets.length === 1) {
+                    this.targetLock = this.validTargets[0];
                 } else {
-                    this.targetLock = (this.validTargets.length === 1) ? this.validTargets[0] : nearest(this.validTargets, {
-                        x: this.body.x,
-                        y: this.body.y
-                    });
+                    // Prefer low-health targets; weight distance by health ratio so wounded enemies are prioritized
+                    const bx = this.body.x, by = this.body.y;
+                    this.targetLock = this.validTargets.reduce((best, e) => {
+                        if (!best) return e;
+                        const distSqE = (e.x - bx) ** 2 + (e.y - by) ** 2;
+                        const distSqB = (best.x - bx) ** 2 + (best.y - by) ** 2;
+                        const hrE = e.health?.max ? e.health.amount / e.health.max : 1;
+                        const hrB = best.health?.max ? best.health.amount / best.health.max : 1;
+                        return distSqE * (0.4 + hrE) < distSqB * (0.4 + hrB) ? e : best;
+                    }, null);
                 }
                 this.tick = -5;
             }
@@ -794,37 +803,36 @@ class io_avoid extends IO {
         super(body)
     }
     think(input) {
-        let masterId = this.body.master.id
-        let range = this.body.size * this.body.size * 100
-        this.avoid = nearest(entities, {
-            x: this.body.x,
-            y: this.body.y
-        }, function (test, sqrdst) {
-            return (test.master.id !== masterId && (test.type === 'bullet' || test.type === 'drone' || test.type === 'swarm' || test.type === 'trap' || test.type === 'block') && sqrdst < range);
-        })
-        // Aim at that target
-        if (this.avoid != null) {
-            // Consider how fast it's moving.
-            let delt = new Vector(this.body.velocity.x - this.avoid.velocity.x, this.body.velocity.y - this.avoid.velocity.y)
-            let diff = new Vector(this.avoid.x - this.body.x, this.avoid.y - this.body.y);
-            let comp = (delt.x * diff.x + delt.y * diff.y) / delt.length / diff.length
-            let goal = {}
-            if (comp > 0) {
-                if (input.goal) {
-                    let goalDist = Math.sqrt(range / (input.goal.x * input.goal.x + input.goal.y * input.goal.y))
-                    goal = {
-                        x: input.goal.x * goalDist - diff.x * comp,
-                        y: input.goal.y * goalDist - diff.y * comp,
-                    }
-                } else {
-                    goal = {
-                        x: -diff.x * comp,
-                        y: -diff.y * comp,
-                    }
-                }
-                return goal
-            }
+        const masterId = this.body.master.id;
+        const detectRange = Math.max(this.body.size * 14, 220);
+        const rangeSquared = detectRange * detectRange;
+        let avoidX = 0, avoidY = 0;
+        for (const e of entities.values()) {
+            if (e.master.id === masterId) continue;
+            const type = e.type;
+            if (type !== 'bullet' && type !== 'drone' && type !== 'swarm' && type !== 'trap' && type !== 'block') continue;
+            const dx = e.x - this.body.x;
+            const dy = e.y - this.body.y;
+            const distSq = dx * dx + dy * dy;
+            if (distSq > rangeSquared) continue;
+            // Positive dot product means the projectile is moving toward us
+            const dvx = e.velocity.x - this.body.velocity.x;
+            const dvy = e.velocity.y - this.body.velocity.y;
+            const approaching = -(dvx * dx + dvy * dy);
+            if (approaching <= 0) continue;
+            const dist = Math.sqrt(distSq) + 1;
+            const weight = approaching / (dist * dist);
+            avoidX -= dx * weight;
+            avoidY -= dy * weight;
         }
+        const avoidLen = Math.hypot(avoidX, avoidY);
+        if (avoidLen < 0.001) return;
+        return {
+            goal: {
+                x: this.body.x + (avoidX / avoidLen) * detectRange,
+                y: this.body.y + (avoidY / avoidLen) * detectRange,
+            }
+        };
     }
 }
 class io_minion extends IO {
@@ -1125,6 +1133,8 @@ class io_ecosystem extends IO {
         this.lastTargetId = null;
         this.lastSwitchAt = 0;
         this.lastDisengageAt = 0;
+        this.strafeDir = ran.chance(0.5) ? 1 : -1;
+        this.nextStrafeSwitch = 0;
     }
     think(input) {
         if (!this.body.isBot) return;
@@ -1200,7 +1210,12 @@ class io_ecosystem extends IO {
             }
             const dist = Math.hypot(dx, dy);
             const desired = Math.min(600, Math.max(200, body.size * 15));
-            const strafeDir = ran.chance(0.5) ? 1 : -1;
+            const now_strafe = performance.now();
+            if (now_strafe > this.nextStrafeSwitch) {
+                this.strafeDir = ran.chance(0.5) ? 1 : -1;
+                this.nextStrafeSwitch = now_strafe + ran.randomRange(1500, 3500);
+            }
+            const strafeDir = this.strafeDir;
             const strafe = {
                 x: -dy / Math.max(1, dist) * strafeDir,
                 y: dx / Math.max(1, dist) * strafeDir,
@@ -1213,10 +1228,19 @@ class io_ecosystem extends IO {
             } else {
                 goal = { x: body.x + strafe.x * 160, y: body.y + strafe.y * 160 };
             }
-            const lead = Math.min(1, dist / 400);
+            let tracking = body.topSpeed;
+            for (let gi = 0; gi < body.gunsArrayed.length; gi++) {
+                const gun = body.gunsArrayed[gi];
+                if (gun.canShoot) {
+                    const v = gun.getTracking();
+                    if (v.speed > 0 && v.range > 0) { tracking = v.speed; break; }
+                }
+            }
+            const relVel = { x: (enemy.velocity?.x || 0) - body.velocity.x, y: (enemy.velocity?.y || 0) - body.velocity.y };
+            const toi = timeOfImpact({ x: dx, y: dy }, relVel, tracking);
             const target = {
-                x: dx + (enemy.velocity?.x || 0) * lead * 20,
-                y: dy + (enemy.velocity?.y || 0) * lead * 20,
+                x: dx + (enemy.velocity?.x || 0) * toi,
+                y: dy + (enemy.velocity?.y || 0) * toi,
             };
             const shouldFire = !lowHealth && !ran.chance(0.15);
             return {

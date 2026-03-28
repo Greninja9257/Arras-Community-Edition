@@ -27,6 +27,7 @@ class Harvest {
         this.scores = {};
         this.bases = {};
         this.scoreTrackers = {};
+        this.globalHarvestTrackers = [];
         this.baseMarkers = {};
         this.attackShapes = {};           // team -> Set of ids
         this.hiddenLeaderboardEntities = new Set();
@@ -39,6 +40,10 @@ class Harvest {
         this._announced1min = false;
         this._announced30sec = false;
         Config.harvest_data = this;
+    }
+
+    getData() {
+        return this.globalHarvestTrackers;
     }
 
     start() {
@@ -115,6 +120,7 @@ class Harvest {
     }
 
     spawnTrackers() {
+        this.globalHarvestTrackers = [];
         const teamDefs = [
             { team: TEAM_BLUE, name: "Blue", color: getTeamColor(TEAM_BLUE) },
             { team: TEAM_RED,  name: "Red",  color: getTeamColor(TEAM_RED)  },
@@ -136,6 +142,7 @@ class Harvest {
             o.godmode = true;
             o.refreshBodyAttributes();
             this.scoreTrackers[team] = o;
+            this.globalHarvestTrackers.push(o);
         }
     }
 
@@ -399,6 +406,7 @@ class Harvest {
         this.harvestedShapes.clear();
         this.scores = {};
         this.scoreTrackers = {};
+        this.globalHarvestTrackers = [];
         this.baseMarkers = {};
         this.bases = {};
         this.attackShapes = {};

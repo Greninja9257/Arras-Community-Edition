@@ -2035,8 +2035,30 @@ class socketManager {
                 }
                 return list;
             }
+            if (Config.harvest) {
+                let teams = Config.harvest_data.getData();
+                for (let i = 0; i < teams.length; i++) {
+                    let t = teams[i];
+                    if (!t.isDead()) {
+                        let color = t.leaderboardColor + " 0 1 0 false";
+                        list.push({
+                            id: t.id,
+                            data: [
+                                Math.round(t.skill.score),
+                                t.index.toString(),
+                                t.name,
+                                color,
+                                color,
+                                "#ffffff",
+                                "",
+                                false,
+                            ]
+                        });
+                    }
+                }
+                return list;
+            }
             for (let instance of entities.values()) {
-                if (Config.harvest && instance.isPlayer) continue;
                 if (instance.settings.leaderboardable &&
                     instance.settings.drawShape &&
                     (instance.type === "tank" ||
@@ -2048,9 +2070,9 @@ class socketManager {
             return makeLeaderboardList(list, args);
         });
         let defaultLeaderboard = new Delta(7, args => {
+            if (Config.harvest) return [];
             let list = [];
             for (const instance of entities.values()) {
-                if (Config.harvest && instance.isPlayer) continue;
                 if (instance.settings.leaderboardable &&
                     instance.settings.drawShape &&
                     instance.type !== "food" &&

@@ -585,7 +585,6 @@ class Entity extends EventEmitter {
         this.acceleration = (1 * global.gameManager.runSpeed * this.ACCELERATION) / speedReduce;
         if (this.settings.reloadToAcceleration) this.acceleration *= this.skill.acl;
         this.topSpeed = (1 * global.gameManager.runSpeed * this.SPEED * this.skill.mob) / speedReduce;
-        if (this.settings.reloadToAcceleration) this.topSpeed /= Math.sqrt(this.skill.acl);
         let health =
             ((this.settings.healthWithLevel ? 2 * level : 0) + this.HEALTH) *
             this.skill.hlt;
