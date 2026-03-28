@@ -157,7 +157,9 @@ Without volume mounting, rebuild the image after code changes.
 
 ## ☁️ GitHub Codespaces
 
-This repo now includes a Codespaces devcontainer at `.devcontainer/devcontainer.json`.
+This repo now includes a Codespaces devcontainer at `devcontainer/devcontainer.json`.
+Rename it to  `.devcontainer`
+(It's named devcontainer currently to prevent issues with CodeSandbox)
 
 Quick setup:
 
