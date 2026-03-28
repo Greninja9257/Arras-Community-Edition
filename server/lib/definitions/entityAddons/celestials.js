@@ -1,7 +1,6 @@
 const { generateProceduralClasses } = require('../procedural.js');
 const { makeTurret, combineStats } = require('../facilitators.js');
 const { base } = require('../constants.js');
-
 const TEMPLATE = 'proc_celestial';
 
 const Formula = {
@@ -236,13 +235,17 @@ Class.proc_celestial = {
 	PARENT: 'genericTank',
 	LABEL: 'Egg',
 	DANGER: 6,
-	FACING_TYPE: ['spin', { speed: 0.02 }],
 	HITS_OWN_TYPE: 'hardOnlyBosses',
-	BODY: { PUSHABILITY: 0.05 },
-	CONTROLLERS: [['minion', { turnwiserange: 360 }], 'canRepel'],
+	BODY: {
+		PUSHABILITY: 0.05,
+		HEALTH: base.HEALTH * 1.5,
+		SPEED: base.SPEED * 1.2,
+	},
+	GUNS: Class.basic.GUNS,
+	CONTROLLERS: ['canRepel'],
 	AI: { NO_LEAD: true }
 };
-/*
+
 Class.proc_celestial.UPGRADES_TIER_1 = generateProceduralClasses({
 	template: TEMPLATE,
 	mockup: 'proc_celestial',
@@ -256,17 +259,18 @@ Class.proc_celestial.UPGRADES_TIER_1 = generateProceduralClasses({
 			SHIELD: Formula.shield(tiers - 1),
 			SPEED: base.SPEED * Formula.speed(tiers - 1),
 			DAMAGE: Formula.damage(tiers - 1),
-			REGEN: base.REGEN * Formula.regen(tiers - 1)
+			REGEN: base.REGEN * Formula.regen(tiers - 1),
+			PUSHABILITY: 0.05,
 		};
 		mockup.EXTRA_SKILL = 10 - tiers;
 
-		if (tiers == 3) {
-			// == because mockup is stackable so this means "once"
-			mockup.CONTROLLERS.push(['minion', { orbit: 240 }]);
-		}
-
-		// clear all layers
+		// clear starting gun and all layers
+		mockup.GUNS = [];
 		mockup.TURRETS = [];
+
+		if (tiers == 3) {
+			mockup.CONTROLLERS = [['minion', { orbit: 240 }], 'canRepel'];
+		}
 
 		context.addLabel(
 			[
@@ -280,7 +284,7 @@ Class.proc_celestial.UPGRADES_TIER_1 = generateProceduralClasses({
 			][tiers - 1]
 		);
 	},
-	/* prettier-ignore *!/
+	/* prettier-ignore */
 	branches: {
 		trapper: makeCelestialBranch(1, getClass('trapperTurret'), 'Trapper'),
 		trap: makeCelestialBranch(1, getClass('trapTurret'), 'MegaTrapper'),
@@ -315,6 +319,6 @@ Class.proc_celestial.UPGRADES_TIER_1 = generateProceduralClasses({
 	},
 	startTier: 1,
 	maxTiers: 1 + 5,
+	maxTiersCap: 5,
 	keepSequence: true
 });
-*/

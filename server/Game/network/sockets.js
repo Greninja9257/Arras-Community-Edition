@@ -1139,7 +1139,7 @@ class socketManager {
                     }, 20)
                 }
             }, 100)
-            if (autoLVLup) {
+            if (autoLVLup && !Config.disable_auto_level) {
                 if (!socket.player.body) return;
                 while (socket.player.body.skill.level < Config.level_cap_cheat) {
                     socket.player.body.skill.score += socket.player.body.skill.levelScore;
