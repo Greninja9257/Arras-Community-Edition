@@ -147,20 +147,38 @@ let initializeFilter = () => {
         ) {
             global.filters.regions.other.push(s);
         }
-        if (
-            s.gameMode.includes("FFA") || 
-            s.gameMode.includes("Maze") || 
-            s.gameMode.includes("Manhunt")
-        ) global.filters.gamemodeFilters.ffa.push(s);
-        if (
-            s.gameMode.includes("TDM") 
-        ) global.filters.gamemodeFilters.tdm.push(s);
-        if (
+        const isMinigame =
+            s.gameMode.includes("Assault") ||
+            s.gameMode.includes("Siege") ||
             s.gameMode.includes("Domination") ||
-            s.gameMode.includes("Mothership")
-        ) global.filters.gamemodeFilters.minigames.push(s);
-        if (
-            s.gameMode.includes("Sandbox")
+            s.gameMode.includes("Mothership") ||
+            s.gameMode.includes("Nexus") ||
+            s.gameMode.includes("Harvest") ||
+            s.gameMode.includes("Celestials") ||
+            s.gameMode.includes("Outbreak") ||
+            s.gameMode.includes("Tag") ||
+            s.gameMode.includes("Arms Race") ||
+            s.gameMode.includes("Train Wars") ||
+            s.gameMode.includes("Boss");
+        // FFA: no teams, no special mechanic
+        if (!isMinigame && (
+            s.gameMode.includes("FFA") ||
+            s.gameMode.includes("Maze") ||
+            s.gameMode.includes("Manhunt") ||
+            s.gameMode.includes("Growth") ||
+            s.gameMode.includes("Space") ||
+            s.gameMode.includes("Classic") ||
+            s.gameMode.includes("Blackout")
+        )) global.filters.gamemodeFilters.ffa.push(s);
+        // Squads: small team modes
+        if (!isMinigame && s.gameMode.includes("Clan Wars")
+        ) global.filters.gamemodeFilters.squads.push(s);
+        // TDM: standard large team modes, minigames override
+        if (!isMinigame && s.gameMode.includes("TDM")
+        ) global.filters.gamemodeFilters.tdm.push(s);
+        // Minigames: any special objective/mechanic, overrides team categories
+        if (isMinigame) global.filters.gamemodeFilters.minigames.push(s);
+        if (s.gameMode.includes("Sandbox")
         ) global.filters.gamemodeFilters.sandbox.push(s);
     };
     let l = [];

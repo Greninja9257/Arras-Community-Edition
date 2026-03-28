@@ -734,6 +734,20 @@ body.mobile .startMenuSlidingContent {
   margin-left: 10px;
 }
 
+#patchNotes .changelog-section {
+  display: block;
+  margin-top: 6px;
+  margin-bottom: 2px;
+  opacity: 0.75;
+}
+
+#patchNotes code {
+  font-family: monospace;
+  background: rgba(128, 128, 128, 0.2);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
 .startMenuHolder.linkHolder {
   display: flex;
   flex-direction: column;

@@ -12,8 +12,14 @@ import * as socketStuff from "./socketinit.js";
     // Get the changelog
     fetch("changelog.md", { cache: "no-cache" }).then(response => response.text()).then(response => {
         let a = [];
-        for (let c of response.split("\n")) 0 !== c.length && (response = c.charAt(0), "#" === response ? (initalizeChangelog(a, !0), a = [c.slice(1).trim()]) : "-" === response ? a.push(c.slice(1).trim()) : a[a.length - 1] += " " + c.trim());
-        initalizeChangelog(a, !1);
+        for (let c of response.split("\n")) {
+            if (!c.length) continue;
+            if (c.startsWith("##")) { a.push("\x00" + c.replace(/^#+\s*/, "")); }
+            else if (c.charAt(0) === "#") { initalizeChangelog(a, true); a = [c.slice(1).trim()]; }
+            else if (c.charAt(0) === "-") { a.push(c.slice(1).trim()); }
+            else if (a.length) { a[a.length - 1] += " " + c.trim(); }
+        }
+        initalizeChangelog(a, false);
     });
 
     let controls = document.getElementById("controlSettings"),
@@ -705,7 +711,18 @@ import * as socketStuff from "./socketinit.js";
             d.appendChild(y);
             let g = document.createElement("ul");
             let l;
-            for (let n of b) l = document.createElement("li"), l.innerHTML = n, g.appendChild(l);
+            for (let n of b) {
+                if (n.startsWith("\x00")) {
+                    let s = document.createElement("b");
+                    s.className = "changelog-section";
+                    s.textContent = n.slice(1);
+                    g.appendChild(s);
+                } else {
+                    l = document.createElement("li");
+                    l.innerHTML = n.replace(/`([^`]+)`/g, "<code>$1</code>");
+                    g.appendChild(l);
+                }
+            }
             l = g.getElementsByTagName("a");
             for (b = 0; b < l.length; b++) {
                 let n = l[b];
