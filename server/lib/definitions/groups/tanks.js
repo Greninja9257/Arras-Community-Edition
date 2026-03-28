@@ -477,7 +477,8 @@ Class.flangle = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
             TYPE: "bullet",
-            LABEL: "thruster"
+            LABEL: "thruster",
+            STAT_CALCULATOR: "thruster"
         }
     }, 0),
     TURRETS: [{
@@ -1137,7 +1138,8 @@ Class.triAngle = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         }, 0)
     ]
@@ -1366,7 +1368,8 @@ Class.ambulance = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         }, 0)
     ],
@@ -1828,7 +1831,8 @@ Class.booster = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         },
         {
@@ -1836,7 +1840,8 @@ Class.booster = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         }], 0)
     ]
@@ -2430,7 +2435,8 @@ Class.fighter = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         }], 0)
     ]
@@ -2445,7 +2451,8 @@ Class.flace = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
             TYPE: "bullet",
-            LABEL: "thruster"
+            LABEL: "thruster",
+            STAT_CALCULATOR: "thruster"
         }
     }, 0),
     TURRETS: [{
@@ -2467,7 +2474,8 @@ Class.flooster = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         },
         {
@@ -2475,7 +2483,8 @@ Class.flooster = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         }
     ], 0),
@@ -2935,7 +2944,8 @@ Class.master = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         },
         {
@@ -2943,7 +2953,8 @@ Class.master = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         }], 0)
     ]
@@ -3958,7 +3969,8 @@ Class.rocket = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         }/*,
         {
@@ -3966,7 +3978,8 @@ Class.rocket = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         }*/], 0)
     ]
@@ -4419,7 +4432,8 @@ Class.surfer = {
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster]),
                 TYPE: "bullet",
-                LABEL: "thruster"
+                LABEL: "thruster",
+                STAT_CALCULATOR: "thruster"
             }
         }], 0)
     ]

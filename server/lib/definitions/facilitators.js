@@ -158,7 +158,7 @@ exports.makeBird = (type, name = -1, options = {}) => {
 
     // Thrusters
     let backRecoil = 0.5 * backRecoilFactor;
-    let thrusterProperties = { SHOOT_SETTINGS: exports.combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster, { recoil: backRecoil }]), TYPE: "bullet", LABEL: "thruster" };
+    let thrusterProperties = { SHOOT_SETTINGS: exports.combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster, { recoil: backRecoil }]), TYPE: "bullet", LABEL: "thruster", STAT_CALCULATOR: "thruster" };
     let shootyBois = [{
             POSITION: [16, 8, 1, 0, 0, 150, 0.1],
             PROPERTIES: thrusterProperties

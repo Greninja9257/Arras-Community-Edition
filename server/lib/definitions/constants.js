@@ -78,7 +78,7 @@ module.exports = {
 	},
 	base: {
 	    ACCEL: 1.6,
-	    SPEED: 7,
+	    SPEED: 6,
 	    HEALTH: 20,
 	    DAMAGE: 3,
 	    RESIST: 1,
