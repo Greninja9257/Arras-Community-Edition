@@ -154,7 +154,7 @@ h3 {
 }
 
 .serverSelector {
-  height: 120px;
+  height: 150px;
   text-align: center;
   font-size: 13px;
   font-weight: bold;
@@ -395,7 +395,7 @@ body.mobile .mainWrapper {
 
 .startMenu {
   display: flex;
-  max-height: 390px;
+  max-height: 488px;
   padding: 10px;
   border-radius: 5px;
   background-color: #dde6eb;
@@ -409,7 +409,7 @@ body.mobile .startMenu {
 .startMenuHolder {
   position: relative;
   width: 350px;
-  height: 350px;
+  height: 438px;
   margin: 10px 12px;
   overflow: hidden;
 }
@@ -520,7 +520,7 @@ body.mobile .startMenuHolder.changelogHolder {
 
 .sliderHolder {
   width: 350px;
-  height: 295px;
+  height: 369px;
   overflow: hidden;
 }
 
@@ -671,7 +671,7 @@ body.mobile .mobileOptionsHeader {
 }
 
 .slided .slider {
-  top: -280px;
+  top: -350px;
 }
 
 body.mobile .slided .slider {
@@ -679,7 +679,7 @@ body.mobile .slided .slider {
 }
 
 .startMenuSlidingContent {
-  height: 270px;
+  height: 338px;
 }
 
 body.mobile .startMenuSlidingContent {
@@ -734,8 +734,20 @@ body.mobile .startMenuSlidingContent {
   margin-left: 10px;
 }
 
+.startMenuHolder.linkHolder {
+  display: flex;
+  flex-direction: column;
+}
+
+.startMenuHolder.linkHolder iframe {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
 .linkButtonHolder {
-  margin-top: 9px;
+  margin-top: auto;
+  padding-top: 9px;
 }
 
 .startButtonHolder {

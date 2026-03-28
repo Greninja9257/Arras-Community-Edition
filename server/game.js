@@ -239,12 +239,12 @@ class gameServer {
             if (Config.tiered_food) global.activateTieredFood();
             // Initalize the room
             this.setRoom();
-            setTimeout(() => {
+            setImmediate(() => {
                 // Set the gamemode manager
                 this.gamemodeManager.redefine(this);
                 // Wake it up
                 this.gamemodeManager.request("start");
-            }, 200);
+            });
 
             // Check if we have a server travel properties.
             if (Config.SERVER_TRAVEL) {
