@@ -195,8 +195,9 @@ class io_listenToPlayer extends IO {
                 y: 100 * Math.sin(kk),
             };
         }
+        const hasMovementInput = this.player.command.right || this.player.command.left || this.player.command.up || this.player.command.down;
         if (this.body.invuln) {
-            if (this.player.command.right || this.player.command.left || this.player.command.up || this.player.command.down || this.player.command.lmb) {
+            if ((!Config.train && hasMovementInput) || this.player.command.lmb) {
                 this.body.invuln = false;
             }
         }
@@ -205,7 +206,7 @@ class io_listenToPlayer extends IO {
             target,
             fire,
             alt,
-            goal: this.static ? null : {
+            goal: this.static || Config.train ? null : {
                 x: this.body.x + this.player.command.right - this.player.command.left,
                 y: this.body.y + this.player.command.down - this.player.command.up,
             },
