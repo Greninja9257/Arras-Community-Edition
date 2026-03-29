@@ -42,7 +42,7 @@ const config = {
         offset: +location.hash.match(/^(?:#debug_lag_offset=(\d+))?/)[1] || -50,
     },
     game: {
-        autoLevelUp: false,
+        autoLevelUp: true,
         centeredMinimap: false,
     }
   };

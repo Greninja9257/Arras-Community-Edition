@@ -188,12 +188,16 @@ import * as socketStuff from "./socketinit.js";
         // Set default theme
         if (document.getElementById("optColors").value === "") {
             document.getElementById("optColors").value = "normal";
-            // Also do auto check for GUI stuff.
+            // First-run defaults for menu toggles.
             document.getElementById("optRenderGui").checked = true;
             document.getElementById("optRenderLeaderboard").checked = true;
             document.getElementById("optRenderNames").checked = true;
             document.getElementById("optRenderHealth").checked = true;
             document.getElementById("optRenderScores").checked = true;
+            document.getElementById("optRenderKillbar").checked = true;
+            document.getElementById("optNoGrid").checked = false;
+            document.getElementById("optReducedInfo").checked = false;
+            document.getElementById("autoLevelUp").checked = true;
             document.getElementById("optFancy").checked = true;
             if (global.mobile) document.getElementById("showCrosshair").checked = true, document.getElementById("showJoystick").checked = true;
         }
