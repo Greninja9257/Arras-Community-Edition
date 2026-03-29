@@ -304,12 +304,14 @@ module.exports = {
     tier_multiplier: 15, // Level difference between each tier.
 
     // Bots
-    bot_cap: 0, // Maximum number of bots that can be on the server. Set to 0 to disable bots.
+    bot_cap: 0, // Maximum number of bots. With dynamic_bots enabled this acts as the ceiling.
     bot_xp_gain: 60, // How much XP bots get until they reach level_cap.
     bot_start_level: 45, // How much XP bots will receive when first created.
     bot_skill_upgrade_chances: [1, 1, 3, 4, 4, 4, 4, 2, 1, 1], // The chances of a bot upgrading a specific skill when skill upgrades are available.
     bot_class_upgrade_chances: [1, 5, 20, 37, 37], // The chances of a bot upgrading a specific amount of times before it stops upgrading.
     bot_name_prefix: "[AI] ", // This is prefixed before the bot's randomly chosen name.
+    dynamic_bots: true,           // Adjust bot count based on player count and CPU usage.
+    dynamic_bots_cpu_threshold: 0.8, // CPU usage (0-1) above which bots start being reduced.
 
     // The class that players and bots spawn as.
     spawn_class: "basic",

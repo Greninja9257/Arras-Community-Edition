@@ -264,6 +264,15 @@ let commands = [
                     "- $ dev team <team> [tag|id|name]",
                     "- $ dev wall grid [name]",
                     "- $ dev wall <dx> <dy> [tiles=1] [name]",
+                    "- $ dev wall cullnearest [radius]",
+                    "- $ dev wall removenearest [radius]",
+                    "- $ dev wall cullarea [radius]",
+                    "- $ dev wall removearea [radius]",
+                    "- $ dev wall cullbox <dx1> <dy1> <dx2> <dy2>",
+                    "- $ dev wall removebox <dx1> <dy1> <dx2> <dy2>",
+                    "- $ dev wall cull <tag|name>",
+                    "- $ dev wall remove <tag|name>",
+                    "- $ dev wall cullstats",
                     "- $ dev me <tag|id|name> <message...>",
                     "- $ dev edit <message...>",
                     "- $ dev setlevel <n>",
@@ -1394,6 +1403,59 @@ let commands = [
                 const room = gameManager.room;
                 const tileSize = room?.tileWidth ?? 30;
                 const wallSize = tileSize / 2;
+                const wallRefs = new Set(walls);
+                const isWall = entity => entity && entity.type === "wall";
+                const markWallCullable = (entity, enabled) => {
+                    entity.allowOptimizerCull = enabled;
+                    return entity.allowOptimizerCull === true;
+                };
+                const getWallsInRadius = radius => {
+                    const radiusSq = radius * radius;
+                    const matches = [];
+                    for (const wall of wallRefs) {
+                        if (!isWall(wall) || wall.isDead?.()) continue;
+                        const dx = wall.x - body.x;
+                        const dy = wall.y - body.y;
+                        if (dx * dx + dy * dy <= radiusSq) matches.push(wall);
+                    }
+                    return matches;
+                };
+                const getNearestWall = (radius = 250) => {
+                    const radiusSq = radius * radius;
+                    let best = null;
+                    let bestDistSq = Infinity;
+                    for (const wall of wallRefs) {
+                        if (!isWall(wall) || wall.isDead?.()) continue;
+                        const dx = wall.x - body.x;
+                        const dy = wall.y - body.y;
+                        const distSq = dx * dx + dy * dy;
+                        if (distSq > radiusSq || distSq >= bestDistSq) continue;
+                        best = wall;
+                        bestDistSq = distSq;
+                    }
+                    return best;
+                };
+                const getWallsInBox = (dx1, dy1, dx2, dy2) => {
+                    const minX = Math.min(body.x + dx1, body.x + dx2);
+                    const maxX = Math.max(body.x + dx1, body.x + dx2);
+                    const minY = Math.min(body.y + dy1, body.y + dy2);
+                    const maxY = Math.max(body.y + dy1, body.y + dy2);
+                    const matches = [];
+                    for (const wall of wallRefs) {
+                        if (!isWall(wall) || wall.isDead?.()) continue;
+                        if (wall.x >= minX && wall.x <= maxX && wall.y >= minY && wall.y <= maxY) matches.push(wall);
+                    }
+                    return matches;
+                };
+                const destroyWalls = selectedWalls => {
+                    let removed = 0;
+                    for (const wall of selectedWalls) {
+                        if (!isWall(wall) || wall.isDead?.()) continue;
+                        wall.kill();
+                        removed++;
+                    }
+                    return removed;
+                };
                 const spawnWall = (x, y, name = null, size = wallSize) => {
                     const e = new Entity({ x, y });
                     e.define("wall");
@@ -1405,6 +1467,96 @@ let commands = [
                     return e;
                 };
                 const type = args[1];
+                if (type === "cullnearest" || type === "uncullnearest" || type === "removenearest") {
+                    const mode = type;
+                    const radius = parseNumber(args[2]) ?? 250;
+                    const target = getNearestWall(radius);
+                    if (!target) return socket.talk("m", 6_000, "No wall found in range.");
+                    if (mode === "removenearest") {
+                        target.kill();
+                        socket.talk("m", 6_000, "Nearest wall removed.");
+                        return;
+                    }
+                    const enabled = mode === "cullnearest";
+                    markWallCullable(target, enabled);
+                    socket.talk("m", 6_000, enabled ? "Nearest wall marked optimizer-cullable." : "Nearest wall removed from optimizer cull list.");
+                    return;
+                }
+                if (type === "cull" || type === "uncull" || type === "remove") {
+                    const mode = type;
+                    const targetRef = args[2];
+                    if (!targetRef) return socket.talk("m", 6_000, `Usage: wall ${mode} <tag|name>`);
+                    const target = resolveEntity(targetRef, null);
+                    if (!isWall(target)) return socket.talk("m", 6_000, "Target is not a wall.");
+                    if (mode === "remove") {
+                        target.kill();
+                        socket.talk("m", 6_000, "Wall removed.");
+                        return;
+                    }
+                    const enabled = mode === "cull";
+                    markWallCullable(target, enabled);
+                    socket.talk("m", 6_000, enabled ? "Wall marked optimizer-cullable." : "Wall removed from optimizer cull list.");
+                    return;
+                }
+                if (type === "cullarea" || type === "uncullarea" || type === "removearea") {
+                    const mode = type;
+                    const radius = parseNumber(args[2]) ?? 250;
+                    const selectedWalls = getWallsInRadius(radius);
+                    if (!selectedWalls.length) return socket.talk("m", 6_000, "No walls found in radius.");
+                    if (mode === "removearea") {
+                        const removed = destroyWalls(selectedWalls);
+                        socket.talk("m", 6_000, `Removed ${removed} walls in radius ${radius}.`);
+                        return;
+                    }
+                    const enabled = mode === "cullarea";
+                    for (const wall of selectedWalls) markWallCullable(wall, enabled);
+                    socket.talk("m", 6_000, `${enabled ? "Marked" : "Unmarked"} ${selectedWalls.length} walls in radius ${radius}.`);
+                    return;
+                }
+                if (type === "cullbox" || type === "uncullbox" || type === "removebox") {
+                    const mode = type;
+                    const dx1 = parseNumber(args[2]);
+                    const dy1 = parseNumber(args[3]);
+                    const dx2 = parseNumber(args[4]);
+                    const dy2 = parseNumber(args[5]);
+                    if ([dx1, dy1, dx2, dy2].some(value => value == null)) {
+                        return socket.talk("m", 6_000, `Usage: wall ${mode} <dx1> <dy1> <dx2> <dy2>`);
+                    }
+                    const selectedWalls = getWallsInBox(dx1, dy1, dx2, dy2);
+                    if (!selectedWalls.length) return socket.talk("m", 6_000, "No walls found in box.");
+                    if (mode === "removebox") {
+                        const removed = destroyWalls(selectedWalls);
+                        socket.talk("m", 6_000, `Removed ${removed} walls in box.`);
+                        return;
+                    }
+                    const enabled = mode === "cullbox";
+                    for (const wall of selectedWalls) markWallCullable(wall, enabled);
+                    socket.talk("m", 6_000, `${enabled ? "Marked" : "Unmarked"} ${selectedWalls.length} walls in box.`);
+                    return;
+                }
+                if (type === "cullstats") {
+                    let totalWalls = 0;
+                    let cullableWalls = 0;
+                    let stackedWalls = 0;
+                    const wallGroups = new Map();
+                    for (const wall of wallRefs) {
+                        if (!isWall(wall) || wall.isDead?.()) continue;
+                        totalWalls++;
+                        if (wall.allowOptimizerCull === true) cullableWalls++;
+                        const x = Math.round(wall.x);
+                        const y = Math.round(wall.y);
+                        const size = Math.round((wall.SIZE ?? wall.size ?? 0) * 10) / 10;
+                        const shape = wall.shape ?? 0;
+                        const wallType = wall.walltype ?? 0;
+                        const key = `${x}:${y}:${size}:${shape}:${wallType}`;
+                        wallGroups.set(key, (wallGroups.get(key) || 0) + 1);
+                    }
+                    for (const count of wallGroups.values()) {
+                        if (count > 1) stackedWalls += count - 1;
+                    }
+                    socket.talk("m", 6_000, `Walls: ${totalWalls}, stacked extras: ${stackedWalls}, optimizer-cullable: ${cullableWalls}.`);
+                    return;
+                }
                 if (type === "grid") {
                     const name = args[2] ?? null;
                     const gx = (Math.floor(body.x / tileSize) + 0.5) * tileSize;

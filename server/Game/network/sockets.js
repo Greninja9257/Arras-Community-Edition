@@ -2111,6 +2111,7 @@ class socketManager {
         })
         let subscribers = [];
         setInterval(() => {
+            if (global.skipMinimap) return;
             logs.minimap.set();
             let minimapUpdate = minimapAll.update(),
                 leaderboardUpdate,

@@ -10,6 +10,32 @@ class gameHandler {
         this.naturallySpawnedBosses = [];
         this.bossTimer = 0;
         this.active = false;
+        this._cpuUsageSample = process.cpuUsage();
+        this._cpuUsageTime = Date.now();
+        this._cpuLoad = 0;
+    }
+
+    getEffectiveBotCap() {
+        if (!Config.dynamic_bots || !Config.bot_cap) return Config.bot_cap;
+        const playerCount = global.gameManager.clients.length;
+        // Scale down bots as players join: target = bot_cap - players
+        let cap = Math.max(0, Config.bot_cap - playerCount);
+        // Further reduce if CPU is overloaded
+        const threshold = Config.dynamic_bots_cpu_threshold ?? 0.8;
+        if (this._cpuLoad > threshold) {
+            const overload = (this._cpuLoad - threshold) / (1 - threshold); // 0-1
+            cap = Math.floor(cap * (1 - overload));
+        }
+        return cap;
+    }
+
+    sampleCpuUsage() {
+        const now = Date.now();
+        const elapsed = (now - this._cpuUsageTime) * 1000; // microseconds
+        const usage = process.cpuUsage(this._cpuUsageSample);
+        this._cpuLoad = elapsed > 0 ? (usage.user + usage.system) / elapsed : 0;
+        this._cpuUsageSample = process.cpuUsage();
+        this._cpuUsageTime = now;
     }
     checkUsers = () => global.gameManager.clients.length >= 1;
     // Collision stuff
@@ -18,17 +44,19 @@ class gameHandler {
         // Fast exit for noclip or ghosts
         if (instance.noclip || other.noclip) return 0;
 
-        // Emit collision events
-        instance.emit('collide', { body: instance, instance, other });
-        other.emit('collide', { body: other, instance: other, other: instance });
+        // Emit collision events only if listeners exist (avoids object allocation per pair)
+        if (instance._events?.collide) instance.emit('collide', { body: instance, instance, other });
+        if (other._events?.collide) other.emit('collide', { body: other, instance: other, other: instance });
         // Custom tick handlers for bullet entities
         if (instance.tickHandler) instance.tickHandler(instance, instance, other);
         if (other.tickHandler) other.tickHandler(other, other, instance);
 
-        if (instance.settings.no_collisions || 
-            instance.master.master.settings.no_collisions || 
-            other.settings.no_collisions || 
-            other.master.master.settings.no_collisions
+        // Cache master.master to avoid repeated property traversal
+        const iMaster = instance.master.master, oMaster = other.master.master;
+        if (instance.settings.no_collisions ||
+            iMaster.settings.no_collisions ||
+            other.settings.no_collisions ||
+            oMaster.settings.no_collisions
         )  return 0;
 
         // Ghost checks (merged for less code repetition)
@@ -222,12 +250,11 @@ class gameHandler {
                 continue;
             }
 
-            // Reset collision array once at the beginning
-            instance.collisionArray = []; 
+            // Reuse collision array instead of allocating a new one each tick
+            instance.collisionArray.length = 0;
 
             // Handle physics only if not bonded
             if (instance.bond == null) {
-                // Resolve the physical behavior from the last collision cycle.
                 logs.physics.set();
                 instance.physics();
                 logs.physics.mark();
@@ -237,7 +264,20 @@ class gameHandler {
                 logs.entities.tally();
                 // Think about my actions.
                 logs.life.set();
-                instance.life();
+                if (global.entityProfiling) {
+                    const t = performance.now();
+                    instance.life();
+                    const elapsed = performance.now() - t;
+                    const key = instance.defs?.[0] || instance.label || instance.type || "unknown";
+                    if (!global.entityTimings) global.entityTimings = new Map();
+                    const entry = global.entityTimings.get(key) || { count: 0, totalMs: 0, sample: instance };
+                    entry.count++;
+                    entry.totalMs += elapsed;
+                    entry.sample = instance;
+                    global.entityTimings.set(key, entry);
+                } else {
+                    instance.life();
+                }
                 logs.life.mark();
                 // Take a selfie.
                 logs.selfie.set();
@@ -431,8 +471,18 @@ class gameHandler {
                 o.leftoverUpgrades--;
             }
         }
+        // Sample CPU and compute effective bot cap
+        this.sampleCpuUsage();
+        const effectiveBotCap = this.getEffectiveBotCap();
+
+        // Kill excess bots if cap dropped (one per tick — dead handler removes from array)
+        if (this.bots.length > effectiveBotCap) {
+            const bot = this.bots[this.bots.length - 1];
+            if (bot && !bot.isDead()) bot.kill();
+        }
+
         // Add new bots if arena is open
-        if (!global.gameManager.arenaClosed && !global.cannotRespawn && this.bots.length < Config.bot_cap) {
+        if (!global.gameManager.arenaClosed && !global.cannotRespawn && this.bots.length < effectiveBotCap) {
             let team = (Config.mode === "tdm" || Config.mode === "tag") && Config.teams > 1 ? getWeakestCombinedTeam() : undefined,
             limit = 20, // give up after 20 attempts and just pick whatever is currently chosen
             loc;

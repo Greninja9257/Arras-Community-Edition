@@ -1,7 +1,6 @@
 function simplecollide(my, n) {
-    // Cache values to avoid redundant calculations
     const dx = my.x - n.x, dy = my.y - n.y;
-    const dist = Math.hypot(dx, dy);
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
     const difference = (1 + dist / 2) * global.gameManager.runSpeed;
     const pushability1 = my.intangibility ? 1 : my.pushability;
     const pushability2 = n.intangibility ? 1 : n.pushability;
