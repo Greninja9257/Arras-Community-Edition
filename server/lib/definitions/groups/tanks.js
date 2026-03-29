@@ -4444,13 +4444,25 @@ Class.executioner = {
     PARENT: "tripleShotOne",
     LABEL: "Executioner",
     DANGER: 10,
-    SELF_DESTRUCT_ON_COLLIDE: true,
-    TOOLTIP: "Slower, heavier, and still fatal on the first touch.",
+    SELF_DESTRUCT_ON_COLLIDE: false,
+    SELF_DESTRUCT_ON_COLLIDE_COUNT: 1,
+    TOOLTIP: "Starts with one life. Every kill adds another.",
     BODY: {
         SPEED: base.SPEED * 2.9,
         DAMAGE: 20000000000000000000000,
         DENSITY: base.DENSITY * 2,
     },
+    ON: [
+        {
+            event: "kill",
+            handler: ({ body, entity }) => {
+                if (!(entity?.isPlayer || entity?.isBot)) return;
+                body.store.remainingCollisionLives ??= body.settings.selfDestructOnCollideCount ?? 1;
+                body.store.remainingCollisionLives += 2;
+                body.sendMessage(`Executioner gained a life. Remaining lives: ${body.store.remainingCollisionLives}.`);
+            },
+        },
+    ],
 }
 Class.glassburst = {
     PARENT: "tripleShotOne",

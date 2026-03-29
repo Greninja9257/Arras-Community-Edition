@@ -246,9 +246,9 @@ function advancedcollide(my, n, doDamage, doInelastic, nIsFirmCollide = false) {
                     now - body.store.lastRamHit.time < 250;
                 if (sameRecentTarget) return 0;
                 body.store.lastRamHit = { targetId: other.id, time: now };
-                body.store.ramHits ??= 0;
-                body.store.ramHits++;
-                if (body.store.ramHits < surviveHits) {
+                body.store.remainingCollisionLives ??= surviveHits;
+                if (body.store.remainingCollisionLives > 1) {
+                    body.store.remainingCollisionLives--;
                     if (body.settings.shrinkOnCollideFactor) {
                         const factor = body.settings.shrinkOnCollideFactor;
                         body.SIZE *= factor;
@@ -271,6 +271,7 @@ function advancedcollide(my, n, doDamage, doInelastic, nIsFirmCollide = false) {
                     }
                     return 0;
                 }
+                body.store.remainingCollisionLives = 0;
                 return incomingDamage + body.health.amount + body.shield.amount + 1;
             }
             if (body.settings.selfDestructOnCollide) {
