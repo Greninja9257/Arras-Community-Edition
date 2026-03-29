@@ -311,6 +311,10 @@ class Entity extends EventEmitter {
         if (set.DAMAGE_CAP != null) this.settings.damageCap = set.DAMAGE_CAP;
         if (set.IGNORE_BODY_DAMAGE_RESIST != null) this.settings.ignoreBodyDamageResist = set.IGNORE_BODY_DAMAGE_RESIST;
         if (set.SELF_DESTRUCT_ON_COLLIDE != null) this.settings.selfDestructOnCollide = set.SELF_DESTRUCT_ON_COLLIDE;
+        if (set.SELF_DESTRUCT_ON_COLLIDE_COUNT != null) this.settings.selfDestructOnCollideCount = set.SELF_DESTRUCT_ON_COLLIDE_COUNT;
+        if (set.SHRINK_ON_COLLIDE_FACTOR != null) this.settings.shrinkOnCollideFactor = set.SHRINK_ON_COLLIDE_FACTOR;
+        if (set.COLLIDE_SPEED_BOOST != null) this.settings.collideSpeedBoost = set.COLLIDE_SPEED_BOOST;
+        if (set.COLLIDE_SPEED_BOOST_TIME != null) this.settings.collideSpeedBoostTime = set.COLLIDE_SPEED_BOOST_TIME;
         if (set.INTANGIBLE != null) this.intangibility = set.INTANGIBLE;
         if (set.IS_SMASHER != null) this.settings.reloadToAcceleration = set.IS_SMASHER;
         if (set.STAT_NAMES != null) this.settings.skillNames = {
@@ -1076,6 +1080,7 @@ class Entity extends EventEmitter {
             }
             // Remove duplicates
             killers = killers.filter((elem, index, self) => index == self.indexOf(elem));
+            this.emit('death', { body: this, killers, killTools });
             killers.forEach((e) => e.emit('kill', { body: e, entity: this }));
             // If there's no valid killers (you were killed by food), change the message to be more passive
             let killText = "You have been killed by ",

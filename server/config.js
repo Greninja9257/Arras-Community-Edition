@@ -318,7 +318,7 @@ module.exports = {
 
     daily_tank: {
         tank: "oneShot",
-        tier: 3,
+        tier: 1,
         ads: {
             enabled: false,
             source: []

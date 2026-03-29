@@ -235,6 +235,49 @@ function advancedcollide(my, n, doDamage, doInelastic, nIsFirmCollide = false) {
             _n: n.health.ratio,
         };
     if (doDamage) {
+        const applyRammerMechanic = (body, incomingDamage, other) => {
+            if (body.team === other.team) return incomingDamage;
+            const surviveHits = body.settings.selfDestructOnCollideCount;
+            if (surviveHits != null) {
+                body.store.lastRamHit ??= { targetId: null, time: 0 };
+                const now = Date.now();
+                const sameRecentTarget =
+                    body.store.lastRamHit.targetId === other.id &&
+                    now - body.store.lastRamHit.time < 250;
+                if (sameRecentTarget) return 0;
+                body.store.lastRamHit = { targetId: other.id, time: now };
+                body.store.ramHits ??= 0;
+                body.store.ramHits++;
+                if (body.store.ramHits < surviveHits) {
+                    if (body.settings.shrinkOnCollideFactor) {
+                        const factor = body.settings.shrinkOnCollideFactor;
+                        body.SIZE *= factor;
+                        body.DAMAGE *= factor;
+                        body.store.baseRamSpeed ??= body.SPEED;
+                        body.SPEED = body.store.baseRamSpeed / Math.max(factor, 0.01);
+                        body.refreshBodyAttributes();
+                    }
+                    if (body.settings.collideSpeedBoost) {
+                        body.store.baseRamSpeed ??= body.SPEED;
+                        body.SPEED = body.store.baseRamSpeed * body.settings.collideSpeedBoost;
+                        body.refreshBodyAttributes();
+                        clearTimeout(body.store.collideSpeedBoostTimeout);
+                        body.store.collideSpeedBoostTimeout = setTimeout(() => {
+                            if (!body.isGhost) {
+                                body.SPEED = body.store.baseRamSpeed;
+                                body.refreshBodyAttributes();
+                            }
+                        }, body.settings.collideSpeedBoostTime ?? 1500);
+                    }
+                    return 0;
+                }
+                return incomingDamage + body.health.amount + body.shield.amount + 1;
+            }
+            if (body.settings.selfDestructOnCollide) {
+                return incomingDamage + body.health.amount + body.shield.amount + 1;
+            }
+            return incomingDamage;
+        };
         let speedFactor = { // Avoid NaNs and infinities
             _me: Number.isFinite(my.maxSpeed) && my.maxSpeed > 0 ? Math.pow(motion._me.length / my.maxSpeed, 0.25) : 1,
             _n: Number.isFinite(n.maxSpeed) && n.maxSpeed > 0 ? Math.pow(motion._n.length / n.maxSpeed, 0.25) : 1,
@@ -311,18 +354,16 @@ function advancedcollide(my, n, doDamage, doInelastic, nIsFirmCollide = false) {
             // n.damageReceived += damage._me * deathFactor._me;
             const __my = damage._n * deathFactor._n;
             const __n = damage._me * deathFactor._me;
-            my.damageReceived += __my * Number(__my > 0
+            let incomingMy = __my * Number(__my > 0
                 ? my.team != n.team
                 : n.healer && n.team == my.team && my.type == "tank" && n.master.id != my.id);
-            n.damageReceived += __n * Number(__n > 0
+            let incomingN = __n * Number(__n > 0
                 ? my.team != n.team
                 : my.healer && n.team == my.team && n.type == "tank" && my.master.id != n.id);
-            if (my.settings.selfDestructOnCollide && my.team != n.team) {
-                my.damageReceived += my.health.amount + my.shield.amount + 1;
-            }
-            if (n.settings.selfDestructOnCollide && my.team != n.team) {
-                n.damageReceived += n.health.amount + n.shield.amount + 1;
-            }
+            incomingMy = applyRammerMechanic(my, incomingMy, n);
+            incomingN = applyRammerMechanic(n, incomingN, my);
+            my.damageReceived += incomingMy;
+            n.damageReceived += incomingN;
         }
     }
     // Exit if healer (healers don't push on collide)
