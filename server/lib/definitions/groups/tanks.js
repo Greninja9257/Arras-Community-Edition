@@ -4444,9 +4444,10 @@ Class.executioner = {
     PARENT: "tripleShotOne",
     LABEL: "Executioner",
     DANGER: 10,
+    IGNORE_TANK_BODY_DAMAGE: true,
     SELF_DESTRUCT_ON_COLLIDE: false,
     SELF_DESTRUCT_ON_COLLIDE_COUNT: 1,
-    TOOLTIP: "Starts with one life. Every kill adds another.",
+    TOOLTIP: "Ignores enemy tank body damage. Player kills add 1 life.",
     BODY: {
         SPEED: base.SPEED * 2.9,
         DAMAGE: 20000000000000000000000,
@@ -4454,11 +4455,17 @@ Class.executioner = {
     },
     ON: [
         {
+            event: "define",
+            handler: ({ body }) => {
+                body.store.remainingCollisionLives = body.settings.selfDestructOnCollideCount ?? 1;
+            },
+        },
+        {
             event: "kill",
             handler: ({ body, entity }) => {
                 if (!(entity?.isPlayer || entity?.isBot)) return;
                 body.store.remainingCollisionLives ??= body.settings.selfDestructOnCollideCount ?? 1;
-                body.store.remainingCollisionLives += 2;
+                body.store.remainingCollisionLives++;
                 body.sendMessage(`Executioner gained a life. Remaining lives: ${body.store.remainingCollisionLives}.`);
             },
         },

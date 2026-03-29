@@ -309,6 +309,7 @@ class Entity extends EventEmitter {
         if (set.DAMAGE_MULTIPLIER_VS_PLAYERS != null) this.settings.damageMultiplierVsPlayers = set.DAMAGE_MULTIPLIER_VS_PLAYERS;
         if (set.DAMAGE_MULTIPLIER_VS_PROJECTILES != null) this.settings.damageMultiplierVsProjectiles = set.DAMAGE_MULTIPLIER_VS_PROJECTILES;
         if (set.DAMAGE_CAP != null) this.settings.damageCap = set.DAMAGE_CAP;
+        if (set.IGNORE_TANK_BODY_DAMAGE != null) this.settings.ignoreTankBodyDamage = set.IGNORE_TANK_BODY_DAMAGE;
         if (set.IGNORE_BODY_DAMAGE_RESIST != null) this.settings.ignoreBodyDamageResist = set.IGNORE_BODY_DAMAGE_RESIST;
         if (set.SELF_DESTRUCT_ON_COLLIDE != null) this.settings.selfDestructOnCollide = set.SELF_DESTRUCT_ON_COLLIDE;
         if (set.SELF_DESTRUCT_ON_COLLIDE_COUNT != null) this.settings.selfDestructOnCollideCount = set.SELF_DESTRUCT_ON_COLLIDE_COUNT;

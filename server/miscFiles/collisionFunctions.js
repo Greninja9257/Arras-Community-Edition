@@ -237,6 +237,7 @@ function advancedcollide(my, n, doDamage, doInelastic, nIsFirmCollide = false) {
     if (doDamage) {
         const applyRammerMechanic = (body, incomingDamage, other) => {
             if (body.team === other.team) return incomingDamage;
+            if (body.settings.ignoreTankBodyDamage && other.type === "tank") return incomingDamage;
             const surviveHits = body.settings.selfDestructOnCollideCount;
             if (surviveHits != null) {
                 body.store.lastRamHit ??= { targetId: null, time: 0 };
@@ -361,6 +362,12 @@ function advancedcollide(my, n, doDamage, doInelastic, nIsFirmCollide = false) {
             let incomingN = __n * Number(__n > 0
                 ? my.team != n.team
                 : my.healer && n.team == my.team && n.type == "tank" && my.master.id != n.id);
+            if (my.settings.ignoreTankBodyDamage && n.type === "tank" && my.team != n.team) {
+                incomingMy = 0;
+            }
+            if (n.settings.ignoreTankBodyDamage && my.type === "tank" && my.team != n.team) {
+                incomingN = 0;
+            }
             incomingMy = applyRammerMechanic(my, incomingMy, n);
             incomingN = applyRammerMechanic(n, incomingN, my);
             my.damageReceived += incomingMy;
