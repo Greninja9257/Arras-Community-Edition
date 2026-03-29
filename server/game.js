@@ -550,9 +550,11 @@ class gameServer {
         this.socketManager.broadcast("Closing!");
         this.arenaClosed = true;
         for (let entity of entities.values()) if (entity.isPlayer || entity.isBot) entity.kill(); // Kill all players and bots.
+        //const trailerSocket = global.trailerState?.socket ?? null;
         setTimeout(() => {
             // Wipe everyone
             for (let client of this.clients) {
+                //if (client === trailerSocket) continue;
                 client.close();
             };
             // Kill the gamemode and the game looper
@@ -584,6 +586,7 @@ class gameServer {
     onEnd() {
         // Log that we are restarting
         util.log(`[${this.name}] Game instance is now over. Soft restarting the server.`);
+
         // Set this to true to run the softstart code
         this.start(true);
     }

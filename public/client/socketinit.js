@@ -1253,6 +1253,7 @@ let incoming = async function(message, socket) {
                 global.chats[id].push(...newMessages);
             }
         } break;
+        // case 'TR': (trailer feature disabled) break;
     };
 }
 const socketInit = () => {

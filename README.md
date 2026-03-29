@@ -33,7 +33,6 @@ https://github.com/AE0hello/open-source-arras/
 - [📁 Project Structure](#-project-structure)
 - [⚙️ Configuration](#️-configuration)
 - [🔐 Environment Variables](#-environment-variables)
-- [👤 Accounts & Sessions](#-accounts--sessions)
 - [🌐 Server Travel (Nexus)](#-server-travel-nexus)
 - [🧩 Addons](#-addons)
 - [🗺 Rooms & Maps](#-rooms--maps)
@@ -56,7 +55,6 @@ It provides:
 - Integrated web client server (`http://localhost:3000`)
 - Multi-instance real-time game servers (`3001+`)
 - Modding framework (definitions, addons, room systems)
-- Optional account system with stats and friends
 - Multi-server travel (Nexus portals)
 - Docker support
 
@@ -67,7 +65,6 @@ It provides:
 - Web client hosted by the same Node process
 - Room system with configurable maps and modes
 - Entity definitions and addon hooks for modding
-- Optional authentication, sessions, and friends
 - Travel between servers via Nexus portals
 - Dockerfile for local containers
 
@@ -187,8 +184,6 @@ For a practical public deployment, use a VPS with Docker and a domain. Full inst
 | server/server.js | Main server entry |
 | server/config.js | Core configuration |
 | server/.env | Tokens and API keys |
-| server/data/users.json | Account storage |
-| server/data/sessions.json | Session storage |
 | server/Game/ | Game logic |
 | server/lib/definitions/ | Entity definitions |
 | server/Game/addons/ | Gameplay addons |
@@ -278,26 +273,6 @@ Additional notes:
 
 - `PUBLIC_HOST` affects client connections and share links.
 - `GAME_PORT_BASE` defines the first port in your game server range.
-
----
-
-## 👤 Accounts & Sessions
-
-API Routes:
-
-- POST /api/register
-- POST /api/login
-- POST /api/logout
-- POST /api/validate
-- POST /api/profile
-- POST /api/friends
-
-Storage Files:
-
-- server/data/users.json
-- server/data/sessions.json
-
-Deleting these files resets all accounts and sessions.
 
 ---
 

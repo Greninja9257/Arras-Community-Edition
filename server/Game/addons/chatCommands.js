@@ -316,6 +316,8 @@ let commands = [
                     "- $ dev entities",
                     "- $ dev reload <n|inf>",
                     "- $ dev reloadattrs",
+                    "- $ dev trailer [sec] - Record a trailer cycling all gamemodes",
+                    "- $ dev trailer stop  - Stop trailer early",
                 ];
                 const pageSize = 12;
                 const totalPages = Math.max(1, Math.ceil(lines.length / pageSize));
@@ -1632,6 +1634,145 @@ let commands = [
                 socket.talk("m", 4_000, "Attributes reloaded.");
                 return;
             }
+
+            // ── TRAILER COMMAND (disabled) ─────────────────────────────────
+            /* if (command === "trailer") {
+                if (global.trailerDone) {
+                    socket.talk("m", 5_000, "Trailer already recorded. Set global.trailerDone = false to reset.");
+                    return;
+                }
+                if (args[1] === "stop") {
+                    if (!global.trailerState) return socket.talk("m", 5_000, "No trailer is running.");
+                    global.trailerState.stop();
+                    return;
+                }
+                if (global.trailerState) {
+                    socket.talk("m", 5_000, "Trailer already running. Use '$ dev trailer stop' to cancel.");
+                    return;
+                }
+
+                const secPerMode = parseNumber(args[1]) ?? 30;
+
+                // Curated list of gamemode configs to cycle through
+                const TRAILER_GAMEMODES = [
+                    ["ffa"],
+                    ["tdm"],
+                    ["domination"],
+                    ["mothership"],
+                    ["siege_og"],
+                    ["assault_bunker"],
+                    ["maze"],
+                    ["trainwars"],
+                    ["outbreak"],
+                    ["clanwars"],
+                ];
+
+                // Find the spatial region with the highest entity density
+                const getHotspot = () => {
+                    const CELL = 300;
+                    const tally = new Map();
+                    for (const e of entities.values()) {
+                        if (e.isGhost || e.type === "wall" || e.type === "mazeWall") continue;
+                        const key = `${Math.floor(e.x / CELL)},${Math.floor(e.y / CELL)}`;
+                        tally.set(key, (tally.get(key) || 0) + 1);
+                    }
+                    let best = null, bestN = 0;
+                    for (const [key, n] of tally) if (n > bestN) { bestN = n; best = key; }
+                    if (!best) return { x: 0, y: 0 };
+                    const [cx, cy] = best.split(",").map(Number);
+                    // Small jitter so repeated pans feel alive
+                    return {
+                        x: (cx + 0.5) * CELL + (Math.random() - 0.5) * CELL * 0.5,
+                        y: (cy + 0.5) * CELL + (Math.random() - 0.5) * CELL * 0.5,
+                    };
+                };
+
+                global.trailerState = {
+                    queue: TRAILER_GAMEMODES.slice(1), // current mode is already loaded
+                    secPerMode,
+                    socket,
+                    panTimer: null,
+                    modeTimer: null,
+                    stop: null,
+                    panCamera: null,
+                    scheduleNextMode: null,
+                };
+
+                global.trailerState.stop = () => {
+                    clearTimeout(global.trailerState.panTimer);
+                    clearTimeout(global.trailerState.modeTimer);
+                    const ts = global.trailerState.socket;
+                    global.trailerDone = true;
+                    global.trailerState = null;
+                    ts.isTrailerSocket = false;
+                    ts.talk("TR", "stop");
+                    ts.talk("DS"); // restore smooth-camera setting
+                    ts.talk("m", 5_000, "Trailer complete! Downloading video...");
+                };
+
+                global.trailerState.panCamera = () => {
+                    if (!global.trailerState) return;
+                    const ts = global.trailerState.socket;
+                    const body = ts.player?.body;
+                    if (!body || body.isDead()) {
+                        global.trailerState.panTimer = setTimeout(global.trailerState.panCamera, 500);
+                        return;
+                    }
+
+                    const target = getHotspot();
+                    const startX = body.x, startY = body.y;
+                    const PAN_MS = 3500; // ms to glide to the new hotspot
+                    const PAUSE_MS = 1000; // ms to linger before picking next hotspot
+                    const STEP_MS = 50;
+                    let elapsed = 0;
+
+                    const step = () => {
+                        if (!global.trailerState) return;
+                        elapsed += STEP_MS;
+                        const t = Math.min(elapsed / PAN_MS, 1);
+                        // Ease in-out cubic
+                        const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+                        body.x = Math.round(startX + (target.x - startX) * ease);
+                        body.y = Math.round(startY + (target.y - startY) * ease);
+                        // Don't send 'c' manually — the server's per-tick camera loop
+                        // already sends 'c' with position + body-derived FOV each tick,
+                        // so sending our own would cause zoom flicker.
+                        if (t < 1) {
+                            global.trailerState.panTimer = setTimeout(step, STEP_MS);
+                        } else {
+                            // Arrived — pause then pick next hotspot
+                            global.trailerState.panTimer = setTimeout(global.trailerState.panCamera, PAUSE_MS);
+                        }
+                    };
+                    step();
+                };
+
+                global.trailerState.scheduleNextMode = () => {
+                    if (!global.trailerState) return;
+                    global.trailerState.modeTimer = setTimeout(() => {
+                        if (!global.trailerState) return;
+                        // Fast close: kill all bots/players and trigger close()
+                        for (const e of entities.values()) {
+                            if (e.isBot || (e.isPlayer && e !== global.trailerState.socket?.player?.body)) e.kill();
+                        }
+                        gameManager.arenaClosed = true;
+                        gameManager.close(null);
+                    }, global.trailerState.secPerMode * 1000);
+                };
+
+                socket.isTrailerSocket = true;
+                // Make the trailer body invisible on the first gamemode
+                const firstBody = socket.player?.body;
+                if (firstBody) firstBody.alpha = 0;
+                socket.talk("TR", "start");
+                socket.talk("AS"); // force smooth camera on
+                socket.talk("m", 5_000, `Trailer: ${TRAILER_GAMEMODES.length} gamemodes, ${secPerMode}s each. Recording started!`);
+
+                global.trailerState.panCamera();
+                global.trailerState.scheduleNextMode();
+                return;
+            } */
+            // ── END TRAILER COMMAND (disabled) ──────────────────────────────
 
             sendAvailableDevCommandsMessage(command, args[1]);
         },

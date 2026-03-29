@@ -135,21 +135,6 @@ class socketManager {
         if (index != -1) {
             // Kill the body if it exists
             if (player.body != null) {
-                if (socket.accountUsername && socket.accountToken && !socket.statsRecorded) {
-                    try {
-                        const userDB = require('../../lib/userDatabase.js');
-                        const playtimeSeconds = Math.max(0, Math.floor(socket.playtimeMs / 1000));
-                        userDB.updateStats(socket.accountUsername, {
-                            kills: player.body.killCount || 0,
-                            deaths: player.body.isDead() ? 1 : 0,
-                            score: player.body.skill.score || 0,
-                            playtimeSeconds
-                        });
-                        socket.statsRecorded = true;
-                    } catch (e) {
-                        // Silently fail if userDB not available
-                    }
-                }
                 if (isPlayerTeam(player.body.team)) {
                     this.rememberedTeams.set(socket.ip, player.body.team);
                 }
@@ -263,22 +248,8 @@ class socketManager {
                 let needsRoom = m[1];
                 let autoLVLup = m[2];
                 let transferbodyID = m[3];
-                let accountToken = m[4]; // Account authentication token
                 if (transferbodyID) transferbodyID = transferbodyID.replace(name, "");
 
-                // Validate account token if provided
-                if (accountToken && typeof accountToken === 'string') {
-                    try {
-                        const userDB = require('../../lib/userDatabase.js');
-                        const accountUsername = userDB.validateToken(accountToken);
-                        if (accountUsername) {
-                            socket.accountUsername = accountUsername;
-                            socket.accountToken = accountToken;
-                        }
-                    } catch (e) {
-                        // Silently fail if userDB not available
-                    }
-                }
                 if (global.gameManager.arenaClosed) {
                     if (needsRoom) {
                       socket.talk("message", "Arena closed. Try again in a few seconds.");
@@ -1602,22 +1573,6 @@ class socketManager {
                             socket.status.deceased = true;
                             // Leave the clan party if clan wars is active
                             if (Config.clan_wars) Config.clan_wars_ft.remove(player.body);
-                            // Update account stats if logged in
-                            if (socket.accountUsername && socket.accountToken) {
-                                try {
-                                    const userDB = require('../../lib/userDatabase.js');
-                                    const playtimeSeconds = Math.max(0, Math.floor(socket.playtimeMs / 1000));
-                                    userDB.updateStats(socket.accountUsername, {
-                                        kills: player.body.killCount || 0,
-                                        deaths: 1,
-                                        score: player.body.skill.score || 0,
-                                        playtimeSeconds
-                                    });
-                                    socket.statsRecorded = true;
-                                } catch (e) {
-                                    // Silently fail if userDB not available
-                                }
-                            }
                             socket.playtimeMs = 0;
                             // Let the client know it died
                             socket.talk("F", ...player.records());
