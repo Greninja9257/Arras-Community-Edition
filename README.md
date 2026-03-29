@@ -1,7 +1,7 @@
 <h1 align="center">Arras Community Edition</h1>
 
 <p align="center">
-  <img src="public/img/round.png" alt="Arras Community Edition Logo" width="600">
+  <img src="public/img/brand.png" alt="Arras Community Edition Logo" width="600">
 </p>
 
 <p align="center">
