@@ -268,7 +268,8 @@ Class.menu_dailyTanks.UPGRADES_TIER_0 = [
     "literallyATank", // dec 17
     "rocketeer", // dec 18
     "jumpSmasher", // dec 19/20
-    "rapture" // dec 25
+    "rapture", // dec 25
+    "spikeDaily"
 ]
 
 Class.menu_fun = makeMenu("Fun")

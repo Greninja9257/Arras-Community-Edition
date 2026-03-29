@@ -4192,6 +4192,37 @@ Class.spike = {
         }
     ], 4)
 }
+Class.oneShot = {
+    PARENT: "smasher",
+    LABEL: "One-Shot",
+    UPGRADE_TOOLTIP: "One Shot anything a the cost of Your Life",
+    IGNORE_BODY_DAMAGE_RESIST: true,
+    SELF_DESTRUCT_ON_COLLIDE: true,
+    DANGER: 8,
+    SKILL_CAP: {
+        RELOAD: 30,
+        PENETRATION: 0,
+        BULLET_HEALTH: 0,
+        BULLET_DAMAGE: 0,
+        BULLET_SPEED: 0,
+        SHIELD_CAPACITY: 0,
+        BODY_DAMAGE: 0,
+        MAX_HEALTH: 0,
+        SHIELD_REGENERATION: 0,
+        MOVEMENT_SPEED: 30,
+    },
+    STAT_NAMES: {
+        RELOAD: "Engine Acceleration",
+        MOVEMENT_SPEED: "Movement Speed",
+    },
+    BODY: {
+        SPEED: base.SPEED * 3.45,
+        DAMAGE: 10000000000000000000000,
+        HEALTH: 1,
+        SHIELD: 0,
+        REGEN: 0,
+    },
+}
 Class.spikeDaily = {
     PARENT: "spike",
     LABEL: "Cushionike",

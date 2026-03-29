@@ -317,7 +317,7 @@ module.exports = {
     spawn_class: "basic",
 
     daily_tank: {
-        tank: "spikeDaily",
+        tank: "oneShot",
         tier: 3,
         ads: {
             enabled: false,

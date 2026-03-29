@@ -309,6 +309,8 @@ class Entity extends EventEmitter {
         if (set.DAMAGE_MULTIPLIER_VS_PLAYERS != null) this.settings.damageMultiplierVsPlayers = set.DAMAGE_MULTIPLIER_VS_PLAYERS;
         if (set.DAMAGE_MULTIPLIER_VS_PROJECTILES != null) this.settings.damageMultiplierVsProjectiles = set.DAMAGE_MULTIPLIER_VS_PROJECTILES;
         if (set.DAMAGE_CAP != null) this.settings.damageCap = set.DAMAGE_CAP;
+        if (set.IGNORE_BODY_DAMAGE_RESIST != null) this.settings.ignoreBodyDamageResist = set.IGNORE_BODY_DAMAGE_RESIST;
+        if (set.SELF_DESTRUCT_ON_COLLIDE != null) this.settings.selfDestructOnCollide = set.SELF_DESTRUCT_ON_COLLIDE;
         if (set.INTANGIBLE != null) this.intangibility = set.INTANGIBLE;
         if (set.IS_SMASHER != null) this.settings.reloadToAcceleration = set.IS_SMASHER;
         if (set.STAT_NAMES != null) this.settings.skillNames = {
@@ -604,7 +606,8 @@ class Entity extends EventEmitter {
             regen *= 1 + Config.growthStatsMultipliers.regen(growthLevel);
         }
         this.health.set(health);
-        this.health.resist = 1 - 1 / Math.max(1, this.RESIST + this.skill.brst);
+        const bodyDamageResist = this.settings.ignoreBodyDamageResist ? 0 : this.skill.brst;
+        this.health.resist = 1 - 1 / Math.max(1, this.RESIST + bodyDamageResist);
         this.shield.set(shield, regen);
         this.damage = 1 * this.DAMAGE * this.skill.atk;
         this.penetration = 1 * (this.PENETRATION + 1.5 * (this.skill.brst + 0.8 * (this.skill.atk - 1)));

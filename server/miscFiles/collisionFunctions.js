@@ -317,6 +317,12 @@ function advancedcollide(my, n, doDamage, doInelastic, nIsFirmCollide = false) {
             n.damageReceived += __n * Number(__n > 0
                 ? my.team != n.team
                 : my.healer && n.team == my.team && n.type == "tank" && my.master.id != n.id);
+            if (my.settings.selfDestructOnCollide && my.team != n.team) {
+                my.damageReceived += my.health.amount + my.shield.amount + 1;
+            }
+            if (n.settings.selfDestructOnCollide && my.team != n.team) {
+                n.damageReceived += n.health.amount + n.shield.amount + 1;
+            }
         }
     }
     // Exit if healer (healers don't push on collide)
