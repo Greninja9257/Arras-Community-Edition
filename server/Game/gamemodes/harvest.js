@@ -47,8 +47,6 @@ class Harvest {
     }
 
     start() {
-        const room = global.gameManager.room;
-
         // Exclude TEAM_GREEN so players only get assigned to BLUE and RED
         if (!Array.isArray(global.defeatedTeams)) global.defeatedTeams = [];
         if (!global.defeatedTeams.includes(TEAM_GREEN)) global.defeatedTeams.push(TEAM_GREEN);
@@ -130,7 +128,7 @@ class Harvest {
             const o = new Entity(base);
             o.isHarvested = true;
             o.define("genericTank");
-            o.define({ BODY: { HEALTH: 1e10, DAMAGE: 0, PUSHABILITY: 0, SPEED: 0 }, SIZE: 1 });
+            o.define({ BODY: { HEALTH: 1e10, DAMAGE: 0, PUSHABILITY: 0, SPEED: 0, ACCELERATION: 0 }, SIZE: 1 });
             o.team = team;
             o.color.base = color;
             o.leaderboardColor = color;
@@ -282,7 +280,6 @@ class Harvest {
 
         const base      = this.bases[team];
         const enemyTeam = team === TEAM_BLUE ? TEAM_RED : TEAM_BLUE;
-        const enemyBase = this.bases[enemyTeam];
 
         for (let i = 0; i < count; i++) {
             let shapeName;
@@ -354,6 +351,15 @@ class Harvest {
     // ─── Main Loop ─────────────────────────────────────────────────────────────
 
     loop() {
+        // Pin score trackers — collision still applies accel even with PUSHABILITY:0
+        for (const [team, tracker] of Object.entries(this.scoreTrackers)) {
+            if (!tracker || tracker.isDead()) continue;
+            tracker.accel.null();
+            tracker.velocity.null();
+            const base = this.bases[team];
+            if (base) { tracker.x = base.x; tracker.y = base.y; }
+        }
+
         if (this.active) this.syncLeaderboardEntities(false);
 
         if (this.phase === "harvest") {
