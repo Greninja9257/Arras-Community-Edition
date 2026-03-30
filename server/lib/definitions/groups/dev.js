@@ -243,12 +243,14 @@ Class.menu_unreleased_T3.UPGRADES_TIER_0 = [
     "rimfire_old",
     "rocket",
     "wrangler",
+    "zombie",
 ]
 
 Class.menu_removed = makeMenu("Removed")
 Class.menu_removed.UPGRADE_TOOLTIP = "Tanks that were previously accessible in-game in some form before being removed."
 Class.menu_removed.UPGRADES_TIER_0 = [
     "menu_dailyTanks",
+    "menu_unusedDailyTanks",
     "boomer_old",
     "auto4_old",
     "spike_old",
@@ -269,7 +271,14 @@ Class.menu_dailyTanks.UPGRADES_TIER_0 = [
     "rocketeer", // dec 18
     "jumpSmasher", // dec 19/20
     "rapture", // dec 25
-    "spikeDaily"
+    "spikeDaily",
+]
+
+Class.menu_unusedDailyTanks = makeMenu("Unused Daily Tanks")
+Class.menu_unusedDailyTanks.UPGRADE_COLOR = "rainbow"
+Class.menu_unusedDailyTanks.UPGRADE_TOOLTIP = "Daily tank candidates or configs that are no longer the active server daily tank."
+Class.menu_unusedDailyTanks.UPGRADES_TIER_0 = [
+    "oneShot",
 ]
 
 Class.menu_fun = makeMenu("Fun")

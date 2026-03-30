@@ -12,6 +12,178 @@ const spawnRamChild = (x, y, parent, type, vx = 0, vy = 0) => {
     o.velocity = new Vector(vx, vy);
     return o;
 };
+const spawnMiniZombieRing = (body, count = 10, distance = 24, speed = 8) => {
+    for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count;
+        spawnMiniZombie(
+            body.x + Math.cos(angle) * distance,
+            body.y + Math.sin(angle) * distance,
+            body,
+            angle,
+            speed,
+        );
+    }
+};
+const zombieMinionControllers = [
+    "nearestDifferentMaster",
+    "mapAltToFire",
+    "minion",
+    "canRepel",
+    "hangOutNearMaster",
+];
+const transferZombieControl = (body) => {
+    const socket = body?.socket;
+    const player = socket?.player;
+    const ownerId = body?.store?.zombieOwnerId ?? socket?.id;
+    if (!player || !ownerId) return false;
+
+    let candidate = null;
+    let bestDist = Infinity;
+    for (const entity of entities.values()) {
+        if (
+            entity === body ||
+            entity.isDead?.() ||
+            entity.type !== "tank" ||
+            entity.underControl ||
+            !entity.store?.isZombieInfection ||
+            entity.store.zombieOwnerId !== ownerId
+        ) continue;
+
+        const dx = entity.x - body.x;
+        const dy = entity.y - body.y;
+        const dist2 = dx * dx + dy * dy;
+        if (dist2 < bestDist) {
+            bestDist = dist2;
+            candidate = entity;
+        }
+    }
+
+    if (!candidate) return false;
+
+    body.underControl = false;
+    body.isPlayer = false;
+    body.controllers = [];
+    body.define({ CONTROLLERS: zombieMinionControllers }, false);
+    candidate.controllers = [];
+    candidate.underControl = true;
+    candidate.isPlayer = true;
+    candidate.socket = socket;
+    candidate.name = body.name;
+    player.body = candidate;
+    player.team = candidate.team;
+    socket.rememberedTeam = candidate.team;
+    socket.status.forceCameraToBody = true;
+    socket.spectateEntity = null;
+    candidate.store.controlledProjectile = false;
+    candidate.become(player);
+    return true;
+};
+const getZombieLeader = (body) => {
+    const ownerId = body?.store?.zombieOwnerId ?? body?.socket?.id;
+    if (!ownerId) return null;
+
+    for (const entity of entities.values()) {
+        if (
+            entity &&
+            !entity.isDead?.() &&
+            entity.type === "tank" &&
+            entity.store?.zombieOwnerId === ownerId &&
+            (entity.underControl || entity.isPlayer)
+        ) {
+            return entity;
+        }
+    }
+    return null;
+};
+const spawnZombieClone = (source, victim) => {
+    if (!victim?.defs || victim.type !== "tank") return null;
+
+    const { Entity } = require('../../../Game/entities/entity.js');
+    const defs = victim.store?.zombieBaseDefs ?? (victim.defs[0] === "bot" ? victim.defs[1] : victim.defs);
+    const baseClass = ensureIsClass(Array.isArray(defs) ? defs[0] : defs);
+    const o = new Entity({ x: victim.x, y: victim.y });
+    const buffedSkill = victim.skill?.raw?.map(value => value * 1.2) ?? Array(10).fill(0);
+
+    o.define(defs);
+    o.controllers = [];
+    o.define({
+        NAME: "Zombie",
+        CONTROLLERS: zombieMinionControllers,
+        AI: { CHASE: true, NO_LEAD: true, IGNORE_SHAPES: true, AWARENESS: 0.8, SCAN_INTERVAL: 8, AVOID_SWARM: true },
+        FACING_TYPE: "smoothToTarget",
+        RESET_UPGRADE_MENU: true,
+        ACCEPTS_SCORE: true,
+        CAN_BE_ON_LEADERBOARD: false,
+        HEALTH_WITH_LEVEL: false,
+        SIZE: victim.SIZE,
+        BODY: {
+            ACCELERATION: o.ACCELERATION * 0.35,
+            SPEED: o.SPEED * 0.4,
+            HEALTH: o.HEALTH * 1.2,
+            RESIST: o.RESIST * 1.15,
+            SHIELD: o.SHIELD * 1.15,
+            REGEN: o.REGEN * 1.15,
+            DAMAGE: o.DAMAGE * 1.15,
+            PENETRATION: o.PENETRATION * 1.15,
+            DENSITY: o.DENSITY * 1.15,
+        },
+        SKILL: buffedSkill,
+        ON: [
+            {
+                event: "kill",
+                handler: ({ body, entity }) => {
+                    spawnZombieClone(body, entity);
+                },
+            },
+            {
+                event: "death",
+                handler: ({ body }) => {
+                    spawnMiniZombieRing(body);
+                },
+            },
+            {
+                event: "dead",
+                handler: ({ body }) => {
+                    transferZombieControl(body);
+                },
+            },
+            {
+                event: "tick",
+                handler: ({ body }) => {
+                    const leader = getZombieLeader(body);
+                    if (leader && leader !== body) {
+                        body.source = leader;
+                    }
+                },
+            },
+        ],
+    }, false);
+    o.store.zombieBaseDefs = defs;
+    o.store.isZombieInfection = true;
+    o.store.zombieOwnerId = source.store?.zombieOwnerId ?? source.socket?.id ?? null;
+    o.team = source.team;
+    o.color.base = source.color.base;
+    o.facing = victim.facing;
+    o.SIZE = victim.size;
+    o.coreSize = victim.size;
+    o.skill.score = 0;
+    o.health.amount = o.health.max;
+    o.shield.amount = o.shield.max;
+    o.refreshBodyAttributes();
+    o.refreshSkills();
+    return o;
+};
+const spawnMiniZombie = (x, y, parent, angle, speed = 10) => {
+    const { Entity } = require('../../../Game/entities/entity.js');
+    const { Vector } = require('../../../Game/entities/vector.js');
+    const o = new Entity({ x, y });
+    o.define("miniZombie");
+    o.team = parent.team;
+    o.color.base = parent.color.base;
+    o.facing = angle;
+    o.velocity = new Vector(Math.cos(angle) * speed, Math.sin(angle) * speed);
+    return o;
+};
 
 // Presets
 const hybridTankOptions = {count: 1, independent: true, cycle: false}
@@ -4620,6 +4792,111 @@ Class.spikeDaily = {
         {
             POSITION: [6, 0, 0, 0, 360, 1],
             TYPE: "cushionCore",
+        },
+    ],
+}
+Class.zombie = {
+    PARENT: "genericTank",
+    LABEL: "Zombie",
+    DANGER: 7,
+    TOOLTIP: "Kills infect tanks into stronger zombies. On death, releases 10 Mini Zombies.",
+    BODY: {
+        ACCELERATION: base.ACCEL * 1.05,
+        SPEED: base.SPEED * 1.06,
+        HEALTH: base.HEALTH * 1.15,
+        SHIELD: base.SHIELD * 0.95,
+        REGEN: base.REGEN * 1.05,
+        DAMAGE: base.DAMAGE * 1.05,
+        PENETRATION: base.PENETRATION * 1.05,
+        DENSITY: base.DENSITY * 1.1,
+        FOV: base.FOV * 1.15,
+    },
+    GUNS: [
+        {
+            POSITION: [18, 8, 1, 0, 0, 0, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic, { reload: 0.85, speed: 1.15, maxSpeed: 1.15, damage: 1.15, pen: 1.1 }]),
+                TYPE: "bullet",
+                MAX_CHILDREN: 1,
+            },
+        },
+    ],
+    ON: [
+        {
+            event: "define",
+            handler: ({ body }) => {
+                body.store.zombieOwnerId = body.store.zombieOwnerId ?? body.socket?.id ?? null;
+                body.source = body;
+            },
+        },
+        {
+            event: "kill",
+            handler: ({ body, entity }) => {
+                spawnZombieClone(body, entity);
+            },
+        },
+        {
+            event: "tick",
+            handler: ({ body }) => {
+                body.store.zombieOwnerId = body.store.zombieOwnerId ?? body.socket?.id ?? null;
+                body.source = body;
+            },
+        },
+        {
+            event: "death",
+            handler: ({ body }) => {
+                spawnMiniZombieRing(body);
+            },
+        },
+        {
+            event: "dead",
+            handler: ({ body }) => {
+                transferZombieControl(body);
+            },
+        },
+    ],
+}
+Class.miniZombie = {
+    PARENT: "genericTank",
+    NAME: "Mini Zombies",
+    LABEL: "Mini Zombie",
+    CONTROLLERS: zombieMinionControllers,
+    FACING_TYPE: "smoothToTarget",
+    AI: { CHASE: true, NO_LEAD: true, IGNORE_SHAPES: true, AWARENESS: 0.8, SCAN_INTERVAL: 8, AVOID_SWARM: true },
+    ACCEPTS_SCORE: false,
+    CAN_BE_ON_LEADERBOARD: false,
+    SIZE: 8,
+    BODY: {
+        ACCELERATION: base.ACCEL * 0.95,
+        SPEED: base.SPEED * 1.05,
+        HEALTH: base.HEALTH * 0.28,
+        SHIELD: 0,
+        REGEN: 0,
+        DAMAGE: base.DAMAGE * 0.38,
+        PENETRATION: base.PENETRATION * 0.5,
+        DENSITY: base.DENSITY * 0.5,
+        FOV: base.FOV * 1.1,
+    },
+    GUNS: [
+        {
+            POSITION: [16, 6, 1, 0, 0, 0, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.basic, g.lowPower, { reload: 1.7, speed: 0.85, maxSpeed: 0.85, damage: 0.65, pen: 0.75 }]),
+                TYPE: "bullet",
+                MAX_CHILDREN: 1,
+                AUTOFIRE: true,
+            },
+        },
+    ],
+    ON: [
+        {
+            event: "tick",
+                handler: ({ body }) => {
+                const leader = getZombieLeader(body);
+                if (leader && leader !== body) {
+                    body.source = leader;
+                }
+            },
         },
     ],
 }
