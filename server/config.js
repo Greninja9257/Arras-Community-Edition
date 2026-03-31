@@ -228,7 +228,7 @@ module.exports = {
             id: "celestials",
             featured: false,
             region: "local",
-            gamemode: ["celestials"],
+            gamemode: ["dreadnaughts"],
             player_cap: 80,
             properties: { bot_cap: 8 }
         },

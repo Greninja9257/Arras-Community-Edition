@@ -25,6 +25,7 @@ const getName = (name, gamemodeData) => {
         space: "Space",
         classic: "Classic",
         armsRace: "Arms Race",
+        dreadnaughts: "Dreadnaughts",
         celestials: "Celestials",
         siege_blitz: "Siege Blitz",
         siege_citadel: "Siege Citadel",

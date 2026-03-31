@@ -1076,7 +1076,7 @@ let commands = [
                 const amount = parseNumber(args[1]) ?? 1;
                 for (let i = 0; i < Math.min(50, amount); i++) {
                     const loc = getSpawnableArea(undefined, gameManager);
-                    gameManager.gameHandler.spawnBots(loc);
+                    gameManager.gameHandler.spawnBots(loc, undefined, false);
                 }
                 socket.talk("m", 4_000, `Added ${amount} bots.`);
                 return;

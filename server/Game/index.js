@@ -474,15 +474,16 @@ class gameHandler {
         // Sample CPU and compute effective bot cap
         this.sampleCpuUsage();
         const effectiveBotCap = this.getEffectiveBotCap();
+        const managedBots = this.bots.filter(bot => bot?.countsTowardsBotCap !== false);
 
         // Kill excess bots if cap dropped (one per tick — dead handler removes from array)
-        if (this.bots.length > effectiveBotCap) {
-            const bot = this.bots[this.bots.length - 1];
+        if (managedBots.length > effectiveBotCap) {
+            const bot = managedBots[managedBots.length - 1];
             if (bot && !bot.isDead()) bot.kill();
         }
 
         // Add new bots if arena is open
-        if (!global.gameManager.arenaClosed && !global.cannotRespawn && this.bots.length < effectiveBotCap) {
+        if (!global.gameManager.arenaClosed && !global.cannotRespawn && managedBots.length < effectiveBotCap) {
             let team = Config.special_boss_spawns && Config.teams === 1
                 ? TEAM_BLUE
                 : (Config.mode === "tdm" || Config.mode === "tag") && Config.teams > 1
@@ -498,7 +499,7 @@ class gameHandler {
         }
     }
 
-    spawnBots(loc, team) {
+    spawnBots(loc, team, countsTowardsBotCap = true) {
         let botName;
         // In clan wars mode, use clan tag instead of [AI] prefix
         if (Config.clan_wars) {
@@ -535,6 +536,7 @@ class gameHandler {
         o.color.base = color;
         o.leaderboardColor = color;
         o.minimapColor = color;
+        o.countsTowardsBotCap = countsTowardsBotCap;
         o.skill.reset();
         let leveling = setInterval(() => {
             if (o.skill.level < Config.bot_start_level) {
