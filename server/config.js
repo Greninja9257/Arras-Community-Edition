@@ -243,6 +243,17 @@ module.exports = {
             player_cap: 80,
             properties: { bot_cap: 16 }
         },
+        {
+            share_client_server: false,
+            host: withPort(GAME_HOST, GAME_PORT_BASE + 19),
+            port: GAME_PORT_BASE + 19,
+            id: "matrix",
+            featured: false,
+            region: "local",
+            gamemode: ["matrix"],
+            player_cap: 80,
+            properties: { bot_cap: 16 }
+        },
     ],
 
     // Web Server
@@ -403,6 +414,8 @@ module.exports = {
     tiered_food: true,
     arena_shape: "rect",
     blackout: false,
+    blackout_fog: "#000000",
+    blackout_minimap_color: "pureBlack",
     space_physics: false,
     arms_race: false,
     clan_wars: false,
@@ -416,6 +429,8 @@ module.exports = {
     tag: false,
     teams: 4,
     spawn_confinement: {},
+    wrap_room: false,
+    hide_minimap: false,
 
     // Room setup
     room_setup: ["room_default"],

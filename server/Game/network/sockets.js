@@ -35,6 +35,7 @@ class socketManager {
                 JSON.stringify(global.gameManager.room.setup.map(x => x.map(t => { 
                     return {
                         color: t.color,
+                        name: t.name,
                         image: t.image ?? false,
                     }
                 }))),
@@ -274,6 +275,7 @@ class socketManager {
                             return {
                                 color: t.color,
                                 visibleOnBlackout: t.visibleOnBlackout,
+                                name: t.name,
                                 image: t.image ?? false,
                             }
                         }))),
@@ -281,9 +283,12 @@ class socketManager {
                         global.gameManager.roomSpeed,
                         JSON.stringify({
                             active: Config.blackout,
-                            color: Config.blackout_fog,
+                            color: Config.blackout_fog ?? Config.blackout_fog_color ?? "#000000",
                         }),
                         Config.arena_shape,
+                        Number(Boolean(Config.hide_minimap)),
+                        Number(Boolean(Config.wrap_room)),
+                        Number(Boolean(Config.matrix_vision)),
                     );
                     return;
                 }
@@ -1197,6 +1202,10 @@ class socketManager {
             body.become(player);
             player.team = body.team;
             socket.rememberedTeam = body.team;
+            if (Config.mode === "matrix") {
+                body.name = "Agent";
+                body.color.base = "black";
+            }
         } else {
             body = new Entity(loc);
             body.protect();
@@ -1209,7 +1218,7 @@ class socketManager {
                     Class.menu_addons.UPGRADES_TIER_0.push("basic")
                 }
             }
-            body.name = name;
+            body.name = Config.mode === "matrix" ? "Agent" : name;
             if (socket.permissions && socket.permissions.nameColor) {
                 body.nameColor = socket.permissions.nameColor;
                 socket.talk("z", body.nameColor);
@@ -1252,6 +1261,13 @@ class socketManager {
                         }
                     })
                 }
+            } break;
+            case 'matrix': {
+                let team = filter.length ? player.team : getRandomTeam();
+                body.team = team;
+                body.name = "Agent";
+                body.originalName = "Agent";
+                body.color.base = "black";
             } break;
             default: {
                 let team = filter.length ? player.team : getRandomTeam();

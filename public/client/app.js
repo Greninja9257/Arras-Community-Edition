@@ -503,20 +503,97 @@ import * as socketStuff from "./socketinit.js";
     };
 
     let CalcScreenSize = () => Math.max(global.vscreenSize, (16 / 9) * global.vscreenSizey) / global.player.renderv,
+        getWrappedDelta = (value, anchor, span) => {
+            if (!global.wrapRoom || !span) return value - anchor;
+            let delta = value - anchor;
+            if (delta > span / 2) delta -= span;
+            else if (delta < -span / 2) delta += span;
+            return delta;
+        },
+        getWrapOffsets = () => {
+            if (!global.wrapRoom) return [{ x: 0, y: 0 }];
+            return [
+                { x: -1, y: -1 }, { x: 0, y: -1 }, { x: 1, y: -1 },
+                { x: -1, y: 0 },  { x: 0, y: 0 },  { x: 1, y: 0 },
+                { x: -1, y: 1 },  { x: 0, y: 1 },  { x: 1, y: 1 },
+            ];
+        },
+        wrapIndex = (value, size) => {
+            value %= size;
+            if (value < 0) value += size;
+            return value;
+        },
+        isMatrixWallTile = (x, y) => {
+            if (!global.roomSetup.length) return true;
+            const row = global.roomSetup[wrapIndex(y, global.roomSetup.length)];
+            const tile = row?.[wrapIndex(x, row.length)];
+            return !tile || tile.name === "Matrix Wall Tile";
+        },
+        getMatrixVisibleTiles = () => {
+            if (!global.matrixVision || !global.roomSetup.length || !global.gameWidth || !global.gameHeight) return [];
+            const H = global.roomSetup.length;
+            const W = global.roomSetup[0].length;
+            const tileWidth = global.gameWidth / W;
+            const tileHeight = global.gameHeight / H;
+            const startX = wrapIndex(Math.floor((global.player.renderx + global.gameWidth / 2) / tileWidth), W);
+            const startY = wrapIndex(Math.floor((global.player.rendery + global.gameHeight / 2) / tileHeight), H);
+            if (isMatrixWallTile(startX, startY)) return [];
+
+            const visible = new Map();
+            const addTile = (x, y) => visible.set(`${wrapIndex(x, W)},${wrapIndex(y, H)}`, {
+                x: wrapIndex(x, W),
+                y: wrapIndex(y, H),
+            });
+            const getDegree = (x, y) => {
+                let degree = 0;
+                const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+                for (const [dx, dy] of dirs) {
+                    if (!isMatrixWallTile(x + dx, y + dy)) degree++;
+                }
+                return degree;
+            };
+
+            const queue = [{ x: startX, y: startY }];
+            const seen = new Set();
+
+            while (queue.length) {
+                const { x, y } = queue.shift();
+                const key = `${wrapIndex(x, W)},${wrapIndex(y, H)}`;
+                if (seen.has(key) || isMatrixWallTile(x, y)) continue;
+                seen.add(key);
+                addTile(x, y);
+
+                const degree = getDegree(x, y);
+                for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                    const nextX = wrapIndex(x + dx, W);
+                    const nextY = wrapIndex(y + dy, H);
+                    if (isMatrixWallTile(nextX, nextY)) continue;
+                    if (degree === 2 || (x === startX && y === startY)) {
+                        queue.push({ x: nextX, y: nextY });
+                    } else {
+                        addTile(nextX, nextY);
+                    }
+                }
+            }
+
+            return [...visible.values()];
+        },
         handleScreenDistance = (alpha, instance, fade = true) => {
             let indexes = instance.index.split("-"),
             m = global.mockups[parseInt(indexes[0])] ?? global.missingno[0];
+            const dx = getWrappedDelta(instance.render.x, global.player.loc.x, global.gameWidth);
+            const dy = getWrappedDelta(instance.render.y, global.player.loc.y, global.gameHeight);
             switch (fade) {
                 case true: 
-                    GetScreenDistance(instance.render.x - global.player.loc.x, instance.render.y - global.player.loc.y, instance.size) ||
-                    (alpha *= GetScreenDistanceF(instance.render.x - global.player.loc.x, instance.size));
-                    (alpha *= GetScreenDistanceV(instance.render.y - global.player.loc.y, instance.size));
+                    GetScreenDistance(dx, dy, instance.size) ||
+                    (alpha *= GetScreenDistanceF(dx, instance.size));
+                    (alpha *= GetScreenDistanceV(dy, instance.size));
                     break;
                 case false:
                     let size = instance.size;
                     size *= m.position.axis;
                     let realSize = size.toFixed(0);
-                    alpha *= GetScreenDistance(instance.render.x - global.player.loc.x, instance.render.y - global.player.loc.y, parseInt(realSize));
+                    alpha *= GetScreenDistance(dx, dy, parseInt(realSize));
                     break;
             }
             return alpha;
@@ -2069,39 +2146,47 @@ import * as socketStuff from "./socketinit.js";
             );
             ctx[0].clip();
         }
-        ctx[0].fillRect(roomX, roomY, roomWidth, roomHeight);
+        for (const offset of getWrapOffsets()) {
+            ctx[0].fillRect(
+                roomX + offset.x * roomWidth,
+                roomY + offset.y * roomHeight,
+                roomWidth,
+                roomHeight
+            );
+        }
         if (global.roomSetup.length) {
             let W = global.roomSetup[0].length,
                 H = global.roomSetup.length;
 
-            for (let f = 0; f < H; f++) {
-                let e = global.roomSetup[f];
-                for (let h = 0; h < W; h++) {
-                    let tile = e[h];
-                    let top = ratio * h * gameWidth / W - px + global.screenWidth / 2 - ratio * gameWidth / 2,
-                        bottom = ratio * f * gameHeight / H - py + global.screenHeight / 2 - ratio * gameHeight / 2,
-                        left = ratio * (h + 1) * gameWidth / W - px + global.screenWidth / 2 - ratio * gameWidth / 2,
-                        right = ratio * (f + 1) * gameHeight / H - py + global.screenHeight / 2 - ratio * gameHeight / 2;
-                    if (tile.image) { // if a tile is a image, then get the image and render it.
-                        ctx[0].globalAlpha = 1;
-                        if (!tile.renderImage) {
-                            tile.renderImage = new Image();
-                            tile.renderImage.src = `img/${tile.image}`;
-                            tile.renderImage.onerror = () => {
-                                console.warn(`Failed to get ${tile.image}! If you are the developer of this game, make sure that you typed the path correctly. Using unknown image.`)
-                                tile.renderImage.src = `img/missingno.png`;
-                            }
-                        };
-                        ctx[0].drawImage(tile.renderImage, top, bottom, left - top, right - bottom);
-                    }
+            for (const offset of getWrapOffsets()) {
+                for (let f = 0; f < H; f++) {
+                    let e = global.roomSetup[f];
+                    for (let h = 0; h < W; h++) {
+                        let tile = e[h];
+                        let top = ratio * h * gameWidth / W - px + global.screenWidth / 2 - ratio * gameWidth / 2 + offset.x * roomWidth,
+                            bottom = ratio * f * gameHeight / H - py + global.screenHeight / 2 - ratio * gameHeight / 2 + offset.y * roomHeight,
+                            left = ratio * (h + 1) * gameWidth / W - px + global.screenWidth / 2 - ratio * gameWidth / 2 + offset.x * roomWidth,
+                            right = ratio * (f + 1) * gameHeight / H - py + global.screenHeight / 2 - ratio * gameHeight / 2 + offset.y * roomHeight;
+                        if (tile.image) {
+                            ctx[0].globalAlpha = 1;
+                            if (!tile.renderImage) {
+                                tile.renderImage = new Image();
+                                tile.renderImage.src = `img/${tile.image}`;
+                                tile.renderImage.onerror = () => {
+                                    console.warn(`Failed to get ${tile.image}! If you are the developer of this game, make sure that you typed the path correctly. Using unknown image.`)
+                                    tile.renderImage.src = `img/missingno.png`;
+                                }
+                            };
+                            ctx[0].drawImage(tile.renderImage, top, bottom, left - top, right - bottom);
+                        }
 
-                    ctx[0].globalAlpha = 0.3;
-                    if (tile.color == 'none') tile.color = 'border';
-                    let tileColor = gameDraw.getColor(tile.color, true);
-                    // If not default tile color, draw that tile!
-                    if (tileColor !== color.white) {
-                        ctx[0].fillStyle = tileColor;
-                        ctx[0].fillRect(top, bottom, left - top, right - bottom);
+                        ctx[0].globalAlpha = 0.3;
+                        if (tile.color == 'none') tile.color = 'border';
+                        let tileColor = gameDraw.getColor(tile.color, true);
+                        if (tileColor !== color.white) {
+                            ctx[0].fillStyle = tileColor;
+                            ctx[0].fillRect(top, bottom, left - top, right - bottom);
+                        }
                     }
                 }
             }
@@ -2128,8 +2213,44 @@ import * as socketStuff from "./socketinit.js";
         }
     }
 
+    function applyMatrixVision(px, py, ratio) {
+        if (!global.matrixVision || !global.roomSetup.length) return;
+        const visibleTiles = getMatrixVisibleTiles();
+
+        ctx[1].beginPath();
+        if (visibleTiles.length) {
+            const W = global.roomSetup[0].length;
+            const H = global.roomSetup.length;
+            const roomWidth = ratio * global.gameWidth;
+            const roomHeight = ratio * global.gameHeight;
+            const tileWidth = roomWidth / W;
+            const tileHeight = roomHeight / H;
+
+            for (const offset of getWrapOffsets()) {
+                for (const tile of visibleTiles) {
+                    const x = ratio * tile.x * global.gameWidth / W - px + global.screenWidth / 2 - roomWidth / 2 + offset.x * roomWidth;
+                    const y = ratio * tile.y * global.gameHeight / H - py + global.screenHeight / 2 - roomHeight / 2 + offset.y * roomHeight;
+                    ctx[1].rect(x - 2, y - 2, tileWidth + 4, tileHeight + 4);
+                }
+            }
+        }
+
+        const playerX = global.screenWidth / 2;
+        const playerY = global.screenHeight / 2;
+        ctx[1].moveTo(playerX, playerY);
+        ctx[1].arc(playerX, playerY, 36 * ratio, 0, 2 * Math.PI);
+
+        ctx[1].globalAlpha = 1;
+        ctx[1].fillStyle = "#000000";
+        ctx[1].globalCompositeOperation = "destination-in";
+        ctx[1].fill();
+        ctx[1].globalCompositeOperation = "destination-over";
+        ctx[1].fillRect(0, 0, global.screenWidth, global.screenHeight);
+        ctx[1].globalCompositeOperation = "source-over";
+    }
+
     function drawEntities(px, py, ratio, tick) {
-        if (global.advanced.blackout.active) {
+        if (global.advanced.blackout.active || global.matrixVision) {
             document.getElementById("gameCanvas-background").style.display = "none";
             ctx[1].drawImage(ctx[0].canvas, 0, 0, global.screenWidth, global.screenHeight);
             if (global.glCanvas) ctx[1].drawImage(global.glCanvas, 0, 0, global.screenWidth, global.screenHeight);
@@ -2175,8 +2296,8 @@ import * as socketStuff from "./socketinit.js";
                 !global.died ?
                 instance.render.f = Math.atan2(global.target.y * global.reverseTank, global.target.x * global.reverseTank) : 0
 
-            let x = ratio * instance.render.x - px,
-                y = ratio * instance.render.y - py,
+            let x = ratio * getWrappedDelta(instance.render.x, px / ratio, global.gameWidth),
+                y = ratio * getWrappedDelta(instance.render.y, py / ratio, global.gameHeight),
                 baseColor = instance.color;
             if (instance.id === gui.playerid) {
                 x = !config.graphical.smoothcamera && !global.player.isScoping && config.graphical.shakeProperties.CameraShake.shakeStartTime == -1 && !global.died ? 0 : x;
@@ -2194,16 +2315,16 @@ import * as socketStuff from "./socketinit.js";
         for (let instance of global.entities) {
             let alpha = instance.id === gui.playerid ? 1 : instance.alpha;
             alpha = handleScreenDistance(alpha, instance);
-            let x = instance.id === gui.playerid ? global.player.screenx : ratio * instance.render.x - px,
-                y = instance.id === gui.playerid ? global.player.screeny : ratio * instance.render.y - py;
+            let x = instance.id === gui.playerid ? global.player.screenx : ratio * getWrappedDelta(instance.render.x, px / ratio, global.gameWidth),
+                y = instance.id === gui.playerid ? global.player.screeny : ratio * getWrappedDelta(instance.render.y, py / ratio, global.gameHeight);
             drawHealth(x, y, instance, ratio, gui.visibleEntities ? 1 : alpha, instance.size);
             drawName(x, y, instance, ratio, gui.visibleEntities ? alpha * 0.75 + 0.25 : alpha, instance.size);
         }
         for (let instance of global.entities) {
             let alpha = instance.id === gui.playerid ? 1 : instance.alpha;
             alpha = handleScreenDistance(alpha, instance);
-            let x = instance.id === gui.playerid ? global.player.screenx : ratio * instance.render.x - px,
-                y = instance.id === gui.playerid ? global.player.screeny : ratio * instance.render.y - py;
+            let x = instance.id === gui.playerid ? global.player.screenx : ratio * getWrappedDelta(instance.render.x, px / ratio, global.gameWidth),
+                y = instance.id === gui.playerid ? global.player.screeny : ratio * getWrappedDelta(instance.render.y, py / ratio, global.gameHeight);
             drawChatMessages(x, false, py, instance, ratio, gui.visibleEntities ? 1 : alpha, instance.size, px, py);
             drawChatInput(x, y, instance, ratio, instance.size);
         }
@@ -2218,19 +2339,21 @@ import * as socketStuff from "./socketinit.js";
                     G = global.roomSetup[0].length,
                     L = global.roomSetup.length
 
-                for (let S = 0; S < L; S++) for (let ea = 0; ea < G; ea++) {
-                    let Pc = x + ((ea + 0.5) / G) * kt - kt / 2,
-                        Qc = y + ((S + 0.5) / L) * ky - ky / 2,
-                        tile = global.roomSetup[S][ea];
+                for (const offset of getWrapOffsets()) {
+                    for (let S = 0; S < L; S++) for (let ea = 0; ea < G; ea++) {
+                        let Pc = x + ((ea + 0.5) / G) * kt - kt / 2 + offset.x * kt,
+                            Qc = y + ((S + 0.5) / L) * ky - ky / 2 + offset.y * ky,
+                            tile = global.roomSetup[S][ea];
 
-                    if (tile.visibleOnBlackout) {
-                        ctx[1].moveTo(Pc + ((0.5) / G) * kt, Qc);
-                        ctx[1].arc(Pc, Qc, ((0.5) / G) * kt, 0, 2 * Math.PI);
+                        if (tile.visibleOnBlackout) {
+                            ctx[1].moveTo(Pc + ((0.5) / G) * kt, Qc);
+                            ctx[1].arc(Pc, Qc, ((0.5) / G) * kt, 0, 2 * Math.PI);
+                        }
                     }
                 }
                 for (let entity of global.entities) {
-                    let x = ratio * entity.render.x - px,
-                        y = ratio * entity.render.y - py,
+                    let x = ratio * getWrappedDelta(entity.render.x, px / ratio, global.gameWidth),
+                        y = ratio * getWrappedDelta(entity.render.y, py / ratio, global.gameHeight),
                         indexes = entity.index.split("-"),
                         m = global.mockups[parseInt(indexes[0])] ?? global.missingno[0];
 
@@ -2272,6 +2395,9 @@ import * as socketStuff from "./socketinit.js";
                 ctx[1].fillStyle = blackoutColor;
                 ctx[1].fillRect(0, 0, global.screenWidth, global.screenHeight);
             }
+        }
+        if (global.matrixVision) {
+            applyMatrixVision(px, py, ratio);
         }
     }
 
@@ -2992,7 +3118,6 @@ import * as socketStuff from "./socketinit.js";
     const xc = { cc: 0, dc: 0 };
     function drawMinimapAndDebug(spacing, alcoveSize, GRAPHDATA) {
         // Draw minimap and FPS monitors
-        // Minimap stuff starts here
         let len = alcoveSize; // * global.screenWidth;
         let height = (len / global.gameWidth) * global.gameHeight;
         let upgradeColumns = Math.ceil(gui.upgrades.length / 9);
@@ -3003,112 +3128,103 @@ import * as socketStuff from "./socketinit.js";
             y += global.canSkill || global.showSkill ? statMenu.get() * alcoveSize / 2.6 + spacing / 0.75 : 0;
         }
 
-        // Calculate minimap center if needed
-        let centerX = x + len / 2;
-        let centerY = y + height / 2;
-    
-        ctx[2].globalAlpha = 0.4;
-        ctx[2].save();
-        ctx[2].fillStyle = color.white;
-        global.advanced.roundMap ? drawGuiCircle(x + len / 2, y + height / 2, len / 2) : drawGuiRect(x, y, len, height);
-        ctx[2].beginPath(); // We will not allow to draw outside of the minimap so we are only allowing minimap entities to draw INSIDE the minimap only
-        global.advanced.roundMap ? ctx[2].arc(x + len / 2, y + height / 2, len / 2, 0, 2 * Math.PI) : ctx[2].rect(x, y, len, height); // Draw everything inside the minimap
-        ctx[2].clip();
+        if (!global.hideMinimap) {
+            let centerX = x + len / 2;
+            let centerY = y + height / 2;
 
-        if (global.roomSetup.length) {
-            let W = global.roomSetup[0].length,
-                H = global.roomSetup.length,
-                i = 0;
+            ctx[2].globalAlpha = 0.4;
+            ctx[2].save();
+            ctx[2].fillStyle = color.white;
+            global.advanced.roundMap ? drawGuiCircle(x + len / 2, y + height / 2, len / 2) : drawGuiRect(x, y, len, height);
+            ctx[2].beginPath();
+            global.advanced.roundMap ? ctx[2].arc(x + len / 2, y + height / 2, len / 2, 0, 2 * Math.PI) : ctx[2].rect(x, y, len, height);
+            ctx[2].clip();
 
-            // Calculate player's position in game world
-            let playerWorldX = global.player.cx.animX;
-            let playerWorldY = global.player.cy.animY;
+            if (global.roomSetup.length) {
+                let W = global.roomSetup[0].length,
+                    H = global.roomSetup.length,
+                    i = 0;
+                let playerWorldX = global.player.cx.animX;
+                let playerWorldY = global.player.cy.animY;
 
-            for (let ycell = 0; ycell < H; ycell++) {
-                let j = 0;
-                for (let xcell = 0; xcell < W; xcell++) {
-                    let cell = global.roomSetup[ycell][xcell];
-                    // Calculate cell world position
-                    let cellWorldX = (xcell / W - 0.5) * global.gameWidth;
-                    let cellWorldY = (ycell / H - 0.5) * global.gameHeight;
-                    
-                    // Calculate relative position to player
-                    let relX = cellWorldX - playerWorldX;
-                    let relY = cellWorldY - playerWorldY;
-                    
-                    // Convert to minimap coordinates
-                    let minimapX = config.game.centeredMinimap ? centerX + (relX / global.gameWidth) * len : x + (j * len) / W;
-                    let minimapY = config.game.centeredMinimap ? centerY + (relY / global.gameHeight) * height : y + (i * height) / H;
-                    let cellWidth = len / W;
-                    let cellHeight = height / H;
-                    if (!cell) {
-                        ctx[2].fillStyle = gameDraw.getColor("border", true);
-                        drawGuiRect(minimapX, minimapY, cellWidth, cellHeight);
-                    } else {
-                        let color = cell.color;
-                        if (color == 'none') cell.color = 'pureBlack';
-                        if (cell.renderImage) {
-                            ctx[2].globalAlpha = 1;
-                            ctx[2].drawImage(cell.renderImage, minimapX, minimapY, cellWidth, cellHeight);
-                        }
-                        ctx[2].globalAlpha = 0.4;
-                        ctx[2].fillStyle = gameDraw.getColor(color);
-                        if (gameDraw.getColor(color) !== color.white) {
+                for (let ycell = 0; ycell < H; ycell++) {
+                    let j = 0;
+                    for (let xcell = 0; xcell < W; xcell++) {
+                        let cell = global.roomSetup[ycell][xcell];
+                        let cellWorldX = (xcell / W - 0.5) * global.gameWidth;
+                        let cellWorldY = (ycell / H - 0.5) * global.gameHeight;
+                        let relX = cellWorldX - playerWorldX;
+                        let relY = cellWorldY - playerWorldY;
+                        let minimapX = config.game.centeredMinimap ? centerX + (relX / global.gameWidth) * len : x + (j * len) / W;
+                        let minimapY = config.game.centeredMinimap ? centerY + (relY / global.gameHeight) * height : y + (i * height) / H;
+                        let cellWidth = len / W;
+                        let cellHeight = height / H;
+
+                        if (!cell) {
+                            ctx[2].fillStyle = gameDraw.getColor("border", true);
                             drawGuiRect(minimapX, minimapY, cellWidth, cellHeight);
+                        } else {
+                            let color = cell.color;
+                            if (color == 'none') cell.color = 'pureBlack';
+                            if (cell.renderImage) {
+                                ctx[2].globalAlpha = 1;
+                                ctx[2].drawImage(cell.renderImage, minimapX, minimapY, cellWidth, cellHeight);
+                            }
+                            ctx[2].globalAlpha = 0.4;
+                            ctx[2].fillStyle = gameDraw.getColor(color);
+                            if (gameDraw.getColor(color) !== color.white) {
+                                drawGuiRect(minimapX, minimapY, cellWidth, cellHeight);
+                            }
                         }
-                    };
-                    j++;
-                }
-                i++;
-            }
-        }
-        ctx[2].globalAlpha = 1;
-        for (let entity of minimap.get()) {
-            ctx[2].fillStyle = gameDraw.mixColors(gameDraw.modifyColor(entity.color), color.black, 0.3);
-            ctx[2].globalAlpha = entity.alpha;
-            
-            // Calculate entity position relative to player
-            let relX = entity.x - global.player.cx.animX;
-            let relY = entity.y - global.player.cy.animY;
-            
-            // Convert to minimap coordinates
-            let minimapX = config.game.centeredMinimap ? centerX + (relX / global.gameWidth) * len : x + (entity.x / global.gameWidth + 0.5) * len;
-            let minimapY = config.game.centeredMinimap ? centerY + (relY / global.gameHeight) * height : y + (entity.y / global.gameHeight + 0.5) * height;
-            
-            switch (entity.type) {
-                case 2:
-                    // Draw wall entities
-                    let trueSize = (entity.size + 2) / 1.1283791671;
-                    let sizeOnMap = (trueSize / global.gameWidth) * len;
-                    drawGuiRect(minimapX - sizeOnMap, minimapY - sizeOnMap, sizeOnMap * 2, sizeOnMap * 2);
-                    break;
-                case 1:
-                    // Draw rock/other entities
-                    let entitySize = (entity.size / global.gameWidth) * len;
-                    drawGuiCircle(minimapX, minimapY, entitySize);
-                    break;
-                case 0:
-                    // Draw other players
-                    if (entity.id !== gui.playerid) {
-                        drawGuiCircle(minimapX, minimapY, !global.mobile ? 2 : 3.5);
+                        j++;
                     }
-                    break;
+                    i++;
+                }
             }
-        }
 
-        ctx[2].globalAlpha = 1;
-        ctx[2].lineWidth = 1;
-        ctx[2].strokeStyle = color.guiblack;
-        ctx[2].fillStyle = color.guiblack;
-        // Draw yourself in the minimap
-        drawGuiCircle(config.game.centeredMinimap ? centerX : x + (global.player.cx.animX / global.gameWidth + 0.5) * len, config.game.centeredMinimap ? centerY : y + (global.player.cy.animY / global.gameHeight + 0.5) * height, !global.mobile ? 2 : 3.5, false);
-        ctx[2].restore();
-        ctx[2].globalAlpha = 1;
-        ctx[2].fillStyle = color.black;
-        // Draw border of the minimap
-        ctx[2].lineWidth = 3;
-        global.advanced.roundMap ? drawGuiCircle(x + len / 2, y + height / 2, len / 2, true) : drawGuiRect(x, y, len, height, true); // Border
-        if (global.mobile) {
+            ctx[2].globalAlpha = 1;
+            for (let entity of minimap.get()) {
+                ctx[2].fillStyle = gameDraw.mixColors(gameDraw.modifyColor(entity.color), color.black, 0.3);
+                ctx[2].globalAlpha = entity.alpha;
+
+                let relX = entity.x - global.player.cx.animX;
+                let relY = entity.y - global.player.cy.animY;
+                let minimapX = config.game.centeredMinimap ? centerX + (relX / global.gameWidth) * len : x + (entity.x / global.gameWidth + 0.5) * len;
+                let minimapY = config.game.centeredMinimap ? centerY + (relY / global.gameHeight) * height : y + (entity.y / global.gameHeight + 0.5) * height;
+
+                switch (entity.type) {
+                    case 2: {
+                        let trueSize = (entity.size + 2) / 1.1283791671;
+                        let sizeOnMap = (trueSize / global.gameWidth) * len;
+                        drawGuiRect(minimapX - sizeOnMap, minimapY - sizeOnMap, sizeOnMap * 2, sizeOnMap * 2);
+                    } break;
+                    case 1: {
+                        let entitySize = (entity.size / global.gameWidth) * len;
+                        drawGuiCircle(minimapX, minimapY, entitySize);
+                    } break;
+                    case 0:
+                        if (entity.id !== gui.playerid) {
+                            drawGuiCircle(minimapX, minimapY, !global.mobile ? 2 : 3.5);
+                        }
+                        break;
+                }
+            }
+
+            ctx[2].globalAlpha = 1;
+            ctx[2].lineWidth = 1;
+            ctx[2].strokeStyle = color.guiblack;
+            ctx[2].fillStyle = color.guiblack;
+            drawGuiCircle(config.game.centeredMinimap ? centerX : x + (global.player.cx.animX / global.gameWidth + 0.5) * len, config.game.centeredMinimap ? centerY : y + (global.player.cy.animY / global.gameHeight + 0.5) * height, !global.mobile ? 2 : 3.5, false);
+            ctx[2].restore();
+            ctx[2].globalAlpha = 1;
+            ctx[2].fillStyle = color.black;
+            ctx[2].lineWidth = 3;
+            global.advanced.roundMap ? drawGuiCircle(x + len / 2, y + height / 2, len / 2, true) : drawGuiRect(x, y, len, height, true);
+            if (global.mobile) {
+                x = global.screenWidth - spacing - len;
+                y = global.screenHeight - spacing;
+            }
+        } else {
             x = global.screenWidth - spacing - len;
             y = global.screenHeight - spacing;
         }

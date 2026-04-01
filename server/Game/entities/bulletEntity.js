@@ -137,6 +137,9 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
         if (set.COLOR != null) {
             this.color.interpret(set.COLOR);
         }
+        if (Config.mode === "matrix") {
+            this.color.base = "black";
+        }
         if (set.UPGRADE_COLOR) this.upgradeColor = new Color(set.UPGRADE_COLOR).compiled;
         if (set.GLOW != null) {
             this.glow = {
@@ -435,6 +438,20 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
             return 0;
         }
         if (!this.settings.canGoOutsideRoom) {
+            if (Config.wrap_room) {
+                const width = global.gameManager.room.width;
+                const height = global.gameManager.room.height;
+                const halfWidth = width / 2;
+                const halfHeight = height / 2;
+
+                if (this.x < -halfWidth) this.x += width;
+                else if (this.x > halfWidth) this.x -= width;
+
+                if (this.y < -halfHeight) this.y += height;
+                else if (this.y > halfHeight) this.y -= height;
+
+                return;
+            }
             if (Config.arena_shape === "circle") {
                 let centerPoint = {
                     x: global.gameManager.room.width - global.gameManager.room.width,

@@ -6,6 +6,7 @@ const { Mothership } = require("./gamemodes/mothership.js");
 const { Sandbox } = require("./gamemodes/sandbox.js");
 const { Train } = require("./gamemodes/trainwars.js");
 const { Maze } = require("./gamemodes/maze.js");
+const { Matrix } = require("./gamemodes/matrix.js");
 const { Outbreak } = require("./gamemodes/outbreak.js");
 const { ClanWars } = require("./gamemodes/clanwars.js");
 const { Harvest } = require("./gamemodes/harvest.js");
@@ -19,6 +20,7 @@ class gamemodeManager {
         this.gameMothership = new Mothership(global.gameManager);
         this.gameSandbox = new Sandbox(global.gameManager);
         this.gameMaze = new Maze(global.gameManager, null);
+        this.gameMatrix = new Matrix(global.gameManager);
         this.gameTrain = new Train();
         this.gameOutbreak = new Outbreak(global.gameManager);
         this.gameClanwars = new ClanWars(global.gameManager);
@@ -35,12 +37,14 @@ class gamemodeManager {
             if (Config.maze_type !== undefined && !Config.special_boss_spawns) this.gameMaze.generate();
             if (Config.OUTBREAK) this.gameOutbreak.start();
             if (Config.harvest) this.gameHarvest.start();
+            if (Config.mode === "matrix") this.gameMatrix.start();
         }
         if (type == "loop") {
             global.gameManager.lagLogger.set();
             if (Config.special_boss_spawns) this.gameSiege.loop();
             if (Config.mothership) this.gameMothership.loop();
             if (Config.harvest) this.gameHarvest.loop();
+            if (Config.mode === "matrix") this.gameMatrix.loop();
             global.gameManager.lagLogger.mark();
             if (global.gameManager.lagLogger.totalTime > 100) {
                 console.log("Gamemode loop is taking a long time!");
@@ -63,6 +67,7 @@ class gamemodeManager {
         if (Config.mothership) this.gameMothership.reset();
         if (Config.clan_wars) this.gameClanwars.reset();
         if (Config.harvest) this.gameHarvest.reset();
+        if (Config.mode === "matrix") this.gameMatrix.reset();
     }
 
     redefine(theshit) {

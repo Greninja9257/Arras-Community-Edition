@@ -508,7 +508,7 @@ class gameHandler {
             // Register clan and get player info
             Config.clan_wars_ft.add(botName);
         } else {
-            botName = Config.bot_name_prefix + ran.chooseBotName();
+            botName = Config.mode === "matrix" ? "Agent" : Config.bot_name_prefix + ran.chooseBotName();
         }
         let o = new Entity(loc);
         o.define(Config.spawn_class);
@@ -530,6 +530,8 @@ class gameHandler {
             color = getTeamColor(TEAM_RED);
             // Add bot to clan party
             Config.clan_wars_ft.add(botName, o);
+        } else if (Config.mode === "matrix") {
+            color = "black";
         } else {
             color = Config.random_body_colors ? Math.floor(Math.random() * 20) : team ? getTeamColor(team) : getTeamColor(TEAM_RED);
         }

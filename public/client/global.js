@@ -168,6 +168,9 @@ const global = {
     syncingWithTank: false,
     respawnTimeout: false,
     showDebug: false,
+    hideMinimap: false,
+    wrapRoom: false,
+    matrixVision: false,
     died: false,
     kicked: false,
     continuity: false,
@@ -397,6 +400,9 @@ const global = {
         global.gameUpdate = false;
         global.died = false;
         global.disconnected = false;
+        global.hideMinimap = false;
+        global.wrapRoom = false;
+        global.matrixVision = false;
         global.entities = [];
         global.roomSetup = [];
         global.messages = [];
@@ -428,6 +434,9 @@ const global = {
         global.died = false;
         global.disconnected = false;
         global.gameConnecting = true;
+        global.hideMinimap = false;
+        global.wrapRoom = false;
+        global.matrixVision = false;
         global.message = "";
         global.entities = [];
         global.roomSetup = [];

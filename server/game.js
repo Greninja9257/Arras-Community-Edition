@@ -18,6 +18,7 @@ const getName = (name, gamemodeData) => {
         opentdm: `Open ${gamemodeData.teams}TDM`,
         clanwars: "Clan Wars",
         trainwars: "Train Wars",
+        matrix: "The Matrix",
         old_dreadnoughts: `Old Dreadnoughts ${gamemodeData.teams}TDM`,
         nexus: "Nexus",
         blackout: "Blackout",

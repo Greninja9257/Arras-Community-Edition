@@ -200,6 +200,9 @@ class Entity extends EventEmitter {
         if (set.COLOR != null) {
             this.color.interpret(set.COLOR);
         }
+        if (Config.mode === "matrix") {
+            this.color.base = "black";
+        }
         if (set.UPGRADE_COLOR) this.upgradeColor = new Color(set.UPGRADE_COLOR).compiled;
         if (set.GLOW != null) {
             this.glow = {
@@ -770,7 +773,7 @@ class Entity extends EventEmitter {
             color: this.color.compiled,
             borderless: this.borderless,
             drawFill: this.drawFill,
-            name: (this.nameColor || "#ffffff") + this.name,
+            name: (this.nameColor || "#ffffff") + ((Config.mode === "matrix" && (this.isPlayer || this.isBot)) ? "Agent" : this.name),
             score: this.settings.scoreLabel || this.skill.score,
             guns: Array.from(this.guns).map(gun => gun[1].getPhotoInfo()),
             turrets: turretsAndProps.map(turret => turret[1].camera()),
@@ -954,6 +957,20 @@ class Entity extends EventEmitter {
             return 0;
         }
         if (!this.settings.canGoOutsideRoom) {
+            if (Config.wrap_room) {
+                const width = global.gameManager.room.width;
+                const height = global.gameManager.room.height;
+                const halfWidth = width / 2;
+                const halfHeight = height / 2;
+
+                if (this.x < -halfWidth) this.x += width;
+                else if (this.x > halfWidth) this.x -= width;
+
+                if (this.y < -halfHeight) this.y += height;
+                else if (this.y > halfHeight) this.y -= height;
+
+                return;
+            }
             if (Config.arena_shape === "circle") {
                 let centerPoint = {
                     x: global.gameManager.room.width - global.gameManager.room.width,

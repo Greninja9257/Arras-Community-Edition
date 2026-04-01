@@ -164,6 +164,7 @@ let initializeFilter = () => {
         if (!isMinigame && (
             s.gameMode.includes("FFA") ||
             s.gameMode.includes("Maze") ||
+            s.gameMode.includes("Matrix") ||
             s.gameMode.includes("Manhunt") ||
             s.gameMode.includes("Growth") ||
             s.gameMode.includes("Space") ||

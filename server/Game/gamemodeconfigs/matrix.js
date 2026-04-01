@@ -1,0 +1,18 @@
+module.exports = {
+    server_name: "The Matrix",
+    mode: "matrix",
+    room_setup: ["room_matrix"],
+    map_tile_width: 160,
+    map_tile_height: 160,
+    blackout: false,
+    wrap_room: true,
+    hide_minimap: true,
+    matrix_vision: true,
+    matrix_agent_cap: 6,
+    matrix_agent_interval: 30,
+    matrix_agent_level: 45,
+    matrix_agent_materialize_time: 1600,
+    matrix_agent_spawn_min_distance: 700,
+    matrix_agent_spawn_max_distance: 1400,
+    matrix_agent_classes: ["basic", "twin", "machineGun", "sniper", "pounder"],
+};

@@ -844,6 +844,9 @@ let incoming = async function(message, socket) {
                 global.advanced.blackout.active = blackoutData.active;
                 global.advanced.blackout.color = blackoutData.color;
                 global.advanced.roundMap = m[6] == "circle" ? true : false;
+                global.hideMinimap = Boolean(m[7]);
+                global.wrapRoom = Boolean(m[8]);
+                global.matrixVision = Boolean(m[9]);
                 // Start syncing
                 socket.talk('S', getNow());
             } break;
