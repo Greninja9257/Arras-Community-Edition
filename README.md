@@ -136,7 +136,7 @@ Run with live file sync:
 
 ```bash
 docker run -d --name arras \
-  -p 3000-3017:3000-3017 \
+  -p 3000-3020:3000-3020 \
   -v "$(pwd):/usr/src/app" \
   arras-ce
 ```
@@ -169,7 +169,7 @@ Then open the forwarded `3000` port in Codespaces.
 Important:
 
 - Codespaces is suitable for development and temporary testing
-- This project uses many ports (`3000` to `3017`)
+- This project uses many ports (`3000` to `3020`)
 - Codespaces assigns separate public URLs per forwarded port
 - Because of that, Codespaces is not the best production host for this repo's current networking model
 

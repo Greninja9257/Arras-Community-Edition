@@ -5,7 +5,7 @@
 This repo can run inside GitHub Codespaces for development, but there is an important limitation:
 
 - The web client runs on port `3000`
-- The game servers run on ports `3001` through `3017`
+- The game servers run on ports `3001` through `3020`
 - Codespaces gives each forwarded port its own public URL
 - This game client expects a stable host/port pairing for each game server
 
@@ -22,7 +22,7 @@ The repo includes `.devcontainer/devcontainer.json`, so Codespaces should:
 
 - build from the repo Dockerfile
 - install npm dependencies
-- forward ports `3000` to `3017`
+- forward ports `3000` to `3020`
 
 ### 2. Start the server
 
@@ -42,7 +42,7 @@ In the Codespaces `Ports` tab:
 2. Right click it
 3. Set `Port Visibility` to `Public`
 
-If you want to test game worker ports directly, you can also expose `3001` to `3017`, but that still does not make Codespaces a good public production host.
+If you want to test game worker ports directly, you can also expose `3001` to `3020`, but that still does not make Codespaces a good public production host.
 
 ## Practical online hosting
 
@@ -87,7 +87,7 @@ Open:
 - `80`
 - `443`
 - `3000`
-- `3001-3017`
+- `3001-3020`
 
 If you use `ufw`:
 
@@ -95,7 +95,7 @@ If you use `ufw`:
 sudo ufw allow 80
 sudo ufw allow 443
 sudo ufw allow 3000
-sudo ufw allow 3001:3017/tcp
+sudo ufw allow 3001:3020/tcp
 sudo ufw enable
 ```
 
@@ -129,7 +129,7 @@ export GAME_PORT_BASE=3001
 docker build -t arras-ce .
 docker run -d --restart unless-stopped --name arras \
   -p 3000:3000 \
-  -p 3001-3017:3001-3017 \
+  -p 3001-3020:3001-3020 \
   -e PUBLIC_HOST=arras.example.com \
   -e GAME_HOST=arras.example.com \
   -e PORT=3000 \
@@ -149,10 +149,10 @@ arras.example.com {
 }
 ```
 
-Then run your game ports on `3001-3017` directly on the VPS.
+Then run your game ports on `3001-3020` directly on the VPS.
 
 ## Important limitation
 
-If you want the whole game to run behind only `443` without exposing `3001-3017`, this repo needs extra proxying or code changes so websocket traffic for each mode is multiplexed through one public endpoint.
+If you want the whole game to run behind only `443` without exposing `3001-3020`, this repo needs extra proxying or code changes so websocket traffic for each mode is multiplexed through one public endpoint.
 
 That is not how the current client/server setup works today.
