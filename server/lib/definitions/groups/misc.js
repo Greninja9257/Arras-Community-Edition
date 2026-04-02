@@ -1124,7 +1124,7 @@ Class.rcs = {
 // BOTS
 Class.bot = {
     FACING_TYPE: ["smoothToTarget", { smoothness: 8 }],
-    CONTROLLERS: ["nearestDifferentMaster", "mapAltToFire", "minion", "fleeAtLowHealth", ["mapFireToAlt", { onlyIfHasAltFireGun: true }], ["wanderAroundMap", { immitatePlayerMovement: true, lookAtGoal: true }]],
+    CONTROLLERS: ["nearestDifferentMaster", "mapAltToFire", "minion", "fleeAtLowHealth", ["mapFireToAlt", { onlyIfHasAltFireGun: true }], ["wanderAroundMap", { immitatePlayerMovement: true, lookAtGoal: true }], "neuralBot"],
     AI: { IGNORE_SHAPES: true, AWARENESS: 0.6, SCAN_INTERVAL: 10, AVOID_SWARM: true },
 };
 

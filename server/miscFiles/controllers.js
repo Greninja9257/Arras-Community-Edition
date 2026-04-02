@@ -1477,6 +1477,208 @@ class io_scaleWithMaster extends IO {
     }
 }
 
+class io_neuralBot extends IO {
+    /**
+     * Neural-network-driven bot using steady-state neuroevolution.
+     *
+     * Each instance owns a unique NeuralNetwork.  When the bot dies its
+     * fitness (score gained + survival time) is submitted to the global
+     * NeuroevolutionManager (neuroManager).  Newly spawned bots inherit
+     * weights from the hall-of-fame with Gaussian mutation, so the
+     * population gradually improves across many bot lifetimes.
+     *
+     * Observation → action mapping:
+     *   inputs  : health, shield, velocity, facing, position, nearby enemies,
+     *             nearest food, nearest incoming projectile, enemy count, low-hp flag
+     *   outputs : aim direction (x,y), move direction (x,y), fire (>0 → fire)
+     *
+     * opts:
+     *   aimScale  {number} – pixels for the aim   vector (default 300)
+     *   moveScale {number} – pixels for the move  vector (default 250)
+     */
+    constructor(body, opts = {}) {
+        super(body);
+        this.network    = neuroManager.getNetwork();
+        this.birthScore = body.skill?.score ?? 0;
+        this.birthTime  = performance.now();
+        this.recorded   = false;
+        this.aimScale   = opts.aimScale  ?? 300;
+        this.moveScale  = opts.moveScale ?? 250;
+        // Pre-allocated observation buffer — avoids GC churn each tick
+        this._obs = new Array(INPUT_SIZE).fill(0);
+    }
+
+    // ── Observation builder ───────────────────────────────────────────────────
+
+    _buildObservation() {
+        const b   = this._body();
+        if (!b) return this._obs;
+        const obs = this._obs;
+
+        const normDist = Math.max(b.fov || 640, 200);
+        const maxSpeed = Math.max(b.topSpeed || 1, 1);
+
+        // [0-1] Health / shield
+        obs[0] = b.health.amount / Math.max(1, b.health.max);
+        obs[1] = (b.shield?.amount && b.shield?.max) ? b.shield.amount / b.shield.max : 0;
+
+        // [2-3] Velocity (normalised)
+        obs[2] = b.velocity.x / maxSpeed;
+        obs[3] = b.velocity.y / maxSpeed;
+
+        // [4-5] Facing direction
+        obs[4] = Math.cos(b.facing);
+        obs[5] = Math.sin(b.facing);
+
+        // [6-7] Position (centre-relative, normalised)
+        const room = global.gameManager?.room;
+        const halfW = room?.width  ? room.width  / 2 : 5600;
+        const halfH = room?.height ? room.height / 2 : 5600;
+        const cx    = room?.center ? room.center.x : 0;
+        const cy    = room?.center ? room.center.y : 0;
+        obs[6] = (b.x - cx) / halfW;
+        obs[7] = (b.y - cy) / halfH;
+
+        // ── Nearby entity scan ────────────────────────────────────────────────
+        const myTeam   = b.master?.master?.team;
+        const scanSq   = (normDist * 1.6) ** 2;
+        const bx = b.x, by = b.y;
+        const bvx = b.velocity.x, bvy = b.velocity.y;
+
+        const enemies = [];
+        const foods   = [];
+        const bullets = [];
+
+        for (const e of entities.values()) {
+            if (e === b || !e.master) continue;
+            const dx = e.x - bx;
+            const dy = e.y - by;
+            const distSq = dx * dx + dy * dy;
+            if (distSq > scanSq) continue;
+
+            if (e.isFood) {
+                foods.push({ dx, dy, distSq });
+                continue;
+            }
+
+            const theirTeam = e.master?.master?.team;
+            const isHostile = theirTeam !== myTeam;
+
+            if (isHostile && (e.isPlayer || e.isBot)) {
+                enemies.push({ e, dx, dy, distSq });
+            } else if (isHostile && (e.type === 'bullet' || e.type === 'drone' || e.type === 'trap')) {
+                // Only track projectiles that are moving toward us
+                const dvx = (e.velocity?.x || 0) - bvx;
+                const dvy = (e.velocity?.y || 0) - bvy;
+                if (-(dvx * dx + dvy * dy) > 0) {
+                    bullets.push({ dx, dy, distSq });
+                }
+            }
+        }
+
+        enemies.sort((a, c) => a.distSq - c.distSq);
+        foods.sort((a, c)   => a.distSq - c.distSq);
+        bullets.sort((a, c) => a.distSq - c.distSq);
+
+        // [8-13] Nearest enemy
+        if (enemies.length > 0) {
+            const en = enemies[0];
+            obs[8]  = en.dx / normDist;
+            obs[9]  = en.dy / normDist;
+            obs[10] = en.e.health?.max ? en.e.health.amount / en.e.health.max : 1;
+            obs[11] = Math.min((en.e.dangerValue || 1) / 5, 1);
+            obs[12] = (en.e.velocity?.x || 0) / maxSpeed;
+            obs[13] = (en.e.velocity?.y || 0) / maxSpeed;
+        } else {
+            obs[8] = obs[9] = obs[10] = obs[11] = obs[12] = obs[13] = 0;
+        }
+
+        // [14-19] 2nd nearest enemy
+        if (enemies.length > 1) {
+            const en = enemies[1];
+            obs[14] = en.dx / normDist;
+            obs[15] = en.dy / normDist;
+            obs[16] = en.e.health?.max ? en.e.health.amount / en.e.health.max : 1;
+            obs[17] = Math.min((en.e.dangerValue || 1) / 5, 1);
+            obs[18] = (en.e.velocity?.x || 0) / maxSpeed;
+            obs[19] = (en.e.velocity?.y || 0) / maxSpeed;
+        } else {
+            obs[14] = obs[15] = obs[16] = obs[17] = obs[18] = obs[19] = 0;
+        }
+
+        // [20-21] Nearest food
+        if (foods.length > 0) {
+            obs[20] = foods[0].dx / normDist;
+            obs[21] = foods[0].dy / normDist;
+        } else {
+            obs[20] = obs[21] = 0;
+        }
+
+        // [22-23] Nearest incoming projectile
+        if (bullets.length > 0) {
+            obs[22] = bullets[0].dx / normDist;
+            obs[23] = bullets[0].dy / normDist;
+        } else {
+            obs[22] = obs[23] = 0;
+        }
+
+        // [24] Normalised enemy count
+        obs[24] = Math.min(enemies.length / 5, 1);
+
+        // [25] Low-health flag
+        obs[25] = obs[0] < 0.4 ? 1 : 0;
+
+        return obs;
+    }
+
+    // ── Controller interface ─────────────────────────────────────────────────
+
+    think(input) {
+        // Detect death and record fitness once
+        if (!this.recorded && this.body.health.amount <= 0) {
+            this._recordFitness();
+        }
+
+        const obs = this._buildObservation();
+        const out = this.network.forward(obs);
+
+        // out[0-1]: aim direction components (tanh → −1…+1)
+        // out[2-3]: move direction components
+        // out[4]:   fire when positive
+        const fire = out[4] > 0;
+
+        // The NN controls movement (goal) and fire timing.
+        // Aiming (target) is intentionally left to nearestDifferentMaster so the
+        // precise bullet-lead calculation is always used — the NN learns the richer
+        // strategic problem of positioning, approach, retreat, and when to shoot.
+        return {
+            goal: {
+                x: this.body.x + out[2] * this.moveScale,
+                y: this.body.y + out[3] * this.moveScale,
+            },
+            fire,
+            main: fire,
+        };
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /** Safe accessor so we don't crash if the body was already cleaned up. */
+    _body() {
+        return this.body ?? null;
+    }
+
+    _recordFitness() {
+        if (this.recorded) return;
+        this.recorded = true;
+        const scoreGained = (this.body.skill?.score ?? 0) - this.birthScore;
+        const aliveSeconds = (performance.now() - this.birthTime) / 1000;
+        // Reward kills/growth strongly; small survival bonus to avoid idle bots
+        const fitness = scoreGained + aliveSeconds * 0.02;
+        neuroManager.recordResult(this.network, fitness);
+    }
+}
+
 let ioTypes = {
     //misc
     zoom: io_zoom,
@@ -1516,6 +1718,7 @@ let ioTypes = {
     wanderAroundMap: io_wanderAroundMap,
     wallAvoidGoal: io_wallAvoidGoal,
     ecosystem: io_ecosystem,
+    neuralBot: io_neuralBot,
 };
 
 module.exports = { ioTypes, IO };

@@ -8,6 +8,7 @@ const requires = [
     "../Game/debug/logs.js", // Logs.
     "../Game/entities/subFunctions.js", // This helps keeping the entities work.
     // Controllers
+    "../miscFiles/neuralBot.js",   // Neural network + neuroevolution engine (loaded before controllers).
     "../miscFiles/controllers.js", // The AI of the game.
     // Entities
     "../Game/entities/vector.js", // Define a vector. Required By Entity.js.
