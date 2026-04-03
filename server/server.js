@@ -4,7 +4,7 @@ console.log("Importing modules...\n");
 
 const path = require("path");
 const fs = require("fs");
-
+const url = require("url");
 const { Worker } = require("worker_threads");
 
 // Increase the stack trace limit for better debugging
@@ -160,10 +160,15 @@ server = require("http").createServer((req, res) => {
         case selectedHeader: {
             // For all other routes, serve static files from the public directory
             ok = false;
-            let fileToGet = path.join(publicRoot, req.url);
+            const parsedUrl = url.parse(req.url);
+            const requestPath = parsedUrl.pathname || "/";
+            let fileToGet = path.resolve(publicRoot, "." + requestPath);
 
-            // If the requested file doesn't exist or isn't a file, default to the INDEX_HTML file
-            if (!fs.existsSync(fileToGet) || !fs.lstatSync(fileToGet).isFile()) {
+            // Ensure the resolved path is within the public root to prevent directory traversal
+            if (!fileToGet.startsWith(publicRoot)) {
+                fileToGet = path.join(publicRoot, `${selectedHeader}/index.html`);
+            } else if (!fs.existsSync(fileToGet) || !fs.lstatSync(fileToGet).isFile()) {
+                // If the requested file doesn't exist or isn't a file, default to the INDEX_HTML file
                 fileToGet = path.join(publicRoot, `${selectedHeader}/index.html`);
             }
 
@@ -176,10 +181,15 @@ server = require("http").createServer((req, res) => {
         default: {
             // For all other routes, serve static files from the public directory
             ok = false;
-            let fileToGet = path.join(publicRoot, req.url);
+            const parsedUrl = url.parse(req.url);
+            const requestPath = parsedUrl.pathname || "/";
+            let fileToGet = path.resolve(publicRoot, "." + requestPath);
 
-            // If the requested file doesn't exist or isn't a file, default to the main_menu file
-            if (!fs.existsSync(fileToGet) || !fs.lstatSync(fileToGet).isFile()) {
+            // Ensure the resolved path is within the public root to prevent directory traversal
+            if (!fileToGet.startsWith(publicRoot)) {
+                fileToGet = path.join(publicRoot, Config.main_menu);
+            } else if (!fs.existsSync(fileToGet) || !fs.lstatSync(fileToGet).isFile()) {
+                // If the requested file doesn't exist or isn't a file, default to the main_menu file
                 fileToGet = path.join(publicRoot, Config.main_menu);
             }
 
