@@ -1307,10 +1307,8 @@ import * as socketStuff from "./socketinit.js";
 
     // The skill bar dividers
     let skas = [];
-    const skillScaleCap = 9;
-    const skillScaleAtCap = (skillScaleCap - 2) * 0.01 + Math.log(4 * (skillScaleCap / 9) + 1) / 1.513;
     for (let i = 1; i <= 256; i++) { //if you want to have more skill levels than 255, then update this
-        skas.push((i / skillScaleCap) * skillScaleAtCap);
+        skas.push((i - 2) * 0.01 + Math.log(4 * (i / 9) + 1) / 1.513);
     }
     const ska = (x) => skas[x];
     var getClassUpgradeKey = function (number) {
