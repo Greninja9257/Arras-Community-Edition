@@ -1503,7 +1503,9 @@ class socketManager {
             let mockup = mockupData.find(o => o.index === `${index}`);
             if (!mockup) { // If not, then make one.
                 let e = this.generateMockup(index);
+                if (!e) continue;
                 mockup = mockupData.find(o => o.index === `${e.index}`);
+                if (!mockup) continue;
             }
             // Send the mockup to the client.
             socket.talk("M", index, JSON.stringify(mockup));

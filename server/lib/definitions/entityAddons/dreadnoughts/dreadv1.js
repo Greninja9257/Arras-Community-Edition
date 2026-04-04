@@ -1,6 +1,6 @@
-const { combineStats, makeAuto, weaponArray, makeTurret } = require('../facilitators.js');
-const { smshskl, base, basePolygonDamage, basePolygonHealth } = require('../constants.js');
-const g = require('../gunvals.js');
+const {combineStats, makeAuto, weaponArray, makeTurret} = require('../../facilitators.js');
+const {smshskl, base, basePolygonDamage, basePolygonHealth} = require('../../constants.js');
+const g = require('../../gunvals.js');
 const dreadnoughtBody = {
     SPEED: base.SPEED * 0.6,
     HEALTH: base.HEALTH * 4,
@@ -52,129 +52,51 @@ g.dreadv1Trap = {
 	size: 1.25,
 }
 
-// Comment out the line below to enable this addon, uncomment it to disable this addon.
-// return console.log('--- Dreadnoughts v1 addon [dreadv1.js] is disabled. See lines 32-33 to enable it. ---');
+// Set the below variable to true to enable the Medicare/Medicaid healing bodies.
+const enable_medicare_branch = true
 
-// Set the below variable to true to enable the Medicare and Medicaid healing bodies.
-const enableHealers = true;
-
-// Food
-Class.hexagonOfficialV1 = {
-	PARENT: 'food',
-	COLOR: 'magenta',
-	LABEL: "Hexagon",
-	BODY: {
-        DAMAGE: 2 * basePolygonDamage,
-        DENSITY: 80,
-        HEALTH: 600 * basePolygonHealth,
-        RESIST: Math.pow(1.25, 3),
-        PENETRATION: 1.1,
-        SHIELD: 40 * basePolygonHealth,
-        ACCELERATION: 0.0025
-    },
-	VALUE: 21000,
-	SHAPE: 6,
-	SIZE: 70,
-	DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-}
-Class.heptagonOfficialV1 = {
-	PARENT: 'food',
-	COLOR: 'green',
-	LABEL: "Heptagon",
-	BODY: {
-        DAMAGE: 2 * basePolygonDamage,
-        DENSITY: 80,
-        HEALTH: 750 * basePolygonHealth,
-        RESIST: Math.pow(1.25, 3),
-        PENETRATION: 1.1,
-        SHIELD: 50 * basePolygonHealth,
-        ACCELERATION: 0.0025
-    },
-	VALUE: 28000,
-	SHAPE: 7,
-	SIZE: 80,
-	DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-}
-Class.octagonOfficialV1 = {
-	PARENT: 'food',
-	COLOR: 'hexagon',
-	LABEL: "Octagon",
-	BODY: {
-        DAMAGE: 2 * basePolygonDamage,
-        DENSITY: 80,
-        HEALTH: 900 * basePolygonHealth,
-        RESIST: Math.pow(1.25, 3),
-        PENETRATION: 1.1,
-        SHIELD: 60 * basePolygonHealth,
-        ACCELERATION: 0.0025
-    },
-	VALUE: 35000,
-	SHAPE: 8,
-	SIZE: 90,
-	DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-}
-Class.nonagonOfficialV1 = {
-	PARENT: 'food',
-	COLOR: 'white',
-	LABEL: "Nonagon",
-	BODY: {
-        DAMAGE: 2 * basePolygonDamage,
-        DENSITY: 80,
-        HEALTH: 1050 * basePolygonHealth,
-        RESIST: Math.pow(1.25, 3),
-        PENETRATION: 1.1,
-        SHIELD: 70 * basePolygonHealth,
-        ACCELERATION: 0.0025
-    },
-	VALUE: 42000,
-	SHAPE: 9,
-	SIZE: 100,
-	DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-}
+// Set the below variable to true to make Dreadnoughts use the Rogues color instead of the Hexagon color.
+const old_dreadnought_color = true
 
 // Map elements
 function portalRings(color = '#1c3766') {
 	return [
 		{
 			POSITION: [22, 0, 0, 0, 1],
-			TYPE: ['portalRing1OfficialV1', {COLOR: color}]
+			TYPE: ['portalRing1_dreadsV1', {COLOR: color}]
 		}, {
 			POSITION: [20.5, 0, 0, -45, 1],
-			TYPE: ['portalRing2OfficialV1', {COLOR: color}]
+			TYPE: ['portalRing2_dreadsV1', {COLOR: color}]
 		}, {
 			POSITION: [20.5, 0, 0, 135, 1],
-			TYPE: ['portalRing3OfficialV1', {COLOR: color}]
+			TYPE: ['portalRing3_dreadsV1', {COLOR: color}]
 		}, {
 			POSITION: [21.2, 0, 0, 0, 1],
-			TYPE: ['portalRing4OfficialV1', {COLOR: color}]
+			TYPE: ['portalRing4_dreadsV1', {COLOR: color}]
 		}
 	]
 }
-Class.portalRing1OfficialV1 = {
+Class.portalRing1_dreadsV1 = {
 	SHAPE: "M -1 0 A 1 1 90 0 0 1 0 L 0.7 0 A 0.7 0.7 90 0 1 -0.7 0 Z M -1 0 A 1 1 90 0 1 1 0 L 0.7 0 A 0.7 0.7 90 0 0 -0.7 0 Z",
 	COLOR: "#1c3766",
 	BORDERLESS: true,
 }
-Class.portalRing2OfficialV1 = {
+Class.portalRing2_dreadsV1 = {
 	SHAPE: "M -0.707 0.707 A 1 1 0 0 1 -0.707 -0.707 A 1 1.225 0 0 0 -0.707 0.707 Z",
 	COLOR: {BASE: "#1c3766", BRIGHTNESS_SHIFT: 16, SATURATION_SHIFT: 0.7},
 	BORDERLESS: true,
 }
-Class.portalRing3OfficialV1 = {
+Class.portalRing3_dreadsV1 = {
 	SHAPE: "M -0.5 0.866 A 1 1 0 0 1 -0.5 -0.866 A 1 1.1 0 0 0 -0.5 0.866 Z",
 	COLOR: {BASE: "#1c3766", BRIGHTNESS_SHIFT: -6, SATURATION_SHIFT: 1.1},
 	BORDERLESS: true,
 }
-Class.portalRing4OfficialV1 = {
+Class.portalRing4_dreadsV1 = {
 	SHAPE: "M -0.92 0 A 0.92 0.92 90 0 0 0.92 0 L 0.84 0 A 0.84 0.84 90 0 1 -0.84 0 Z M -0.92 0 A 0.92 0.92 90 0 1 0.92 0 L 0.84 0 A 0.84 0.84 90 0 0 -0.84 0 Z",
 	COLOR: {BASE: "#1c3766", BRIGHTNESS_SHIFT: 7, SATURATION_SHIFT: 0.9},
 	BORDERLESS: true,
 }
-Class.portalOfficialV1 = {
+Class.portal_dreadsV1 = {
 	LABEL: "",
 	TYPE: 'portal',
 	BODY: {
@@ -197,7 +119,7 @@ Class.portalOfficialV1 = {
 	DIE_AT_RANGE: true,
 	INTANGIBLE: true
 }
-Class.spikyPortalSpikesOfficialV1 = {
+Class.spikyPortalSpikes_dreadsV1 = {
 	SHAPE: "",
 	INDEPENDENT: true,
 	FACING_TYPE: ["spin", {speed: 0.07}],
@@ -206,21 +128,21 @@ Class.spikyPortalSpikesOfficialV1 = {
 		PROPERTIES: {COLOR: 'egg'}
 	}, 5),
 }
-Class.spikyPortalBumpsOfficialV1 = {
+Class.spikyPortalBumps_dreadsV1 = {
 	SHAPE: "M 1 0 L 0.666 0.216 L 0.566 0.41 L 0.41 0.566 L 0.309 0.951 L 0 0.7 L -0.215 0.665 L -0.412 0.565 L -0.809 0.588 L -0.666 0.217 L -0.699 0.001 L -0.664 -0.217 L -0.809 -0.588 L -0.412 -0.566 L -0.217 -0.664 L 0.001 -0.699 L 0.309 -0.951 L 0.411 -0.567 L 0.565 -0.412 L 0.665 -0.215 Z",
 	COLOR: 'egg',
 	INDEPENDENT: true,
 	FACING_TYPE: ["spin", {speed: 0.12}],
 }
-Class.spikyPortalOfficialV1 = {
-	PARENT: 'portalOfficialV1',
+Class.spikyPortal_dreadsV1 = {
+	PARENT: 'portal_dreadsV1',
 	TURRETS: [
 		{
 			POSITION: [26, 0, 0, 0, 0, 0],
-			TYPE: "spikyPortalSpikesOfficialV1"
+			TYPE: "spikyPortalSpikes_dreadsV1"
 		}, {
 			POSITION: [35, 0, 0, 0, 0, 0],
-			TYPE: "spikyPortalBumpsOfficialV1"
+			TYPE: "spikyPortalBumps_dreadsV1"
 		}
 	],
 	PROPS: [
@@ -231,8 +153,8 @@ Class.spikyPortalOfficialV1 = {
 		...portalRings('#1c1c1c')
 	]
 }
-Class.bluePortalOfficialV1 = {
-	PARENT: 'portalOfficialV1',
+Class.bluePortal_dreadsV1 = {
+	PARENT: 'portal_dreadsV1',
 	PROPS: [
 		{
 			POSITION: [20, 0, 0, 0, 1],
@@ -241,8 +163,8 @@ Class.bluePortalOfficialV1 = {
 		...portalRings()
 	]
 }
-Class.greenPortalOfficialV1 = {
-	PARENT: 'portalOfficialV1',
+Class.greenPortal_dreadsV1 = {
+	PARENT: 'portal_dreadsV1',
 	PROPS: [
 		{
 			POSITION: [20, 0, 0, 0, 1],
@@ -257,11 +179,12 @@ Class.genericDreadnought1 = {
 	PARENT: "genericTank",
 	BODY: dreadnoughtBody,
 	SHAPE: 6,
-	COLOR: 'hexagon',
+	COLOR: "hexagon",
 	SIZE: 22.5,
 	SKILL_CAP: Array(10).fill(smshskl+3),
-	REROOT_UPGRADE_TREE: "dreadOfficialV1",
+	REROOT_UPGRADE_TREE: "dreadnought_dreadsV1",
 }
+if (old_dreadnought_color) { Class.genericDreadnought1.COLOR = "darkGrey" }
 // Turret damage modifiers:
 // Automation secondary: 1x
 // Automation main: 1.6x
@@ -296,7 +219,7 @@ Class.medicareTurret = {
 	], 3),
 	TURRETS: [{
 		POSITION: [13, 0, 0, 0, 360, 1],
-		TYPE: "healerSymbol",
+		TYPE: "healerHat",
 	}]
 }
 Class.medicaidTurret = {
@@ -319,22 +242,22 @@ Class.medicaidTurret = {
 	], 5),
 	TURRETS: [{
 		POSITION: [13, 0, 0, 0, 360, 1],
-		TYPE: "healerSymbol",
+		TYPE: "healerHat",
 	}]
 }
 Class.turretedTrap = makeAuto("trap", "Auto-Trap", {size: 7.5, type: 'droneAutoTurret'});
 Class.turretedTrap.BODY.RECOIL_MULTIPLIER = 0;
 
 // T0
-Class.dreadOfficialV1 = {
+Class.dreadnought_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Dreadnought",
-	UPGRADE_LABEL: "Dreads V1",
+	//UPGRADE_LABEL: "Dreads V1",
 	EXTRA_SKILL: 18,
 }
 
 // T1
-Class.swordOfficialV1 = {
+Class.sword_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Sword",
 	UPGRADE_TOOLTIP: "Snipers",
@@ -347,7 +270,7 @@ Class.swordOfficialV1 = {
 	}, 3)
 }
 
-Class.pacifierOfficialV1 = {
+Class.pacifier_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Pacifier",
 	UPGRADE_TOOLTIP: "Bullet Spam",
@@ -360,7 +283,7 @@ Class.pacifierOfficialV1 = {
 	}, 3)
 }
 
-Class.invaderOfficialV1 = {
+Class.invader_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Invader",
 	UPGRADE_TOOLTIP: "Drones",
@@ -378,10 +301,10 @@ Class.invaderOfficialV1 = {
 	}, 3)
 }
 
-Class.centaurOfficialV1 = {
+Class.centaur_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Centaur",
-	UPGRADE_TOOLTIP: "Traps",
+	UPGRADE_TOOLTIP: "Thrown Traps",
 	GUNS: weaponArray([
 		{
 			POSITION: [13, 7, 1, 0, 0, 0, 0],
@@ -396,7 +319,7 @@ Class.centaurOfficialV1 = {
 	], 3)
 }
 
-Class.automationOfficialV1 = {
+Class.automation_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Automation",
 	UPGRADE_TOOLTIP: "Auto Turrets",
@@ -412,7 +335,7 @@ Class.automationOfficialV1 = {
 	]
 }
 
-Class.juggernautOfficialV1 = {
+Class.juggernaut_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Juggernaut",
 	UPGRADE_TOOLTIP: "Health Buff",
@@ -424,10 +347,10 @@ Class.juggernautOfficialV1 = {
 	},
 	TURRETS: [{
 		POSITION: [22, 0, 0, 0, 0, 0],
-		TYPE: 'hexagon'
+		TYPE: ['hexagon', { COLOR: "black", MIRROR_MASTER_ANGLE: true }]
 	}]
 }
-Class.medicareOfficialV1 = {
+Class.medicare_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Medicare",
 	UPGRADE_TOOLTIP: "Healing",
@@ -438,7 +361,7 @@ Class.medicareOfficialV1 = {
 }
 
 // T2
-Class.sabreOfficialV1 = {
+Class.sabre_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Sabre",
 	UPGRADE_TOOLTIP: "Assassins",
@@ -454,7 +377,7 @@ Class.sabreOfficialV1 = {
 		}
 	], 3)
 }
-Class.gladiusOfficialV1 = {
+Class.gladius_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Gladius",
 	UPGRADE_TOOLTIP: "Rifles",
@@ -471,7 +394,7 @@ Class.gladiusOfficialV1 = {
 	], 3)
 }
 
-Class.appeaserOfficialV1 = {
+Class.appeaser_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Appeaser",
 	UPGRADE_TOOLTIP: "Machine Guns",
@@ -491,7 +414,7 @@ Class.appeaserOfficialV1 = {
 		}
 	], 3)
 }
-Class.peacekeeperOfficialV1 = {
+Class.peacekeeper_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Peacekeeper",
 	UPGRADE_TOOLTIP: "Heavy Bullets",
@@ -503,7 +426,7 @@ Class.peacekeeperOfficialV1 = {
 		}
 	}, 3)
 }
-Class.diplomatOfficialV1 = {
+Class.diplomat_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Diplomat",
 	UPGRADE_TOOLTIP: "Triplets",
@@ -530,7 +453,7 @@ Class.diplomatOfficialV1 = {
 	], 3)
 }
 
-Class.inquisitorOfficialV1 = {
+Class.inquisitor_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Inquisitor",
 	UPGRADE_TOOLTIP: "Drones",
@@ -547,7 +470,7 @@ Class.inquisitorOfficialV1 = {
 		}
 	}, 3)
 }
-Class.assailantOfficialV1 = {
+Class.assailant_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Assailant",
 	UPGRADE_TOOLTIP: "Minions",
@@ -557,7 +480,7 @@ Class.assailantOfficialV1 = {
 		}, {
 			POSITION: [1.5, 10, 1, 14.25, 0, 0, 0],
 			PROPERTIES: {
-				SHOOT_SETTINGS: combineStats([g.factory, g.overseer, g.dreadv1Drone, {damage: 0.45}]),
+				SHOOT_SETTINGS: combineStats([g.minion, g.overseer, g.dreadv1Drone, {damage: 0.45}]),
 				TYPE: ["minion", {GUN_STAT_SCALE: {reload: 1.5, health: 0.75, speed: 0.8, maxSpeed: 0.8}}],
 				STAT_CALCULATOR: "drone",
 				AUTOFIRE: true,
@@ -570,7 +493,7 @@ Class.assailantOfficialV1 = {
 		}
 	], 3)
 }
-Class.infiltratorOfficialV1 = {
+Class.infiltrator_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Infiltrator",
 	UPGRADE_TOOLTIP: "Swarms",
@@ -600,10 +523,10 @@ Class.infiltratorOfficialV1 = {
 	], 3)
 }
 
-Class.cerberusOfficialV1 = {
+Class.cerberus_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Cerberus",
-	UPGRADE_TOOLTIP: "Trap Spam",
+	UPGRADE_TOOLTIP: "Thrown Trap Spam",
 	GUNS: weaponArray([
 		{
 			POSITION: [13.25, 2.25, 1, 0, 4, 0, 0]
@@ -635,10 +558,10 @@ Class.cerberusOfficialV1 = {
 		}
 	], 3)
 }
-Class.minotaurOfficialV1 = {
+Class.minotaur_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Minotaur",
-	UPGRADE_TOOLTIP: "Blocks",
+	UPGRADE_TOOLTIP: '"Set" Traps',
 	GUNS: weaponArray([
 		{
 			POSITION: [13, 9.5, 1, 0, 0, 0, 0],
@@ -652,10 +575,10 @@ Class.minotaurOfficialV1 = {
 		}
 	], 3)
 }
-Class.sirenOfficialV1 = {
+Class.siren_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Siren",
-	UPGRADE_TOOLTIP: "Auto-Traps",
+	UPGRADE_TOOLTIP: "Auto-Thrown Traps",
 	GUNS: weaponArray([
 		{
 			POSITION: [6, 7, -1.5, 7, 0, 0, 0],
@@ -671,7 +594,7 @@ Class.sirenOfficialV1 = {
 	], 3)
 }
 
-Class.mechanismOfficialV1 = {
+Class.mechanism_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Mechanism",
 	UPGRADE_TOOLTIP: "Auto Turrets",
@@ -687,7 +610,7 @@ Class.mechanismOfficialV1 = {
 	]
 }
 
-Class.behemothOfficialV1 = {
+Class.behemoth_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Behemoth",
 	UPGRADE_TOOLTIP: "Health Buff",
@@ -699,10 +622,10 @@ Class.behemothOfficialV1 = {
 	},
 	TURRETS: [{
 		POSITION: [23.5, 0, 0, 0, 0, 0],
-		TYPE: 'hexagon'
+		TYPE: ['hexagon', { COLOR: "black", MIRROR_MASTER_ANGLE: true }]
 	}]
 }
-Class.medicaidOfficialV1 = {
+Class.medicaid_dreadsV1 = {
 	PARENT: "genericDreadnought1",
 	LABEL: "Medicaid",
 	UPGRADE_TOOLTIP: "Healing",
@@ -720,18 +643,17 @@ if (Config.tier_cap < 10) {
 	tier2 = 0;
 }
 
-Class.menu_addons.UPGRADES_TIER_0.push("dreadOfficialV1");
-	Class.dreadOfficialV1[`UPGRADES_TIER_${tier1}`] = ["swordOfficialV1", "pacifierOfficialV1", "invaderOfficialV1", "centaurOfficialV1"];
-		Class.swordOfficialV1.UPGRADES_TIER_M1 = ["sabreOfficialV1", "gladiusOfficialV1"];
-		Class.pacifierOfficialV1.UPGRADES_TIER_M1 = ["appeaserOfficialV1", "peacekeeperOfficialV1", "diplomatOfficialV1"];
-		Class.invaderOfficialV1.UPGRADES_TIER_M1 = ["inquisitorOfficialV1", "assailantOfficialV1", "infiltratorOfficialV1"];
-		Class.centaurOfficialV1.UPGRADES_TIER_M1 = ["cerberusOfficialV1", "minotaurOfficialV1", "sirenOfficialV1"];
-		Class.automationOfficialV1.UPGRADES_TIER_M1 = ["mechanismOfficialV1"];
-		Class.juggernautOfficialV1.UPGRADES_TIER_M1 = ["behemothOfficialV1"];
-		Class.medicareOfficialV1.UPGRADES_TIER_M1 = ["medicaidOfficialV1"];
+Class.dreadnought_dreadsV1[`UPGRADES_TIER_${tier1}`] = ["sword", "pacifier", "invader", "centaur"].map(x => x + "_dreadsV1")
+	Class.sword_dreadsV1.UPGRADES_TIER_M1 = ["sabre", "gladius"].map(x => x + "_dreadsV1")
+	Class.pacifier_dreadsV1.UPGRADES_TIER_M1 = ["appeaser", "peacekeeper", "diplomat"].map(x => x + "_dreadsV1")
+	Class.invader_dreadsV1.UPGRADES_TIER_M1 = ["inquisitor", "assailant", "infiltrator"].map(x => x + "_dreadsV1")
+	Class.centaur_dreadsV1.UPGRADES_TIER_M1 = ["cerberus", "minotaur", "siren"].map(x => x + "_dreadsV1")
+	Class.automation_dreadsV1.UPGRADES_TIER_M1 = ["mechanism"].map(x => x + "_dreadsV1")
+	Class.juggernaut_dreadsV1.UPGRADES_TIER_M1 = ["behemoth"].map(x => x + "_dreadsV1")
+	Class.medicare_dreadsV1.UPGRADES_TIER_M1 = ["medicaid"].map(x => x + "_dreadsV1")
 
-const t1Bodies = [ "swordOfficialV1", "pacifierOfficialV1", "invaderOfficialV1", "centaurOfficialV1", "medicareOfficialV1", "automationOfficialV1", "juggernautOfficialV1" ];
-if (!enableHealers) {
+const t1Bodies = ["sword", "pacifier", "invader", "centaur", "medicare", "automation", "juggernaut"].map(x => x + "_dreadsV1")
+if (!enable_medicare_branch) {
 	t1Bodies.splice(4, 1); // Remove Medicare if healers are disabled
 }
 
@@ -746,10 +668,10 @@ function mergeDreads(dread1, dread2, sourceDread, tier) {
 		TURRETS = [],
 		LABEL = `${dread1.LABEL}-${dread2.LABEL}`,
 		BODY = JSON.parse(JSON.stringify(dreadnoughtBody)),
-		UPGRADE_TOOLTIP = `${dread1.UPGRADE_TOOLTIP ?? ""}+${dread2.UPGRADE_TOOLTIP ?? ""}`;
+		UPGRADE_TOOLTIP = `${dread1.UPGRADE_TOOLTIP ?? ""} + ${dread2.UPGRADE_TOOLTIP ?? ""}`;
 
 	// Label it
-	if (dread1.LABEL == dread2.LABEL) LABEL = dread1.LABEL;
+	if (dread1.LABEL == dread2.LABEL) LABEL = dread1.LABEL + " II";
 	if (dread1.UPGRADE_TOOLTIP == dread2.UPGRADE_TOOLTIP) UPGRADE_TOOLTIP = dread1.UPGRADE_TOOLTIP;
 
 	// Guns
@@ -801,7 +723,7 @@ function mergeDreads(dread1, dread2, sourceDread, tier) {
 }
 
 // Initiate dread merge
-for (let branch1 of Class.dreadOfficialV1[`UPGRADES_TIER_${tier1}`]) {
+for (let branch1 of Class.dreadnought_dreadsV1[`UPGRADES_TIER_${tier1}`]) {
 	for (let branch2 of t1Bodies) {
 		mergeDreads(branch1, branch2, branch1, 1);
 	}

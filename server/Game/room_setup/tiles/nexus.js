@@ -1,6 +1,6 @@
-tileClass.nexus_red = new Tile({
-    COLOR: "red",
-    NAME: "Nexus 90 level tile",
+tileClass.nexus = new Tile({
+    COLOR: "white",
+    NAME: "Level 90 tile",
     TICK: (tile) => {
         for (let i = 0; i < tile.entities.length; i++) {
             let entity = tile.entities[i];
@@ -28,20 +28,4 @@ tileClass.nexus_portal_tile = new Tile({
         if (!room.portalTiles) room.portalTiles = [];
         room.portalTiles.push(tile);
     }
-})
-tileClass.nexus_bas1 = new Tile({
-    COLOR: "blue",
-    NAME: "Nexus blue tile",
-})
-tileClass.nexus_bas2 = new Tile({
-    COLOR: "green",
-    NAME: "Nexus green tile",
-})
-tileClass.nexus_bas3 = new Tile({
-    COLOR: "red",
-    NAME: "Nexus red tile",
-})
-tileClass.nexus_bas4 = new Tile({
-    COLOR: "purple",
-    NAME: "Nexus purple tile",
 })

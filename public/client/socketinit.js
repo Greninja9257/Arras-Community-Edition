@@ -21,18 +21,18 @@ startSettings = {
 gui = {
     getStatNames: data => {
         return [
-                data?.body_damage ?? 'Body Damage',
-                data?.max_health ?? 'Max Health',
-                data?.bullet_speed ?? 'Bullet Speed',
-                data?.bullet_health ?? 'Bullet Health',
-                data?.bullet_pen ?? 'Bullet Penetration',
-                data?.bullet_damage ?? 'Bullet Damage',
-                data?.reload ?? 'Reload',
-                data?.move_speed ?? 'Movement Speed',
-                data?.shield_regen ?? 'Shield Regeneration',
-                data?.shield_cap ?? 'Shield Capacity',
-            ]
-        },
+            data?.body_damage ?? 'Body Damage',
+            data?.max_health ?? 'Max Health',
+            data?.bullet_speed ?? 'Bullet Speed',
+            data?.bullet_health ?? 'Bullet Health',
+            data?.bullet_pen ?? 'Bullet Penetration',
+            data?.bullet_damage ?? 'Bullet Damage',
+            data?.reload ?? 'Reload',
+            data?.move_speed ?? 'Movement Speed',
+            data?.shield_regen ?? 'Shield Regeneration',
+            data?.shield_cap ?? 'Shield Capacity',
+        ]
+    },
     skills: [
         { amount: 0, color: 'purple', cap: 1, softcap: 1 },
         { amount: 0, color: 'pink'  , cap: 1, softcap: 1 },
@@ -242,6 +242,7 @@ const Entry = class {
 
         return {
             id: this.id,
+            color: this.color,
             image: util.requestEntityImage(this.index, this.color),
             position: ref.position,
             barColor: this.bar,
@@ -640,6 +641,12 @@ const convert = {
             if (e.render.status.getFade() !== 0 && util.isInView(e.render.x - global.player.renderx, e.render.y - global.player.rendery, e.size, true)) {
                 output.push(e);
             } else {
+                if (global.chats[e.id]) {
+                    for (let o of global.chats[e.id]) {
+                        util.remove(global.chats[e.id], global.chats[e.id].indexOf(o)); // Remove it properly
+                    };
+                    delete global.chats[e.id]; // Now we can delete it entirely
+                };
                 if (e.render.textobjs != null) {
                     for (let o of e.render.textobjs) {
                         o.remove();
@@ -685,11 +692,9 @@ const convert = {
             gui.playerid = get.next();
         }
         if (indices.score) {
-            let scoreRaw = get.next();
-            let score = Array.isArray(scoreRaw) ? scoreRaw : JSON.parse(scoreRaw);
-            let scoreValue = Number(score[0]) || 0;
-            gui.__s.setScore(scoreValue);
-            gui.__s.setKills(Number(score[1]) || 0, Number(score[2]) || 0, Number(score[3]) || 0);
+            let score = JSON.parse(get.next());
+            gui.__s.setScore(score[0]);
+            gui.__s.setKills(score[1], score[2], score[3]);
         }
         if (indices.points) {
             gui.points = get.next();
@@ -738,8 +743,11 @@ const convert = {
         }
         if (indices.dailyTank) {
             let dailyTank = JSON.parse(get.next());
-            gui.dailyTank.tank = dailyTank[0];
-            gui.dailyTank.ads = dailyTank[1];
+            if (!dailyTank[0]) gui.dailyTank = {tank: null, ads: false};
+            else {
+                gui.dailyTank.tank = dailyTank[0];
+                gui.dailyTank.ads = dailyTank[1];
+            }
         }
     },
     broadcast: () => {
@@ -828,7 +836,7 @@ let incoming = async function(message, socket) {
 
             case 'w': { // welcome to the game
                 if (m[0]) { // Ask to get the room data first
-                    socket.talk('s', "", 1, 0, false, window.AccountManager?.token ?? "");
+                    socket.talk('s', "", 1, 0, false, 0);
                 }
             }; break;
             case 'R': { // room setup
@@ -857,7 +865,7 @@ let incoming = async function(message, socket) {
                 global.player.roomAnim.y.add(m[1]);
                 global.roomSetup = JSON.parse(m[2]);
             } break;
-            case "bansussy": {
+            case "temporaryban": {
                 global.message = "You have been temporarily banned from the game. You will be able to rejoin after a server restart.";
             } break;
             case "permanentban": {
@@ -924,7 +932,7 @@ let incoming = async function(message, socket) {
                     util.pullTotalPlayers();
                     global.gameUpdate = true;
                     // Now we can ask for spawn.
-                    socket.talk('s', global.playerName, 0, 1 * config.game.autoLevelUp, global.bodyID ? global.bodyID : false, window.AccountManager?.token ?? "");
+                    socket.talk('s', global.playerName, 0, 1 * config.game.autoLevelUp, global.bodyID ? global.bodyID : false, 1 * config.game.incognitoMode);
                     global.bodyID = undefined;
                 }
             } break;
@@ -1232,31 +1240,31 @@ let incoming = async function(message, socket) {
             delete config.graphical.smoothcamera2;
         } break;
         case 'CHAT_MESSAGE_ENTITY': {
-            get.set(m);
             if (!global.chats) global.chats = {};
-            for (let i = get.next(); i; i--) {
-                const id = get.next();
-                const count = get.next();
-                if (!global.chats[id]) global.chats[id] = [];
-                const existing = global.chats[id];
-                const newMessages = [];
-                for (let j = 0; j < count; j++) {
-                    const text = get.next();
-                    const expires = parseFloat(get.next());
-                    const alreadyExists = existing.some(msg => msg.text === text && msg.expires === expires);
+            for (let data of JSON.parse(m[0])) {
+                if (!global.chats[data.id]) global.chats[data.id] = [];
+                for (let e of data.messages) {
+                    const alreadyExists = global.chats[data.id].find(msg => msg.id === e.id);
                     if (!alreadyExists) {
-                        newMessages.push({
-                            text,
-                            expires,
-                            createdAt: Date.now(),
-                            fadedIn: false
-                        });
+                        let alpha = util.AdvancedSmoothBar(0, 0.3, 1.5);
+                        global.chats[data.id].push({
+                            text: e.text,
+                            id: e.id,
+                            alpha: alpha
+                        })
+                        alpha.set(1);
                     }
                 }
-                global.chats[id].push(...newMessages);
+                for (let i = 0; i < global.chats[data.id].length; i++) {
+                    let e = global.chats[data.id][i];
+                    const existing = data.messages.find(o => o.id === e.id);
+                    if (!existing && !e.erased) {
+                        e.erased = true;
+                        e.alpha.set(0);
+                    };
+                }
             }
         } break;
-        // case 'TR': (trailer feature disabled) break;
     };
 }
 const socketInit = () => {

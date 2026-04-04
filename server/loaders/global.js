@@ -11,6 +11,7 @@ global.mazeGenerator = require("../miscFiles/mazeGenerator.js");
 global.grid = new HashGrid(7);
 global.cannotRespawn = false;
 global.mockupData = [];
+global.mockupMap = {};
 global.entities = new Map();
 global.targetableEntities = new Map();
 global.unspawnableTeam = [];
@@ -22,6 +23,7 @@ global.travellingPlayers = [];
 global.fps = "Unknown";
 
 global.loadedAddons = [];
+global.addonAuthorInfos = [];
 global.TEAM_BLUE = -1;
 global.TEAM_GREEN = -2;
 global.TEAM_RED = -3;
@@ -39,35 +41,50 @@ global.getSpawnableArea = (team, gameManager) => {
     return ran.choose((team in room.spawnable && room.spawnable[team].length) ? room.spawnable[team] : room.spawnableDefault).randomInside();
 
 }
-global.teamNames = ["BLUE", "GREEN", "RED", "PURPLE", "YELLOW", "ORANGE", "BROWN", "CYAN"],
-global.teamColors = [10, 11, 12, 15, 25, 26, 27, 28];
-global.getTeamName = team => ["BLUE", "GREEN", "RED", "PURPLE", "YELLOW", "ORANGE", "BROWN", "CYAN", , "DREADNOUGHTS"][-team - 1] ?? "An unknown team";
+global.teamNames = [
+    "BLUE",
+    "GREEN",
+    "RED",
+    "PURPLE",
+    "YELLOW",
+    "ORANGE",
+    "BROWN",
+    "CYAN"
+]
+global.teamColors = [
+    "blue",
+    "green",
+    "red",
+    "magenta",
+    "mustard",
+    "tangerine",
+    "brown",
+    "cyan"
+]
+global.getTeamName = team => [...global.teamNames, , "DREADNOUGHT"][-team - 1] ?? "NEUTRAL";
 global.getTeamColor = (team, fixMode = false) => {
-    let color = ([10, 11, 12, 15, 25, 26, 27, 28, , 4][-team - 1] ?? 3);
+    let color = ([...global.teamColors, , "aqua"][-team - 1] ?? 3);
     if (fixMode) color = color + " 0 1 0 false";
     return color;
 }
-global.isPlayerTeam = team => /*team < 0 && */team > -11;
+global.isPlayerTeam = team => team < 0 || team > -11;
 global.getWeakestTeam = () => {
-    let teamcounts = {};
+    let teamCounts = {};
     for (let i = -Config.teams; i < 0; i++) {
         if (global.defeatedTeams.includes(i)) continue;
-        teamcounts[i] = 0;
+        teamCounts[i] = 0;
     }
-    for (let o of global.entities) {
-        if ((o.isBot || o.isPlayer) && o.team in teamcounts && o.team < 0 && isPlayerTeam(o.team)) {
-            if (!(o.team in teamcounts)) {
-                teamcounts[o.team] = 0;
-            }
-            teamcounts[o.team]++;
+    for (let o of global.entities.values()) {
+        if ((o.isBot || o.isPlayer) && o.team in teamCounts && o.team < 0 && isPlayerTeam(o.team)) {
+            teamCounts[o.team]++;
         }
     }
-    teamcounts = Object.entries(teamcounts).map(([teamId, amount]) => {
+    teamCounts = Object.entries(teamCounts).map(([teamId, amount]) => {
         let weight = teamId in Config.team_weights ? Config.team_weights[teamId] : 1;
         return [teamId, amount / weight];
     });
-    let lowestTeamCount = Math.min(...teamcounts.map(x => x[1])),
-        entries = teamcounts.filter(a => a[1] == lowestTeamCount);
+    let lowestTeamCount = Math.min(...teamCounts.map(x => x[1])),
+        entries = teamCounts.filter(a => a[1] == lowestTeamCount);
     return parseInt(!entries.length ? -Math.ceil(Math.random() * Config.teams) : ran.choose(entries)[0]);
 };
 global.getWeakestCombinedTeam = () => {
@@ -102,8 +119,10 @@ global.getWeakestCombinedTeam = () => {
 global.getRandomTeam = () => -Math.floor(Math.random() * 3000) + 1;
 
 global.Class = {};
+global.classMap = new Map();
 global.tileClass = {};
 global.definitionsWaiter = false;
+global._missingDefinitionFallbacks = new Set();
 
 global.ensureIsClass = str => {
     if ("object" == typeof str) {
@@ -112,8 +131,22 @@ global.ensureIsClass = str => {
     if (str in Class) {
         return Class[str];
     };
-
-    throw Error(`Definition ${str} is attempted to be gotten but does not exist!`);
+    if (!global._missingDefinitionFallbacks.has(str)) {
+        global._missingDefinitionFallbacks.add(str);
+        console.warn(`[WARNING]: Missing definition "${str}". Using a safe placeholder definition.`);
+    }
+    Class[str] = {
+        PARENT: "genericEntity",
+        LABEL: `[Missing] ${str}`,
+        COLOR: "grey",
+        SHAPE: 0,
+        SIZE: 1,
+        DANGER: 0,
+        IGNORED_BY_AI: true,
+        ACCEPTS_SCORE: false,
+        CAN_BE_ON_LEADERBOARD: false,
+    };
+    return Class[str];
 }
 
 global.ensureIsManager = str => {

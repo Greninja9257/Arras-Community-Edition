@@ -22,6 +22,7 @@ function getMockup(e, positionInfo) {
         realSize: util.rounder(e.realSize),
         mirrorMasterAngle: e.settings.mirrorMasterAngle,
         layer: e.layer,
+        displayScore: e.displayScore,
         statnames: e.settings.skillNames,
         sendAllMockups: e.sendAllMockups,
         position: positionInfo,
@@ -65,14 +66,12 @@ function getMockup(e, positionInfo) {
             out.direction = util.rounder(p.bound.direction);
             out.layer = util.rounder(p.bound.layer);
             out.angle = util.rounder(p.bound.angle);
-            out.setAngle = p.setAngle;
+            out.forceAngle = p.forceAngle;
             out.isProp = true;
             return out;
         })
     };
 }
-
-let endPoints;
 
 // Minimum enclosing circle via Welzl's algorithm
 function welzlMEC(P, R) {
@@ -149,7 +148,7 @@ function sizeEntity(entity, x = 0, y = 0, angle = 0, scale = 1) {
         let angleOffset = (entity.shape % 1) * 2 * Math.PI;
         let numSides = Math.floor(entity.shape);
         for (let i = 0; i < numSides; i++) {
-            let theta = 2 * Math.PI / numSides * i + angleOffset + angle;
+            let theta = 2 * Math.PI / numSides * i + angleOffset;
             endPoints.push([x + Math.cos(theta) * scale * lazyRealSizes[numSides], y + Math.sin(theta) * scale * lazyRealSizes[numSides]]);
         }
     }
@@ -200,13 +199,14 @@ function buildMockup(className, Manager) {
             position: getDimensions(mockup),
         };
         // Add the new data to the thing.
+        mockupMap[mockup.index] = mockupData.length;
         mockupData.push(getMockup(mockup, type.mockup.position));
-        mockup.clear();
     } catch (error) {
-        util.error('[WARNING] An error has occured during mockup loading:');
+        util.error('[WARNING]: An error has occured during mockup loading:');
         util.error('When attempting to generate mockup "' + className + '":');
         for (let i in Class[className]) util.error("\t" + i + ": " + Class[className][i]);
-        throw error;
+        util.error(error);
+        return null;
     }
 }
 

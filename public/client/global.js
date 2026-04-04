@@ -2,7 +2,7 @@ import { util } from "./util.js";
 
 const missingno = {
     index: -1,
-    name: "missingno",
+    name: "MissingNo.",
     x: 0,
     y: 0,
     color: "mirror 0 1 0 true",
@@ -22,15 +22,26 @@ const missingno = {
     realSize: 12,
     facing: 0,
     position: {
-        axis: 2.0000006188980963,
+        axis: 2,
         middle: {
-            x: 3.094490002740532e-7,
-            y: -3.0944900009099996e-7
+            x: 0,
+            y: 0
         }
     },
-    statnames: { body_damage: "???", max_health: "???", max_health: "???", bullet_speed: "???", bullet_health: "???", bullet_pen: "???", bullet_damage: "???", reload: "???", move_speed: "???", shield_regen: "???", shield_cap: "???" },
+    statnames: {
+        body_damage: "???",
+        max_health: "???",
+        bullet_speed: "???",
+        bullet_health: "???",
+        bullet_pen: "???",
+        bullet_damage: "???",
+        reload: "???",
+        move_speed: "???",
+        shield_regen: "???",
+        shield_cap: "???"
+    },
     rerootUpgradeTree: "basic", // todo: find a way to make this automatically change to Config.spawn_class without bricking everything
-    className: "missingno",
+    className: "MissingNo.",
     upgrades: [],
     guns: [],
     turrets: [],
@@ -117,7 +128,7 @@ const global = {
     KEY_REVERSE_MOUSE: 66,// B
     KEY_SPIN_LOCK: 88,// X
 
-    KEY_LEVEL_UP: 78,
+    KEY_LEVEL_UP: 78, // N
     KEY_TOKEN: 80,// P
     KEY_CLASS_TREE: 84,// T
     KEY_MAX_STAT: 77,// M
@@ -168,9 +179,6 @@ const global = {
     syncingWithTank: false,
     respawnTimeout: false,
     showDebug: false,
-    hideMinimap: false,
-    wrapRoom: false,
-    matrixVision: false,
     died: false,
     kicked: false,
     continuity: false,
@@ -216,7 +224,6 @@ const global = {
             HoverBoxes: Region(100),
         }
     },
-    optionsMenu_Anim: {isOpened: false}, // Placeholder
     dailyTankAd: {
         render: undefined,
         closeable: false,
@@ -262,6 +269,7 @@ const global = {
             color: "#000000"
         },
     },
+    matrixVision: false,
     bandwidth: {
         currentHa: 0,
         currentFa: 0,
@@ -275,12 +283,15 @@ const global = {
         showJoysticks: false,
     },
     GUIStatus: {
-        renderGUI: true,
-        renderLeaderboard: true,
-        renderhealth: true,
-        renderPlayerNames: true,
-        renderPlayerScores: true,
-        renderPlayerKillbar: true,
+        renderGUI: false,
+        renderLeaderboard: false,
+        renderUpgrades: false,
+        renderMinimap: false,
+        renderhealth: false,
+        renderPlayerNames: false,
+        renderPlayerScores: false,
+        renderPlayerBars: false,
+        renderPlayerKillbar: false,
         minimapReducedInfo: false,
         fullHDMode: false,
     },
@@ -314,11 +325,24 @@ const global = {
     screenSize: Math.min(1920, Math.max(window.innerWidth, 1280)),
     vscreenSize: 1920,
     vscreenSizey: 1080,
+    timezoneLocation: new Date().getTimezoneOffset() / -60,
     ratio: window.devicePixelRatio,
     mockupLoading: { then: cb => cb() },
     treeScale: 1,
     chats: {},
     initPlayer: () => {
+        global.optionsMenu_Anim = {
+            switchMenu_button: util.Smoothbar(0, 2, 3, 0.08, 0.025, true),
+            optionsButtonProgress: util.Smoothbar(0, 2, 0.1, 0.08, 0.025, true),
+            mainMenu: util.Smoothbar(-500, 2, 3, 0.08, 0.025, true),
+            mainMenuHeight: util.Smoothbar(730, 2, 3, 0.08, 0.025, true),
+            isOpened: false,
+            tabClickables: Region(10),  // Pre-initialize for up to 10 tabs
+            themeClickables: Region(100),
+            activeTab: 0, // 0=Options, 1=Theme, 2=Keybinds, 3=Secret
+            tabs: [["Options", 730], ["Theme", 610], ["Keybinds", 730]],
+            tabSlideAnim: util.Smoothbar(0, 0.3, 1.5, 0.03, 0.025, true),
+        };
         let list = {
             // Set up the player
             id: -1,
@@ -390,19 +414,12 @@ const global = {
         document.getElementById("gameAreaWrapper").style.display = "none";
         global.socket && global.socket.close();
         document.getElementById("startMenuWrapper").style.display = "block";
-        const accountCorner = document.getElementById("accountCorner");
-        if (accountCorner) {
-            accountCorner.style.display = "block";
-        }
         global.player = global.initPlayer();
         global.gameLoading = false;
         global.gameStart = false;
         global.gameUpdate = false;
         global.died = false;
         global.disconnected = false;
-        global.hideMinimap = false;
-        global.wrapRoom = false;
-        global.matrixVision = false;
         global.entities = [];
         global.roomSetup = [];
         global.messages = [];
@@ -434,9 +451,6 @@ const global = {
         global.died = false;
         global.disconnected = false;
         global.gameConnecting = true;
-        global.hideMinimap = false;
-        global.wrapRoom = false;
-        global.matrixVision = false;
         global.message = "";
         global.entities = [];
         global.roomSetup = [];

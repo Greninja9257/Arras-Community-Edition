@@ -46,7 +46,11 @@ global.loadServerSelector = (serverData, text) => {
             td2.classList.add("tdCenter");
             td2.textContent = `${server.gameMode}`;
             const td3 = document.createElement("td");
-            td3.textContent = `${server.players}/${server.maxPlayers}`;
+            if (server.maxPlayers < 1) {
+                td3.textContent = `${server.players}`;
+            } else {
+                td3.textContent = `${server.players}/${server.maxPlayers}`;
+            }
             tr.appendChild(td1);
             tr.appendChild(td2);
             tr.appendChild(td3);
@@ -60,12 +64,8 @@ global.loadServerSelector = (serverData, text) => {
                 global.locationHash = location.hash;
                 localStorage.setItem("lastServer", server.id);
                 tr.classList.add("selected"), (global.serverAdd = server.ip);
-                if (!global.serverAdd || ["localhost", "127.0.0.1", "::1"].includes(global.serverAdd)) {
-                    global.serverAdd = location.hostname;
-                }
-                if (server.port && !global.serverAdd.includes(":")) {
-                    global.serverAdd = global.serverAdd + ":" + server.port;
-                }
+                if (server.ip == "localhost")
+                  global.serverAdd = global.serverAdd + ":" + server.port;
             };
             serversDocs.appendChild(tr);
             serverMap[server.id] = tr;
@@ -113,6 +113,7 @@ let initializeFilter = () => {
             america: [],
             europe: [],
             asia: [],
+            oceania: [],
             other: [],
         },
         gamemodeFilters: {
@@ -135,11 +136,22 @@ let initializeFilter = () => {
     tbody.appendChild(noServerMatches);
 
     for (let s of servers) {
-        global.filters.gamemodeFilters.all.push(s);
+        // Regions
         global.filters.regions.all.push(s);
-        if (s.region == "US West" || s.region == "US Central" || s.region == "US East") global.filters.regions.america.push(s);
-        if (s.region == "Europe") global.filters.regions.europe.push(s);
-        if (s.region == "Asia" || s.region == "Oceania") global.filters.regions.asia.push(s);
+
+        // USA
+        if (s.region.toLowerCase() == "usa" || s.region.toLowerCase() == "us west" || s.region.toLowerCase() == "us central" || s.region.toLowerCase() == "us east") global.filters.regions.america.push(s);
+
+        // Europe
+        if (s.region.toLowerCase() == "europe") global.filters.regions.europe.push(s);
+
+        // Asia
+        if (s.region.toLowerCase() == "asia") global.filters.regions.asia.push(s);
+
+        // Oceania
+        if (s.region.toLowerCase() == "oceania") global.filters.regions.oceania.push(s);
+
+        // Other
         if (
             !global.filters.regions.america.includes(s) &&
             !global.filters.regions.europe.includes(s) &&
@@ -147,40 +159,31 @@ let initializeFilter = () => {
         ) {
             global.filters.regions.other.push(s);
         }
-        const isMinigame =
-            s.gameMode.includes("Assault") ||
-            s.gameMode.includes("Siege") ||
-            s.gameMode.includes("Domination") ||
-            s.gameMode.includes("Mothership") ||
-            s.gameMode.includes("Nexus") ||
-            s.gameMode.includes("Harvest") ||
-            s.gameMode.includes("Celestials") ||
-            s.gameMode.includes("Outbreak") ||
-            s.gameMode.includes("Tag") ||
-            s.gameMode.includes("Arms Race") ||
-            s.gameMode.includes("Train Wars") ||
-            s.gameMode.includes("Boss");
-        // FFA: no teams, no special mechanic
-        if (!isMinigame && (
-            s.gameMode.includes("FFA") ||
-            s.gameMode.includes("Maze") ||
-            s.gameMode.includes("Matrix") ||
-            s.gameMode.includes("Manhunt") ||
-            s.gameMode.includes("Growth") ||
-            s.gameMode.includes("Space") ||
-            s.gameMode.includes("Classic") ||
-            s.gameMode.includes("Blackout")
-        )) global.filters.gamemodeFilters.ffa.push(s);
-        // Squads: small team modes
-        if (!isMinigame && s.gameMode.includes("Clan Wars")
-        ) global.filters.gamemodeFilters.squads.push(s);
-        // TDM: standard large team modes, minigames override
-        if (!isMinigame && s.gameMode.includes("TDM")
-        ) global.filters.gamemodeFilters.tdm.push(s);
-        // Minigames: any special objective/mechanic, overrides team categories
-        if (isMinigame) global.filters.gamemodeFilters.minigames.push(s);
-        if (s.gameMode.includes("Sandbox")
-        ) global.filters.gamemodeFilters.sandbox.push(s);
+
+        // Gamemodes
+        global.filters.gamemodeFilters.all.push(s);
+
+        // FFA
+        if (s.gameMode.includes("FFA") || s.gameMode.includes("Matrix") || s.gameMode.includes("The Matrix")) global.filters.gamemodeFilters.ffa.push(s);
+
+        // Squads
+        if (s.gameMode.includes("Duos") || s.gameMode.includes("Squads") || s.gameMode.includes("Wars")) global.filters.gamemodeFilters.squads.push(s);
+
+        // TDM
+        if (s.gameMode.includes("TDM")) global.filters.gamemodeFilters.tdm.push(s);
+
+        // Sandbox
+        if (s.gameMode.includes("Sandbox")) global.filters.gamemodeFilters.sandbox.push(s);
+
+        // Minigames
+        if (
+            !global.filters.gamemodeFilters.ffa.includes(s) &&
+            !global.filters.gamemodeFilters.squads.includes(s) &&
+            !global.filters.gamemodeFilters.tdm.includes(s) &&
+            !global.filters.gamemodeFilters.sandbox.includes(s)
+        ) {
+            global.filters.gamemodeFilters.minigames.push(s);
+        }
     };
     let l = [];
     let createFilter = (type, data) => {
@@ -231,8 +234,12 @@ let initializeFilter = () => {
             let e = checkFilter(h, global.filters.regions.europe);
             return e;
         } },
-        { name: "Asia/Oceania", filter: (h) => { 
+        { name: "Asia", filter: (h) => { 
             let e = checkFilter(h, global.filters.regions.asia);
+            return e;
+        } },
+        { name: "Oceania", filter: (h) => { 
+            let e = checkFilter(h, global.filters.regions.oceania);
             return e;
         } },
         { name: "Other", filter: (h) => {

@@ -1,3 +1,5 @@
+const { workerData } = require('worker_threads');
+
 const http = require("http");
 const ws = require("ws");
 const fs = require("fs");
@@ -11,37 +13,64 @@ let { gamemodeManager } = require("./Game/gamemodeManager.js");
 
 // Gamemode names
 const getName = (name, gamemodeData) => {
-    const nameMap = {
-        tdm: `${gamemodeData.teams}TDM`,
+    const nameMap = { // commented-out gamemodes haven't been implemented yet
+    // Deathmatch
+        clan_wars: "Clan Wars",
+        clanwars: "Clan Wars", // legacy alias
+        //duos: "Duos",
         ffa: "FFA",
-        tag: "Tag",
-        opentdm: `Open ${gamemodeData.teams}TDM`,
-        clanwars: "Clan Wars",
-        trainwars: "Train Wars",
-        matrix: "The Matrix",
-        old_dreadnoughts: `Old Dreadnoughts ${gamemodeData.teams}TDM`,
-        nexus: "Nexus",
-        blackout: "Blackout",
-        outbreak: "Outbreak",
-        space: "Space",
-        classic: "Classic",
-        armsRace: "Arms Race",
-        dreadnaughts: "Dreadnaughts",
-        celestials: "Celestials",
+        //halloween: "Halloween",
+        //squads: "Squads",
+        tdm: `${gamemodeData.teams}TDM`,
+            open_tdm: `Open ${gamemodeData.teams}TDM`,
+            opentdm: `Open ${gamemodeData.teams}TDM`, // legacy alias
+        //tetromino: `${gamemodeData.teams} Team Tetromino`,
+        train_wars: "Train Wars",
+        trainwars: "Train Wars", // legacy alias
+    // Minigames
+        assault_acropolis: "Assault Acropolis",
+        assault_booster: "Assault Booster",
+        assault_bunker: "Assault Bunker",
+        assault_eye: "Assault Eye",
+        assault_line: "Assault Line",
+        assault_trenches: "Assault Trenches",
+        assault_yinyang: "Assault Yin Yang",
+        //ctf: "Capture The Flag",
+        domination: `${gamemodeData.teams} Team Domination`,
+        //elimination: "Elimination",
+        //grudge_ball: "Grudge Ball",
+        mothership: `${gamemodeData.teams} Team Mothership`,
+        old_siege: "Old Siege",
+        //pandemic: "Pandemic",
         siege_blitz: "Siege Blitz",
         siege_citadel: "Siege Citadel",
+        siege_classic: "Siege Classic",
         siege_fortress: "Siege Fortress",
-        siege_og: "OG Siege",
-        siege_legacy: "Siege Legacy",
-        assault_bunker: "Assault Bunker",
-        assault_booster: "Assault Booster",
-        assault_trenches: "Assault Trenches",
-        assault_line: "Assault Line",
-        assault_eye: "Assault Eye",
-        assault_yinyang: "Assault Yin Yang",
-        assault_acropolis: "Assault Acropolis",
+        //soccer: "Soccer",
+        tag: `${gamemodeData.teams} Team Tag`,
+    // Miscellaneous
+        //forge: "Forge",
+        //limbo: "Limbo",
+        nexus: "Nexus",
+        sandbox: "Sandbox",
+    // Modifiers
+        arms_race: "Arms Race",
+        armsRace: "Arms Race", // legacy alias
+        blackout: "Blackout",
+        classic: "Classic",
+        diep: "Diep",
+        old_dreadnoughts: "Old Dreadnoughts",
+        dreadnaughts: "Dreadnaughts", // legacy alias
+        growth: "Growth",
+        harvest: "Harvest",
+        march_madness: "March Madness",
+        matrix: "The Matrix",
+        maze: "Maze",
+        outbreak: "Outbreak",
+        retrograde: "Retrograde",
+        space: "Space",
     };
-    return nameMap[name]; 
+    return nameMap[name];
 }
 
 // Here is our actual game server
@@ -61,7 +90,7 @@ class gameServer {
         this.name = "Unknown";
         this.featured = isfeatured;
         this.parentPort = parentPort;
-        this.definitionsCombiner = new definitionCombiner({ groups: fs.readdirSync(path.join(__dirname, './lib/definitions/groups')), addonsFolder: path.join(__dirname, './lib/definitions/entityAddons') });
+        this.definitionsCombiner = new definitionCombiner({ groups: path.join(__dirname, './lib/definitions/groups'), addonsFolder: path.join(__dirname, './lib/definitions/entityAddons') });
         this.loaderGlobal = loaderGlobal;
         // Initalize.
         this.roomSpeed = Config.game_speed;
@@ -79,6 +108,12 @@ class gameServer {
         this.socketManager = new socketManager(this);
         this.gameHandler = new gameHandler(this);
         this.gameSpeedCheckHandler = new speedcheckloop(this);
+
+        // Modify the console log with an instance index on it.
+        if (!global.launchedOnMainServer && workerData && workerData.index != null) {
+            console._log = console.log;
+            console.log = (...args) => this.showConsoleLoggings && console._log(`[I${workerData.index}]`, ...args);
+        }
 
         // Make it public
         global.gameManager = this;
@@ -224,7 +259,13 @@ class gameServer {
             let overrideRoom = true;
             // Get gamemode
             for (let gamemode of this.gamemode) {
-                let mode = require(`./Game/gamemodeconfigs/${gamemode}.js`);
+                // Try new config location first, fall back to legacy gamemodeconfigs
+                let mode;
+                try {
+                    mode = require(`./Game/gamemodes/config/${gamemode}.js`);
+                } catch (e) {
+                    mode = require(`./Game/gamemodeconfigs/${gamemode}.js`);
+                }
                 for (let key in mode) {
                     if (key == "do_not_override_room") {
                         overrideRoom = mode[key];
@@ -301,6 +342,7 @@ class gameServer {
         this.room = {
             lastCycle: undefined,
             cycleSpeed: 1000 / this.roomSpeed / 30,
+            partyHash: Number(((Math.random() * 1000000 | 0) + 1000000).toString().replace("0.", "")),
             setup: this.importedRoom,
             roomxgrid: this.importedRoom[0].length,
             roomygrid: this.importedRoom.length,
@@ -486,7 +528,7 @@ class gameServer {
                 // Define it as arena closer
                 o.define('arenaCloser');
                 o.define({
-                    COLOR: 3,
+                    COLOR: "yellow",
                     AI: {
                         FULL_VIEW: true,
                         SKYNET: true,

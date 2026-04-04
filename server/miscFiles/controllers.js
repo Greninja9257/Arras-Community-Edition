@@ -99,7 +99,7 @@ class IO {
         }
     }
 }
-class io_bossRushAI extends IO {
+class io_siegeAI extends IO {
     constructor(body, opts = {}) {
         super(body);
         this.enabled = true;
@@ -195,9 +195,8 @@ class io_listenToPlayer extends IO {
                 y: 100 * Math.sin(kk),
             };
         }
-        const hasMovementInput = this.player.command.right || this.player.command.left || this.player.command.up || this.player.command.down;
         if (this.body.invuln) {
-            if ((!Config.train && hasMovementInput) || this.player.command.lmb) {
+            if (this.player.command.right || this.player.command.left || this.player.command.up || this.player.command.down || this.player.command.lmb) {
                 this.body.invuln = false;
             }
         }
@@ -206,7 +205,7 @@ class io_listenToPlayer extends IO {
             target,
             fire,
             alt,
-            goal: this.static || Config.train ? null : {
+            goal: this.static ? null : {
                 x: this.body.x + this.player.command.right - this.player.command.left,
                 y: this.body.y + this.player.command.down - this.player.command.up,
             },
@@ -228,47 +227,6 @@ class io_mapTargetToGoal extends IO {
                 power: 1,
             }
         }
-    }
-}
-class io_keepDistance extends IO {
-    constructor(body, opts = {}) {
-        super(body);
-        this.minDistance = opts.minDistance ?? Math.max(200, body.size * 8);
-        this.maxDistance = opts.maxDistance ?? Math.max(450, body.size * 14);
-        this.strafeDistance = opts.strafeDistance ?? Math.max(120, body.size * 6);
-        this.switchIntervalMs = opts.switchIntervalMs ?? 2000;
-        this.turnwise = ran.chance(0.5) ? 1 : -1;
-        this.nextSwitchAt = 0;
-    }
-    think(input) {
-        if (!input.target) return;
-        const dx = input.target.x;
-        const dy = input.target.y;
-        const dist = Math.hypot(dx, dy);
-        if (!dist) return;
-
-        if (performance.now() > this.nextSwitchAt) {
-            this.turnwise = ran.chance(0.5) ? 1 : -1;
-            this.nextSwitchAt = performance.now() + this.switchIntervalMs;
-        }
-
-        let goal;
-        if (dist < this.minDistance || dist > this.maxDistance) {
-            const desired = dist < this.minDistance ? this.minDistance : this.maxDistance;
-            const scale = 1 - desired / dist;
-            goal = {
-                x: this.body.x + dx * scale,
-                y: this.body.y + dy * scale,
-            };
-        } else {
-            const scale = this.strafeDistance / dist;
-            goal = {
-                x: this.body.x - dy * scale * this.turnwise,
-                y: this.body.y + dx * scale * this.turnwise,
-            };
-        }
-
-        return { goal, power: 1 };
     }
 }
 class io_boomerang extends IO {
@@ -446,8 +404,8 @@ class io_stackGuns extends IO {
         //find gun that is about to shoot
         let lowestReadiness = Infinity,
             readiestGun;
-        for (let i = 0; i < this.body.gunsArrayed.length; i++) {
-            let gun = this.body.gunsArrayed[i];
+        for (let i = 0; i < this.body.guns.length; i++) {
+            let gun = this.body.guns[i];
             if (!gun.canShoot || !gun.stack) continue;
             let reloadStat = (gun.calculator == "necro" || gun.calculator == "fixed reload") ? 1 : (gun.bulletStats === "master" ? this.body.skill : gun.bulletStats).rld,
                 readiness = (1 - gun.cycle) / (gun.settings.reload * reloadStat);
@@ -517,17 +475,9 @@ class io_nearestDifferentMaster extends IO {
         const sqrRange = range * range;
         const sqrRangeMaster = sqrRange * 4 / 3;
         const validCandidates = [];
-        const aiSettings = this.body.aiSettings;
-        const awareness = aiSettings.AWARENESS;
         for (const e of targetableEntities.values()) {
             if (this.validate(e, this.body, this.body.master.master, sqrRange, sqrRangeMaster) && !this.wouldHitWall(e)) {
                 if (this.body.aiSettings.view360 || Math.abs(util.angleDifference(util.getDirection(this.body, e), this.body.firingArc[0])) < this.body.firingArc[1]) {
-                    if (awareness != null) {
-                        const dist = util.getDistance(this.body, e);
-                        const rangeFactor = Math.min(1, dist / range);
-                        const chance = Math.max(0, awareness * (1 - 0.5 * rangeFactor));
-                        if (!ran.chance(chance)) continue;
-                    }
                     validCandidates.push(e);
                 }
             }
@@ -536,33 +486,23 @@ class io_nearestDifferentMaster extends IO {
             this.targetLock = undefined;
             return [];
         }
+        let mostDangerous = 0;
+        for (const e of validCandidates) {
+            mostDangerous = Math.max(e.dangerValue, mostDangerous);
+        }
         let keepTarget = false;
-        const wallChecked = validCandidates.filter((e) => {
+        const finalTargets = validCandidates.filter((e) => {
             // Even more expensive
             return !this.wouldHitWall(e);
-        });
-        let finalTargets;
-        if (aiSettings.AVOID_SWARM) {
-            finalTargets = wallChecked;
-            if (this.targetLock && wallChecked.some(e => e.id === this.targetLock.id)) {
-                keepTarget = true;
-            }
-        } else {
-            let mostDangerous = 0;
-            for (const e of wallChecked) {
-                mostDangerous = Math.max(e.dangerValue, mostDangerous);
-            }
-            finalTargets = wallChecked.filter(e => {
-                const lowHealth = e.health?.max && (e.health.amount / e.health.max) < 0.35;
-                if (this.body.aiSettings.farm || lowHealth || e.dangerValue === mostDangerous) {
-                    if (this.targetLock && e.id === this.targetLock.id) {
-                        keepTarget = true;
-                    }
-                    return true;
+        }).filter(e => {
+            if (this.body.aiSettings.farm || e.dangerValue === mostDangerous) {
+                if (this.targetLock && e.id === this.targetLock.id) {
+                    keepTarget = true;
                 }
-                return false;
-            });
-        }
+                return true;
+            }
+            return false;
+        });
         // Reset target if it's not in there
         if (!keepTarget) {
             this.targetLock = undefined;
@@ -577,9 +517,9 @@ class io_nearestDifferentMaster extends IO {
         let tracking = this.body.topSpeed,
             range = this.body.fov;
         // Use whether we have functional guns to decide
-        for (let i = 0; i < this.body.gunsArrayed.length; i++) {
-            if (this.body.gunsArrayed[i].canShoot && !this.body.aiSettings.SKYNET) {
-                let v = this.body.gunsArrayed[i].getTracking();
+        for (let i = 0; i < this.body.guns.length; i++) {
+            if (this.body.guns[i].canShoot && !this.body.aiSettings.SKYNET) {
+                let v = this.body.guns[i].getTracking();
                 if (v.speed == 0 || v.range == 0) continue;
                 tracking = v.speed;
                 range = Math.min(range, (v.speed || 1.5) * (v.range < (this.body.size * 2) ? this.body.fov : v.range));
@@ -602,31 +542,17 @@ class io_nearestDifferentMaster extends IO {
         }
         // OK, now let's try reprocessing the targets!
         this.tick++;
-        let scanInterval = this.body.aiSettings.SCAN_INTERVAL ?? 2;
-        if (this.tick > scanInterval) {
+        if (this.tick > 2) {
             this.tick = 0;
             this.validTargets = this.buildList(range);
             if (this.targetLock && this.validTargets.indexOf(this.targetLock) === -1) {
                 this.targetLock = undefined;
             }
             if (this.targetLock == null && this.validTargets.length) {
-                if (this.body.aiSettings.AVOID_SWARM && this.validTargets.length > 1) {
-                    let pool = this.validTargets.length > 3 ? ran.chooseN(this.validTargets, 3) : this.validTargets;
-                    this.targetLock = ran.choose(pool);
-                } else if (this.validTargets.length === 1) {
-                    this.targetLock = this.validTargets[0];
-                } else {
-                    // Prefer low-health targets; weight distance by health ratio so wounded enemies are prioritized
-                    const bx = this.body.x, by = this.body.y;
-                    this.targetLock = this.validTargets.reduce((best, e) => {
-                        if (!best) return e;
-                        const distSqE = (e.x - bx) ** 2 + (e.y - by) ** 2;
-                        const distSqB = (best.x - bx) ** 2 + (best.y - by) ** 2;
-                        const hrE = e.health?.max ? e.health.amount / e.health.max : 1;
-                        const hrB = best.health?.max ? best.health.amount / best.health.max : 1;
-                        return distSqE * (0.4 + hrE) < distSqB * (0.4 + hrB) ? e : best;
-                    }, null);
-                }
+                this.targetLock = (this.validTargets.length === 1) ? this.validTargets[0] : nearest(this.validTargets, {
+                    x: this.body.x,
+                    y: this.body.y
+                });
                 this.tick = -5;
             }
         }
@@ -735,9 +661,9 @@ class io_healTeamMasters extends IO {
         let tracking = this.body.topSpeed,
             range = this.body.fov;
         // Use whether we have functional guns to decide
-        for (let i = 0; i < this.body.gunsArrayed.length; i++) {
-            if (this.body.gunsArrayed[i].canShoot && !this.body.aiSettings.SKYNET) {
-                let v = this.body.gunsArrayed[i].getTracking();
+        for (let i = 0; i < this.body.guns.length; i++) {
+            if (this.body.guns[i].canShoot && !this.body.aiSettings.SKYNET) {
+                let v = this.body.guns[i].getTracking();
                 if (v.speed == 0 || v.range == 0) continue;
                 tracking = v.speed;
                 range = Math.min(range, (v.speed || 1.5) * (v.range < (this.body.size * 2) ? this.body.fov : v.range));
@@ -804,36 +730,37 @@ class io_avoid extends IO {
         super(body)
     }
     think(input) {
-        const masterId = this.body.master.id;
-        const detectRange = Math.max(this.body.size * 14, 220);
-        const rangeSquared = detectRange * detectRange;
-        let avoidX = 0, avoidY = 0;
-        for (const e of entities.values()) {
-            if (e.master.id === masterId) continue;
-            const type = e.type;
-            if (type !== 'bullet' && type !== 'drone' && type !== 'swarm' && type !== 'trap' && type !== 'block') continue;
-            const dx = e.x - this.body.x;
-            const dy = e.y - this.body.y;
-            const distSq = dx * dx + dy * dy;
-            if (distSq > rangeSquared) continue;
-            // Positive dot product means the projectile is moving toward us
-            const dvx = e.velocity.x - this.body.velocity.x;
-            const dvy = e.velocity.y - this.body.velocity.y;
-            const approaching = -(dvx * dx + dvy * dy);
-            if (approaching <= 0) continue;
-            const dist = Math.sqrt(distSq) + 1;
-            const weight = approaching / (dist * dist);
-            avoidX -= dx * weight;
-            avoidY -= dy * weight;
-        }
-        const avoidLen = Math.hypot(avoidX, avoidY);
-        if (avoidLen < 0.001) return;
-        return {
-            goal: {
-                x: this.body.x + (avoidX / avoidLen) * detectRange,
-                y: this.body.y + (avoidY / avoidLen) * detectRange,
+        let masterId = this.body.master.id
+        let range = this.body.size * this.body.size * 100
+        this.avoid = nearest(entities, {
+            x: this.body.x,
+            y: this.body.y
+        }, function (test, sqrdst) {
+            return (test.master.id !== masterId && (test.type === 'bullet' || test.type === 'drone' || test.type === 'swarm' || test.type === 'trap' || test.type === 'block') && sqrdst < range);
+        })
+        // Aim at that target
+        if (this.avoid != null) {
+            // Consider how fast it's moving.
+            let delt = new Vector(this.body.velocity.x - this.avoid.velocity.x, this.body.velocity.y - this.avoid.velocity.y)
+            let diff = new Vector(this.avoid.x - this.body.x, this.avoid.y - this.body.y);
+            let comp = (delt.x * diff.x + delt.y * diff.y) / delt.length / diff.length
+            let goal = {}
+            if (comp > 0) {
+                if (input.goal) {
+                    let goalDist = Math.sqrt(range / (input.goal.x * input.goal.x + input.goal.y * input.goal.y))
+                    goal = {
+                        x: input.goal.x * goalDist - diff.x * comp,
+                        y: input.goal.y * goalDist - diff.y * comp,
+                    }
+                } else {
+                    goal = {
+                        x: -diff.x * comp,
+                        y: -diff.y * comp,
+                    }
+                }
+                return goal
             }
-        };
+        }
     }
 }
 class io_minion extends IO {
@@ -1031,7 +958,7 @@ class io_wanderAroundMap extends IO {
     constructor(body, opts = {}) {
         super(body);
         this.lookAtGoal = opts.lookAtGoal;
-        this.immitatePlayerMovement = opts.immitatePlayerMovement;
+        this.replicatePlayerMovement = opts.replicatePlayerMovement;
         this.spot = ran.choose(global.gameManager.room.spawnableDefault).randomInside();
 
         this.bossWander = opts.diepBossWander;
@@ -1111,7 +1038,7 @@ class io_wanderAroundMap extends IO {
             }
             if (input.goal == null && !this.body.autoOverride) {
                 let goal = this.spot;
-                if (this.immitatePlayerMovement) {
+                if (this.replicatePlayerMovement) {
                     goal = compressMovement(this.body, goal);
                 }
                 return {
@@ -1121,186 +1048,6 @@ class io_wanderAroundMap extends IO {
                     } : null,
                     goal
                 };
-            }
-        }
-    }
-}
-class io_ecosystem extends IO {
-    constructor(body, opts = {}) {
-        super(body);
-        this.farmRadius = opts.farmRadius ?? 700;
-        this.home = null;
-        this.nextHomeAt = 0;
-        this.lastTargetId = null;
-        this.lastSwitchAt = 0;
-        this.lastDisengageAt = 0;
-        this.strafeDir = ran.chance(0.5) ? 1 : -1;
-        this.nextStrafeSwitch = 0;
-    }
-    think(input) {
-        if (!this.body.isBot) return;
-        if (Config.tag || Config.clan_wars || Config.domination || Config.mothership || Config.ASSAULT || Config.teams) return;
-        const body = this.body;
-        const myDanger = body.dangerValue ?? 1;
-        const myHealth = body.health?.amount && body.health?.max ? body.health.amount / body.health.max : 1;
-        const cautious = myHealth < 0.7;
-        const lowHealth = myHealth < 0.45;
-        const now = performance.now();
-        const enemies = [];
-        const foods = [];
-        const maxScan = Math.max(body.fov || 1, 1) * 900;
-        const maxScanSq = maxScan * maxScan;
-
-        for (const e of entities.values()) {
-            if (e === body || !e.master) continue;
-            const dx = e.x - body.x;
-            const dy = e.y - body.y;
-            const distSq = dx * dx + dy * dy;
-            if (distSq > maxScanSq) continue;
-            if (e.isFood) {
-                foods.push({ e, distSq });
-                continue;
-            }
-            if (e.isPlayer || e.isBot) {
-                enemies.push({ e, distSq });
-            }
-        }
-
-        let enemy = null;
-        let bestScore = Infinity;
-        let currentScore = Infinity;
-        for (const entry of enemies) {
-            const e = entry.e;
-            if (e.invuln || e.godmode || e.master.master?.passive) continue;
-            const danger = e.dangerValue ?? 1;
-            const healthRatio = e.health?.amount && e.health?.max ? e.health.amount / e.health.max : 1;
-            const dist = Math.sqrt(entry.distSq);
-            const wallPenalty = wouldHitWall(body, e) ? 1.6 : 1;
-            const score = dist * (0.6 + danger) * (0.4 + healthRatio) * wallPenalty;
-            if (score < bestScore) {
-                bestScore = score;
-                enemy = e;
-            }
-            if (this.lastTargetId && e.id === this.lastTargetId) {
-                currentScore = score;
-            }
-        }
-
-        if (enemy) {
-            const enemyDanger = enemy.dangerValue ?? 1;
-            const dx = enemy.x - body.x;
-            const dy = enemy.y - body.y;
-            if (this.lastTargetId && this.lastTargetId !== enemy.id) {
-                const canSwitch = now - this.lastSwitchAt > 3500 || bestScore < currentScore * 0.7;
-                if (canSwitch) {
-                    this.lastTargetId = enemy.id;
-                    this.lastSwitchAt = now;
-                } else {
-                    enemy = enemies.find(e => e.e.id === this.lastTargetId)?.e ?? enemy;
-                }
-            } else if (!this.lastTargetId) {
-                this.lastTargetId = enemy.id;
-                this.lastSwitchAt = now;
-            }
-            if (enemyDanger > myDanger * 1.3 && (lowHealth || ran.chance(0.75))) {
-                return {
-                    goal: { x: body.x - dx, y: body.y - dy },
-                    main: false,
-                    fire: false,
-                };
-            }
-            const dist = Math.hypot(dx, dy);
-            const desired = Math.min(600, Math.max(200, body.size * 15));
-            const now_strafe = performance.now();
-            if (now_strafe > this.nextStrafeSwitch) {
-                this.strafeDir = ran.chance(0.5) ? 1 : -1;
-                this.nextStrafeSwitch = now_strafe + ran.randomRange(1500, 3500);
-            }
-            const strafeDir = this.strafeDir;
-            const strafe = {
-                x: -dy / Math.max(1, dist) * strafeDir,
-                y: dx / Math.max(1, dist) * strafeDir,
-            };
-            let goal;
-            if (dist < desired * 0.75 || (lowHealth && dist < desired * 1.2)) {
-                goal = { x: body.x - dx + strafe.x * 120, y: body.y - dy + strafe.y * 120 };
-            } else if (dist > desired * 1.2 && !lowHealth) {
-                goal = { x: enemy.x + strafe.x * 120, y: enemy.y + strafe.y * 120 };
-            } else {
-                goal = { x: body.x + strafe.x * 160, y: body.y + strafe.y * 160 };
-            }
-            let tracking = body.topSpeed;
-            for (let gi = 0; gi < body.gunsArrayed.length; gi++) {
-                const gun = body.gunsArrayed[gi];
-                if (gun.canShoot) {
-                    const v = gun.getTracking();
-                    if (v.speed > 0 && v.range > 0) { tracking = v.speed; break; }
-                }
-            }
-            const relVel = { x: (enemy.velocity?.x || 0) - body.velocity.x, y: (enemy.velocity?.y || 0) - body.velocity.y };
-            const toi = timeOfImpact({ x: dx, y: dy }, relVel, tracking);
-            const target = {
-                x: dx + (enemy.velocity?.x || 0) * toi,
-                y: dy + (enemy.velocity?.y || 0) * toi,
-            };
-            const shouldFire = !lowHealth && !ran.chance(0.15);
-            return {
-                target,
-                goal,
-                main: shouldFire,
-                fire: shouldFire,
-            };
-        }
-
-        if (foods.length && (lowHealth || cautious || ran.chance(0.7))) {
-            foods.sort((a, b) => a.distSq - b.distSq);
-            const food = foods[0].e;
-            return {
-                target: { x: food.x - body.x, y: food.y - body.y },
-                goal: { x: food.x, y: food.y },
-                main: true,
-                fire: true,
-            };
-        }
-
-        this.lastTargetId = null;
-        if (!this.home || util.getDistance(body, this.home) < 80 || performance.now() > this.nextHomeAt) {
-            this.home = ran.choose(global.gameManager.room.spawnableDefault).randomInside();
-            this.nextHomeAt = performance.now() + 5000;
-        }
-        return { goal: this.home };
-    }
-}
-class io_wallAvoidGoal extends IO {
-    constructor(body, opts = {}) {
-        super(body);
-        this.sideStepScale = opts.sideStepScale ?? 6;
-        this.minStep = opts.minStep ?? 60;
-    }
-    think(input) {
-        if (!input.goal) return;
-        if (!wouldHitWall(this.body, input.goal)) return;
-        const dx = input.goal.x - this.body.x;
-        const dy = input.goal.y - this.body.y;
-        const dist = Math.hypot(dx, dy);
-        if (!dist) return;
-        const sideStep = Math.max(this.minStep, this.body.size * this.sideStepScale);
-        const baseAngle = Math.atan2(dy, dx);
-        // Use atan to scale angle based on distance - gives smaller angles for farther goals
-        const angleOffset = Math.atan(sideStep / dist);
-        const candidateAngles = [
-            baseAngle + angleOffset,
-            baseAngle - angleOffset,
-            baseAngle + angleOffset * 2,
-            baseAngle - angleOffset * 2,
-        ];
-        for (const angle of candidateAngles) {
-            const candidate = {
-                x: this.body.x + Math.cos(angle) * dist,
-                y: this.body.y + Math.sin(angle) * dist,
-            };
-            if (!wouldHitWall(this.body, candidate)) {
-                return { goal: candidate };
             }
         }
     }
@@ -1340,17 +1087,10 @@ class io_whirlwind extends IO {
         this.body.dist = opts.initialDist || this.minDistance * this.body.size;
         this.body.inverseDist = this.maxDistance * this.body.size - this.body.dist + this.minDistance * this.body.size;
         this.radiusScalingSpeed = opts.radiusScalingSpeed || 10;
-        this.spinSpeedMultiplier = opts.spinSpeedMultiplier ?? 1;
-        this.spinUsesDegrees = opts.spinUsesDegrees ?? false;
-        this.spinUsesMasterSkill = opts.spinUsesMasterSkill ?? false;
-        this.spinUsesRaw = opts.spinUsesRaw ?? false;
     }
     
     think(input) {
-        const skillSource = this.spinUsesMasterSkill && this.body.master?.skill ? this.body.master.skill : this.body.skill;
-        const skillSpeedValue = this.spinUsesRaw ? (skillSource.raw?.[4] ?? 0) : (skillSource.spd * 2);
-        const spinSpeed = (skillSpeedValue * this.spinSpeedMultiplier) + this.body.aiSettings.SPEED;
-        this.body.angle += this.spinUsesDegrees ? spinSpeed : spinSpeed * Math.PI / 180;
+        this.body.angle += (this.body.skill.spd * 2 + this.body.aiSettings.SPEED) * Math.PI / 180;
         let trueMaxDistance = this.maxDistance * this.body.size;
         let trueMinDistance = this.minDistance * this.body.size;
         if(input.fire){
@@ -1477,6 +1217,24 @@ class io_scaleWithMaster extends IO {
     }
 }
 
+class io_ecosystem extends IO {
+    constructor(body, opts = {}) {
+        super(body);
+    }
+    think(input) {
+        return null;
+    }
+}
+
+class io_wallAvoidGoal extends IO {
+    constructor(body, opts = {}) {
+        super(body);
+    }
+    think(input) {
+        return null;
+    }
+}
+
 let ioTypes = {
     //misc
     zoom: io_zoom,
@@ -1501,8 +1259,7 @@ let ioTypes = {
     //movement related
     canRepel: io_canRepel,
     mapTargetToGoal: io_mapTargetToGoal,
-    keepDistance: io_keepDistance,
-    bossRushAI: io_bossRushAI,
+    siegeAI: io_siegeAI,
     moveInCircles: io_moveInCircles,
     boomerang: io_boomerang,
     formulaTarget: io_formulaTarget,
@@ -1514,8 +1271,8 @@ let ioTypes = {
     hangOutNearMaster: io_hangOutNearMaster,
     fleeAtLowHealth: io_fleeAtLowHealth,
     wanderAroundMap: io_wanderAroundMap,
-    wallAvoidGoal: io_wallAvoidGoal,
     ecosystem: io_ecosystem,
+    wallAvoidGoal: io_wallAvoidGoal,
 };
 
 module.exports = { ioTypes, IO };

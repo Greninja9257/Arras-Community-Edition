@@ -1,6 +1,7 @@
-const { skill_cap, bullet_speed_scale } = require("../../config.js")
+const {skill_cap} = require('../../config.js')
+const {statnames} = require('./constants.js')
 const g = require('./gunvals.js')
-const { basePolygonDamage, basePolygonHealth, dfltskl } = require("./constants")
+const {basePolygonDamage, basePolygonHealth, dfltskl} = require("./constants")
 let skcnv = {
     atk: 6,
     spd: 4,
@@ -36,6 +37,7 @@ exports.combineStats = function (stats) {
 
         for (let object = 0; object < stats.length; object++) {
             let gStat = stats[object];
+            if (gStat == null) continue; // skip null/undefined entries
             if (Array.isArray(gStat)) {
                 gStat = {
                     reload: gStat[0], recoil: gStat[1], shudder: gStat[2],
@@ -59,9 +61,6 @@ exports.combineStats = function (stats) {
             data.spray *= gStat.spray ?? 1;
             data.resist *= gStat.resist ?? 1;
         }
-        let speedScale = bullet_speed_scale ?? 1;
-        data.speed *= speedScale;
-        data.maxSpeed *= speedScale;
         return data;
     } catch (err) {
         console.log(err);
@@ -83,7 +82,7 @@ exports.skillSet = (args) => {
     return skills;
 }
 
-// functions
+// core functions
 exports.dereference = type => {
     type = ensureIsClass(type);
 
@@ -108,75 +107,111 @@ exports.dereference = type => {
     return output;
 }
 
-// gun functions
-exports.makeGuard = (type, name = -1) => {
-    type = ensureIsClass(type);
-    let output = exports.dereference(type),
-    cannons = [{
-        POSITION: [13, 8, 1, 0, 0, 180, 0],
-    }, {
-        POSITION: [4, 8, 1.7, 13, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: exports.combineStats([g.trap]),
-            TYPE: "trap",
-            STAT_CALCULATOR: "trap",
-        },
-    }];
-    output.GUNS = type.GUNS == null ? cannons : type.GUNS.concat(cannons);
-    output.LABEL = name == -1 ? type.LABEL + " Guard" : name;
-    return output;
-}
-exports.makeRearGunner = (type, name = -1) => {
+// drone functions
+exports.makeOver = (type, name = -1, options = {}) => {
     type = ensureIsClass(type);
     let output = exports.dereference(type);
-    let cannons = [{
-        POSITION: [19, 2, 1, 0, -2.5, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: exports.combineStats([g.basic, g.pelleter, g.power, g.twin, { recoil: 4 }, { recoil: 1.8 }]),
-            TYPE: "bullet",
-        },
-    }, {
-        POSITION: [19, 2, 1, 0, 2.5, 180, 0.5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: exports.combineStats([g.basic, g.pelleter, g.power, g.twin, { recoil: 4 }, { recoil: 1.8 }]),
-            TYPE: "bullet",
-        },
-    }, {
-        POSITION: [12, 11, 1, 0, 0, 180, 0],
-    }];
-    output.GUNS = type.GUNS == null ? cannons : type.GUNS.concat(cannons);
-    output.LABEL = name == -1 ? type.LABEL : name;
-    return output;
+
+    let angle = 180 - (options.angle ?? 125)
+    let count = options.count ?? 2
+    let independent = options.independent ?? false
+    let cycle = options.cycle ?? true
+    let maxChildren = options.maxDrones ?? 3
+    let stats = options.extraStats ?? []
+
+    options.renderBehind ??= false
+
+    let spawners = [];
+    let spawnerProperties = {
+        SHOOT_SETTINGS: exports.combineStats([g.drone, g.overseer, ...stats]),
+        TYPE: ["drone", {INDEPENDENT: independent}],
+        AUTOFIRE: true,
+        SYNCS_SKILLS: true,
+        STAT_CALCULATOR: "drone",
+        WAIT_TO_CYCLE: cycle,
+        MAX_CHILDREN: maxChildren,
+    }
+    if (count % 2 == 1) {
+        spawners.push({
+            POSITION: {
+                LENGTH: 6,
+                WIDTH: 11,
+                ASPECT: 1.2,
+                X: 8,
+                ANGLE: 180
+            },
+            PROPERTIES: spawnerProperties,
+        })
+    }
+    for (let i = 2; i <= (count - count % 2); i += 2) {
+        spawners.push(...exports.weaponMirror({
+            POSITION: {
+                LENGTH: 6,
+                WIDTH: 11,
+                ASPECT: 1.2,
+                X: 8,
+                ANGLE: 180 - angle * i / 2
+            },
+            PROPERTIES: spawnerProperties
+        }))
+    }
+    if (options.renderBehind) {
+        output.GUNS = type.GUNS == null ? spawners : spawners.concat(type.GUNS)
+    } else {
+        output.GUNS = type.GUNS == null ? spawners : type.GUNS.concat(spawners)
+    }
+    output.LABEL = name == -1 ? "Over" + type.LABEL.toLowerCase() : name
+    if (type.UPGRADE_LABEL !== undefined) {
+        output.UPGRADE_LABEL = output.LABEL;
+    }
+    return output
 }
+
+// gun functions
 exports.makeBird = (type, name = -1, options = {}) => {
     type = ensureIsClass(type);
     let output = exports.dereference(type);
     let frontRecoilFactor = options.frontRecoil ?? 1;
     let backRecoilFactor = options.frontRecoil ?? 1;
     let color = options.frontRecoil;
-    let superBird = options.super ?? false;
 
     // Thrusters
     let backRecoil = 0.5 * backRecoilFactor;
-    let thrusterProperties = { SHOOT_SETTINGS: exports.combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster, { recoil: backRecoil }]), TYPE: "bullet", LABEL: "thruster", STAT_CALCULATOR: "thruster" };
-    let shootyBois = [{
-            POSITION: [16, 8, 1, 0, 0, 150, 0.1],
+    let thrusterProperties = {
+        SHOOT_SETTINGS: exports.combineStats([g.basic, g.flankGuard, g.triAngle, g.thruster, { recoil: backRecoil }]),
+        TYPE: "bullet",
+        LABEL: "thruster"
+    };
+    let shootyBois = [
+        ...exports.weaponMirror({
+            POSITION: {
+                LENGTH: 16,
+                WIDTH: 8,
+                ANGLE: 153,
+                DELAY: 0.1
+            },
             PROPERTIES: thrusterProperties
-        }, {
-            POSITION: [16, 8, 1, 0, 0, -150, 0.1],
+        }),
+        {
+            POSITION: {
+                LENGTH: 18,
+                WIDTH: 8,
+                ANGLE: 180,
+                DELAY: 0.6
+            },
             PROPERTIES: thrusterProperties
-        }, {
-            POSITION: [18, 8, 1, 0, 0, 180, 0.6],
+        }
+    ];
+    if (options.super) {
+        shootyBois.splice(0, 0, ...exports.weaponMirror({
+            POSITION: {
+                LENGTH: 14,
+                WIDTH: 8,
+                ANGLE: 130,
+                DELAY: 0.6
+            },
             PROPERTIES: thrusterProperties
-        }];
-    if (superBird) {
-        shootyBois.splice(0, 0, {
-            POSITION: [14, 8, 1, 0, 0, 130, 0.6],
-            PROPERTIES: thrusterProperties
-        }, {
-            POSITION: [14, 8, 1, 0, 0, -130, 0.6],
-            PROPERTIES: thrusterProperties
-        })
+        }))
     }
     // Assign thruster color
     if (color) for (let gun of shootyBois) {
@@ -197,198 +232,372 @@ exports.makeBird = (type, name = -1, options = {}) => {
     if (output.FACING_TYPE == "locksFacing") output.FACING_TYPE = "toTarget";
     output.GUNS = type.GUNS == null ? [...shootyBois] : [...output.GUNS, ...shootyBois];
     output.LABEL = name == -1 ? "Bird " + type.LABEL : name;
+    if (type.UPGRADE_LABEL !== undefined) {
+        output.UPGRADE_LABEL = output.LABEL;
+    }
     return output;
 }
-
-// drone functions
-exports.makeOver = (type, name = -1, options = {}) => {
-    type = ensureIsClass(type);
-    let output = exports.dereference(type);
-
-    let angle = 180 - (options.angle ?? 125);
-    let count = options.count ?? 2;
-    let independent = options.independent ?? false;
-    let cycle = options.cycle ?? true;
-    let maxChildren = options.maxDrones ?? 3;
-    let stats = options.extraStats ?? [];
-    let spawnerType = options.spawnerType;
-
-    let spawners = [];
-    if (spawnerType == "swarm") {
-        let spawnerProperties = {
-            SHOOT_SETTINGS: exports.combineStats([g.swarm, ...stats]),
-            TYPE: independent ? "autoswarm" : "swarm",
-            STAT_CALCULATOR: "swarm",
-        }
-        if (count % 2 == 1) {
-            spawners.push({
-                POSITION: [7, 7.5, 0.6, 7, 4, 180, 0],
-                PROPERTIES: spawnerProperties,
-            }, {
-                POSITION: [7, 7.5, 0.6, 7, -4, 180, 0.5],
-                PROPERTIES: spawnerProperties,
-            })
-        }
-        for (let i = 2; i <= (count - count % 2); i += 2) {
-            spawners.push({
-                POSITION: [7, 7.5, 0.6, 7, 4, 180 - angle * i / 2, 0],
-                PROPERTIES: spawnerProperties,
-            }, {
-                POSITION: [7, 7.5, 0.6, 7, -4, 180 - angle * i / 2, 0.5],
-                PROPERTIES: spawnerProperties,
-            }, {
-                POSITION: [7, 7.5, 0.6, 7, 4, 180 + angle * i / 2, 0],
-                PROPERTIES: spawnerProperties,
-            }, {
-                POSITION: [7, 7.5, 0.6, 7, -4, 180 + angle * i / 2, 0.5],
-                PROPERTIES: spawnerProperties,
-            })
-        }
-    } else {
-        let spawnerProperties = {
-            SHOOT_SETTINGS: exports.combineStats([g.drone, g.overseer, ...stats]),
-            TYPE: ["drone", {INDEPENDENT: independent}],
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: "drone",
-            WAIT_TO_CYCLE: cycle,
-            MAX_CHILDREN: maxChildren,
-        }
-        if (count % 2 == 1) {
-            spawners.push({
-                POSITION: [6, 12, 1.2, 8, 0, 180, 0],
-                PROPERTIES: spawnerProperties,
-            })
-        }
-        for (let i = 2; i <= (count - count % 2); i += 2) {
-            spawners.push({
-                POSITION: [6, 12, 1.2, 8, 0, 180 - angle * i / 2, 0],
-                PROPERTIES: spawnerProperties,
-            }, {
-                POSITION: [6, 12, 1.2, 8, 0, 180 + angle * i / 2, 0],
-                PROPERTIES: spawnerProperties,
-            })
+exports.makeFlank = (type, count, name = -1, options = {}) => {
+    type = ensureIsClass(type)
+    let output = exports.dereference(type)
+    let extraStats = options.extraStats ??= []
+    for (let gun of output.GUNS) {
+        if (gun.PROPERTIES) {
+            if (gun.PROPERTIES.SHOOT_SETTINGS) {
+                gun.PROPERTIES.SHOOT_SETTINGS = exports.combineStats([gun.PROPERTIES.SHOOT_SETTINGS, ...extraStats])
+            }
         }
     }
-    
-    output.GUNS = type.GUNS == null ? spawners : type.GUNS.concat(spawners);
-    output.LABEL = name == -1 ? "Over" + type.LABEL.toLowerCase() : name;
-    return output;
+    output.GUNS = exports.weaponArray(output.GUNS, count ??= 3, {delayIncrement: options.delayIncrement ?? 0, delayOverflow: options.delayOverflow ?? false, startAngle: options.startAngle ?? 0})
+    output.LABEL = name == -1 ? type.LABEL : name
+    output.DANGER = options.danger ??= type.DANGER + 1
+    output.HAS_NO_RECOIL = options.noRecoil ??= false
+    return output
+}
+exports.makeGuard = (type, name = -1, options = {}) => {
+    type = ensureIsClass(type)
+    let output = exports.dereference(type)
+    let dangerIncrement = options.danger ?? 2
+
+    // Rear Trap Launcher
+    let trapper = {
+        GUNS: [
+            {
+                POSITION: {
+                    LENGTH: 13,
+                    WIDTH: 8
+                }
+            },
+            {
+                POSITION: {
+                    LENGTH: 4,
+                    WIDTH: 8,
+                    ASPECT: 1.7,
+                    X: 13
+                },
+                PROPERTIES: {
+                    SHOOT_SETTINGS: exports.combineStats([g.trap]),
+                    TYPE: 'trap',
+                    STAT_CALCULATOR: 'trap'
+                }
+            }
+        ]
+    }
+    if (options.type) {
+        trapper = exports.dereference(options.type)
+    }
+
+    // Rotate 180 degrees
+    for (let gun of trapper.GUNS) {
+        if (gun.POSITION) {
+            if (gun.POSITION.ANGLE) {
+                gun.POSITION.ANGLE = gun.POSITION.ANGLE + 180
+            } else {
+                gun.POSITION.ANGLE = 180
+            }
+        }
+    }
+
+    // Add two more if we're making a Tri-Guard
+    if (options.triple) {
+        trapper.GUNS.push(
+            ...exports.weaponArray(trapper.GUNS, 2, {startAngle: 90})
+        )
+    }
+
+    // Nerf existing barrels
+    if (output.GUNS) for (let gun of output.GUNS) {
+        if (gun.PROPERTIES) {
+            if (gun.PROPERTIES.SHOOT_SETTINGS) {
+                gun.PROPERTIES.SHOOT_SETTINGS = exports.combineStats([gun.PROPERTIES.SHOOT_SETTINGS, g.flankGuard, g.flankGuard])
+            }
+        }
+    }
+
+    // Assign misc settings
+    output.GUNS = type.GUNS == null ? trapper.GUNS : [...output.GUNS, ...trapper.GUNS]
+    output.DANGER = type.DANGER + dangerIncrement
+    output.LABEL = name == -1 ? type.LABEL + " Guard" : name
+    if (type.UPGRADE_LABEL !== undefined) {
+        output.UPGRADE_LABEL = output.LABEL;
+    }
+    output.STAT_NAMES = statnames.mixed
+    return output
+}
+exports.makeGunner = (type, name = -1, options  = {}) => {
+    type = ensureIsClass(type)
+    let output = exports.dereference(type)
+
+    // Rear Gunner
+    let gunner = [
+        ...exports.weaponMirror({
+            POSITION: {
+                LENGTH: options.length ?? 19,
+                WIDTH: 2,
+                Y: -2.5,
+                ANGLE: options.rear ? 180 : 0
+            },
+            PROPERTIES: {
+                SHOOT_SETTINGS: exports.combineStats([g.basic, g.pelleter, g.power, g.twin, {recoil: 4}, {recoil: 1.8}]),
+                TYPE: 'bullet',
+            },
+        }, {delayIncrement: 0.5})
+    ]
+    if (!options.noDeco) {
+        gunner.push({
+            POSITION: {
+                LENGTH: 12,
+                WIDTH: 11,
+                ANGLE: options.rear ? 180 : 0
+            }
+        }
+    )}
+
+    // Assign misc settings
+    if (options.renderBehind) {
+        output.GUNS = type.GUNS == null ? gunner : gunner.concat(output.GUNS)
+    } else {
+        output.GUNS = type.GUNS == null ? gunner : output.GUNS.concat(gunner)
+    }
+    output.DANGER = type.DANGER + 1
+    output.LABEL = name == -1 ? "Gunner " + type.LABEL : name
+    if (type.UPGRADE_LABEL !== undefined) {
+        output.UPGRADE_LABEL = output.LABEL;
+    }
+    return output
 }
 
 // turret functions
 exports.makeAuto = (type, name = -1, options = {}) => {
+
+    /*
+    - type: what turret (or regular Class) to use as the mounted turret
+
+    Available options:
+    - color: turret body color
+    - size: turret size
+    - x: turret X position
+    - y: turret Y position
+    - angle: turret offset angle
+    - arc: turret FOV arc
+    - layer: turret layer
+    - total: number of turrets
+    - independent: whether the turret ignores parent tank inputs
+    - clearProps: whether to clear the parent tank's existing props or not (recommended for -drive tanks)
+    - clearTurrets: whether to clear the parent tank's existing turrets or not
+    */
+
     type = ensureIsClass(type);
-    let turret = {
-        type: "autoTurret",
-        size: 10,
-        independent: true,
-        color: 16,
-        angle: 180,
-        total: 1,
-    };
-    if (options.type != null) {
-        turret.type = options.type;
-    }
-    if (options.size != null) {
-        turret.size = options.size;
-    }
-    if (options.independent != null) {
-        turret.independent = options.independent;
-    }
-    if (options.color != null) {
-        turret.color = options.color;
-    }
-    if (options.angle != null) {
-        turret.angle = options.angle;
-    }
-    if (options.total != null) {
-        turret.total = options.total;
-    }
     let output = exports.dereference(type);
     let autogun = exports.weaponArray({
         POSITION: {
-            SIZE: turret.size,
-            ANGLE: turret.angle,
-            ARC: 360 / turret.total,
-            LAYER: 1
+            SIZE: options.size ??= 10,
+            ANGLE: options.angle ??= 180,
+            X: options.x ??= 0,
+            Y: options.y ??= 0,
+            ARC: options.arc ??= 360,
+            LAYER: options.layer ??= 1
         },
         TYPE: [
-            turret.type,
+            options.type ??= "autoTurret",
             {
                 CONTROLLERS: ["nearestDifferentMaster"],
-                INDEPENDENT: turret.independent,
-                COLOR: turret.color,
-            },
-        ],
-    }, turret.total);
+                INDEPENDENT: options.independent ??= true,
+                COLOR: options.color ??= "grey"
+            }
+        ]
+    }, options.total ??= 1);
     if (type.GUNS != null) {
         output.GUNS = type.GUNS;
     }
-    if (type.TURRETS == null) {
+    if (type.PROPS == null || options.clearProps == true) {
+        output.PROPS = [];
+    } else {
+        output.PROPS = [...type.PROPS];
+    }
+    if (type.TURRETS == null || options.clearTurrets == true) {
         output.TURRETS = [...autogun];
     } else {
         output.TURRETS = [...type.TURRETS, ...autogun];
     }
     if (name == -1) {
         output.LABEL = "Auto-" + type.LABEL;
-        output.UPGRADE_LABEL = "Auto-" + type.LABEL;
+        if (type.UPGRADE_LABEL !== undefined) {
+            output.UPGRADE_LABEL = "Auto-" + type.LABEL;
+        }
     } else {
         output.LABEL = name;
-        output.UPGRADE_LABEL = name;
+        if (type.UPGRADE_LABEL !== undefined) {
+            output.UPGRADE_LABEL = name;
+        }
     }
     output.DANGER = type.DANGER + 1;
     return output;
 }
-exports.makeCeption = (type, name = -1, options = {}) => {
+exports.makeHat = (shape = 0, options = {}) => {
+    options.color ??= "mirror"
+    options.rotationSpeed ??= 0
+    if (!options.rotationSpeed == 0) {
+        spinProperties = ["spin", { speed: options.rotationSpeed }]
+    } else (
+        spinProperties = ["toTarget"]
+    )
+    return {
+        LABEL: "",
+        FACING_TYPE: spinProperties,
+        SHAPE: shape,
+        COLOR: options.color,
+        INDEPENDENT: true
+    }
+}
+// Compatibility alias for legacy files that use makeDeco (use makeHat for new code)
+exports.makeDeco = (shape = 0, color = "mirror") => exports.makeHat(shape, { color });
+
+exports.makeWhirlwind = (type, options = {}) => {
     type = ensureIsClass(type);
-    let turret = {
-        type: "autoTurret",
-        size: 12.5,
-        independent: true,
-    };
-    if (options.type != null) {
-        turret.type = options.type;
-    }
-    if (options.size != null) {
-        turret.size = options.size;
-    }
-    if (options.independent != null) {
-        turret.independent = options.independent;
-    }
     let output = exports.dereference(type);
-    let autogun = {
-        POSITION: [turret.size, 0, 0, 180, 360, 1],
-        TYPE: [
-            type,
+    options.satellites ??= 4
+    let hat = [
+        {
+            POSITION: {SIZE: options.hatSize ??= 8, LAYER: options.hatLayer ??= 1},
+            TYPE: [options.hat ??= "squareHat_spin", {COLOR: options.hatColor ??= "grey"}]
+        }
+    ]
+    if (options.dualLayer || options.enableHat2) {
+        hat.push(
             {
-                CONTROLLERS: ["nearestDifferentMaster"],
-                INDEPENDENT: turret.independent,
-            },
-        ],
-    };
+                POSITION: {SIZE: options.hat2Size ??= 6, ANGLE: 180, LAYER: options.hat2Layer ??= 2},
+                TYPE: [options.hat2 ??= "squareHat_spin", {COLOR: options.hat2Color ??= "grey"}]
+            }
+        )
+    }
+    let satellites = (() => {
+        let output = []
+        for (let i = 0; i < options.satellites; i++) { 
+            output.push({
+                POSITION: {WIDTH: options.satelliteSize ??= 8, LENGTH: 1, DELAY: i * 0.25},
+                PROPERTIES: {
+                    SHOOT_SETTINGS: exports.combineStats([g.satellite, ...options.extraStats ??= [{}], {recoil: 0}]), 
+                    TYPE: [options.satelliteType ??= "satellite", {ANGLE: i * (360 / options.satellites)}], 
+                    MAX_CHILDREN: 1,
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: false,
+                    WAIT_TO_CYCLE: true
+                }
+            })
+        }
+        if (options.dualLayer) {
+            for (let i = 0; i < options.satellites; i++) { 
+                output.push({
+                    POSITION: {WIDTH: options.satelliteSize ??= 8, LENGTH: 1, DELAY: i * 0.25},
+                    PROPERTIES: {
+                        SHOOT_SETTINGS: exports.combineStats([g.satellite, ...options.extraStats ??= [{}], {recoil: 0}]), 
+                        TYPE: [options.satelliteType ??= "satellite", {ANGLE: i * (360 / options.satellites), CONTROLLERS: [['orbit', {invert: true}]]}], 
+                        MAX_CHILDREN: 1,
+                        AUTOFIRE: true,
+                        SYNCS_SKILLS: false,
+                        WAIT_TO_CYCLE: true
+                    }
+                })
+            }
+        }
+        return output
+    })()
+    if (type.GUNS == null) {output.GUNS = [...satellites]} else {output.GUNS = [...type.GUNS, ...satellites]}
+    if (type.TURRETS == null) {output.TURRETS = [...hat]} else {output.TURRETS = [...type.TURRETS, ...hat]}
+    if (type == Class.genericTank) {output.STAT_NAMES = statnames.satellite} else {output.STAT_NAMES = statnames.mixed}
+    output.AI = {SPEED: options.satelliteSpeed ??= 2}
+    output.ANGLE = (360 / options.satellites)
+    if (type.CONTROLLERS == null) {output.CONTROLLERS = ["whirlwind"]} else {output.CONTROLLERS = [...type.CONTROLLERS, "whirlwind"]}
+    output.DANGER = options.danger ??= type.DANGER + 1
+    if (options.label == -1) {
+        output.LABEL = "Whirl " + type.LABEL;
+        if (type.UPGRADE_LABEL !== undefined) {
+            output.UPGRADE_LABEL = "Whirl " + type.LABEL;
+        }
+    } else {
+        output.LABEL = options.label;
+        if (type.UPGRADE_LABEL !== undefined) {
+            output.UPGRADE_LABEL = options.label;
+        }
+    }
+    return output;
+}
+function toPascalCase(input) {
+    if (!input) {
+        return -1
+    }
+    var output = ""
+    for (var c = 0; c < input.length; c++) {
+        output += c == 0 ? input[c].toUpperCase() : input[c].toLowerCase()
+    }
+    return output
+}
+exports.makeDrive = (type, options = {}) => {
+    type = ensureIsClass(type);
+    let output = exports.dereference(type)
+
+    options.label ??= -1
+    options.suffix ??= "drive"
+    options.projectileType ??= 'drone'
+
+    let hat = [
+        {
+            TYPE: [options.hatType ??= "squareHat", {COLOR: options.hatColor ??= "grey"}],
+            POSITION: {
+                SIZE: options.hatSize ??= 9,
+                ANGLE: options.hatAngle ??= 0,
+                LAYER: 1
+            }
+        }
+    ]
+
+    let GUNS = output.GUNS;
+    for (let gun of GUNS) {
+        if (!gun.PROPERTIES) continue;
+        if (!gun.PROPERTIES.TYPE) continue;
+        projectile = exports.dereference(gun.PROPERTIES.TYPE)
+        if (gun.PROPERTIES.TYPE == options.projectileType || options.doNotDiscriminate) {
+            const name = (Array.isArray(gun.PROPERTIES.TYPE) ? gun.PROPERTIES.TYPE[0][0] : gun.PROPERTIES.TYPE) + options.label + options.suffix
+            Class[name] = exports.makeAuto(
+                gun.PROPERTIES.TYPE,
+                "Auto-" + projectile.LABEL,
+                {
+                    type: options.type ??= "droneAutoTurret",
+                    independent: options.independent ??= true,
+                    color: options.color ??= "grey",
+                    total: options.total ??= 1,
+                    size: options.size ??= 10,
+                    x: options.x ??= 0,
+                    y: options.y ??= 0,
+                    angle: options.angle ??= 180
+                }
+            )
+            gun.PROPERTIES.TYPE = name
+        }
+    }
+
     if (type.GUNS != null) {
-        output.GUNS = type.GUNS;
+        output.GUNS = GUNS;
     }
     if (type.TURRETS == null) {
-        output.TURRETS = [autogun];
+        output.TURRETS = [...hat];
     } else {
-        output.TURRETS = [...type.TURRETS, autogun];
+        output.TURRETS = [...type.TURRETS, ...hat];
     }
-    if (name == -1) {
-        output.LABEL = type.LABEL + "-Ception";
+    if (options.label == -1) {
+        output.LABEL = type.LABEL + options.suffix;
+        if (type.UPGRADE_LABEL !== undefined) {
+            output.UPGRADE_LABEL = type.LABEL + options.suffix;
+        }
     } else {
-        output.LABEL = name;
+        output.LABEL = options.label;
+        if (type.UPGRADE_LABEL !== undefined) {
+            output.UPGRADE_LABEL = options.label;
+        }
     }
-    output.DANGER = type.DANGER + 1;
+    output.DANGER = options.danger ??= type.DANGER + 1;
     return output;
-}
-exports.makeDeco = (shape = 0, color = 16) => {
-    return {
-        PARENT: "genericTank",
-        SHAPE: shape,
-        COLOR: color,
-    };
 }
 exports.makeRadialAuto = (type, options = {}) => {
 
@@ -414,7 +623,6 @@ exports.makeRadialAuto = (type, options = {}) => {
     let count = options.count ?? 3;
     let isTurret = options.isTurret ?? false;
     let turretIdentifier = type;
-    let noRecoil = options.noRecoil ?? false;
 
     if (!isTurret) {
         type = exports.dereference(type);
@@ -448,10 +656,6 @@ exports.makeRadialAuto = (type, options = {}) => {
 
     let LABEL = options.label ?? (type.LABEL + "-" + count);
     let HAS_NO_RECOIL = options.noRecoil ?? false;
-    let turretSize = options.size ?? 11;
-    let turretX = options.x ?? 8;
-    let turretArc = options.arc ?? 190;
-    let turretAngle = options.angle ?? 0;
 
     return {
         PARENT: 'genericTank',
@@ -460,9 +664,16 @@ exports.makeRadialAuto = (type, options = {}) => {
         FACING_TYPE: ["spin", {speed: options.rotation ?? 0.02}],
         DANGER: options.danger ?? (type.DANGER + 2),
         BODY: options.body ?? undefined,
+        GUNS: [],
         TURRETS: exports.weaponArray({
-            POSITION: [turretSize, turretX, 0, turretAngle, turretArc, 0],
-            TYPE: turretIdentifier
+            TYPE: turretIdentifier,
+            POSITION: {
+                SIZE: options.size ?? 11,
+                X: options.x ?? 8,
+                ANGLE: options.angle ?? 0,
+                ARC: options.arc ?? 190,
+                LAYER: options.layer ?? 0
+            }
         }, count)
     }
 }
@@ -477,6 +688,7 @@ exports.makeTurret = (type, options = {}) => {
     - hasAI: whether or not the auto turret can think and shoot on its own
     - extraStats: array of stats to append onto the shoot settings of all of the turret's guns
     - label: turret label
+    - shape: turret body shape
     - color: turret color
     - fov: turret FOV
     - independent: turret independence
@@ -512,6 +724,7 @@ exports.makeTurret = (type, options = {}) => {
     return {
         PARENT: 'genericTank',
         LABEL: options.label ?? "",
+        SHAPE: options.shape ?? 0,
         COLOR: options.color ?? "grey",
         BODY: { FOV: options.fov ?? 2 },
         INDEPENDENT: options.independent ?? false,
@@ -525,7 +738,7 @@ exports.makeTurret = (type, options = {}) => {
 exports.makeAura = (damageFactor = 1, sizeFactor = 1, opacity = 0.3, auraColor) => {
     let isHeal = damageFactor < 0;
     let auraType = isHeal ? "healAura" : "aura";
-    let symbolType = isHeal ? "healerSymbol" : "auraSymbol";
+    let symbolType = isHeal ? "healerHat" : "auraSymbol";
     auraColor = auraColor ?? (isHeal ? 12 : 0);
     return {
         PARENT: "genericTank",
@@ -584,31 +797,40 @@ exports.setTurretProjectileRecoil = (type, recoilFactor) => {
 }
 
 // misc functions
-exports.makeMenu = (name = -1, color = "mirror", shape = 0, overrideLabel = false, overrideGuns = false) => {
-    let defaultGun = {
-        POSITION: {
-            LENGTH: 18,
-            WIDTH: 10,
-            ASPECT: -1.4
-        },
-        PROPERTIES: {
-            SHOOT_SETTINGS: exports.combineStats([g.basic]),
-            TYPE: "bullet",
-        },
-    };
+exports.makeMenu = (name = -1, options = {}) => {
+    options.color ??= "mirror"
+
     return {
         PARENT: "genericTank",
         LABEL: name == -1 ? undefined : name,
-        GUNS: overrideGuns ? overrideGuns : [defaultGun],
-        COLOR: color == "mirror" ? null : color,
-        UPGRADE_COLOR: color == "mirror" ? null : color,
-        SHAPE: shape,
+        COLOR: options.color == "mirror" ? null : options.color,
+        REROOT_UPGRADE_TREE: options.rerootTree,
+        UPGRADE_COLOR: options.boxColor,
+        UPGRADE_LABEL: options.boxLabel,
+        UPGRADE_TOOLTIP: options.tooltip,
+        SHAPE: options.shape ??= 0,
         IGNORED_BY_AI: true,
         SKILL_CAP: Array(10).fill(dfltskl),
         RESET_CHILDREN: true,
+        GUNS: options.guns ??= [
+            {
+                POSITION: {
+                    LENGTH: 18,
+                    WIDTH: 10,
+                    ASPECT: -1.4
+                },
+                PROPERTIES: {
+                    SHOOT_SETTINGS: exports.combineStats([g.basic]),
+                    TYPE: "bullet"
+                }
+            }
+        ],
+        PROPS: options.props ??= [],
+        TURRETS: options.turrets ??= [],
+        UPGRADES_TIER_0: options.upgrades ??= []
     };
 }
-exports.weaponArray = (weapons, count, delayIncrement = 0, delayOverflow = false) => {
+exports.weaponArray = (weapons, count, options = {}) => {
     // delayIncrement: how much each side's delay increases by
     // delayOverflow: false to constrain the delay value between [0, 1)
     if (!Array.isArray(weapons)) {
@@ -617,11 +839,13 @@ exports.weaponArray = (weapons, count, delayIncrement = 0, delayOverflow = false
     let isTurret = weapons[0].TYPE != undefined;
     let angleKey = isTurret ? 3 : 5;
     let delayKey = 6;
+    let angleIncrement = options.startAngle ?? 0
+    let delayIncrement = options.delayIncrement ?? 0
 
     let output = [];
     for (let weapon of weapons) {
         for (let i = 0; i < count; i++) {
-            let angle = 360 / count * i;
+            let angle = 360 / count * i + angleIncrement;
             let delay = delayIncrement * i;
             let newWeapon = exports.dereference(weapon);
 
@@ -633,7 +857,7 @@ exports.weaponArray = (weapons, count, delayIncrement = 0, delayOverflow = false
             newWeapon.POSITION[angleKey] = (newWeapon.POSITION[angleKey] ?? 0) + angle;
             if (!isTurret) {
                 newWeapon.POSITION[delayKey] = (newWeapon.POSITION[delayKey] ?? 0) + delay;
-                if (!delayOverflow) {
+                if (!options.delayOverflow) {
                     newWeapon.POSITION[delayKey] %= 1;
                 }
             }
@@ -642,15 +866,26 @@ exports.weaponArray = (weapons, count, delayIncrement = 0, delayOverflow = false
     }
     return output;
 }
-exports.weaponMirror = (weapons, delayIncrement = 0.5, delayOverflow = false) => {
-    // delayIncrement: how much each side's delay increases by
-    // delayOverflow: false to constrain the delay value between [0, 1)
+exports.weaponMirror = (weapons, options = {}) => {
+
+    /*
+    - weapons: what guns to mirror
+    
+    Available options:
+    - delayIncrement: delay increment for mirrored guns
+    - delayOverflow: whether the gun delay can exceed 1 or not, default false
+    */
+
     if (!Array.isArray(weapons)) {
         weapons = [weapons]
     }
-    let yKey = 4;
-    let angleKey = 5;
+    let isTurret = weapons[0].TYPE != undefined;
+    let yKey = isTurret ? 2 : 4;
+    let angleKey = isTurret ? 3 : 5;
     let delayKey = 6;
+
+    options.delayIncrement ??= 0
+    options.delayOverflow ??= false
 
     let output = [];
     for (let weapon of weapons) {
@@ -664,12 +899,168 @@ exports.weaponMirror = (weapons, delayIncrement = 0.5, delayOverflow = false) =>
 
         newWeapon.POSITION[yKey] = (newWeapon.POSITION[yKey] ?? 0) * -1;
         newWeapon.POSITION[angleKey] = (newWeapon.POSITION[angleKey] ?? 0) * -1;
-        newWeapon.POSITION[delayKey] = (newWeapon.POSITION[delayKey] ?? 0) + delayIncrement;
+        newWeapon.POSITION[delayKey] = (newWeapon.POSITION[delayKey] ?? 0) + options.delayIncrement;
+        if (!options.delayOverflow) {
+            newWeapon.POSITION[delayKey] %= 1;
+        }
         output.push(weapon, newWeapon);
 
     }
     return output;
 }
+exports.weaponStack = (weapons, count, options = {}) => {
+
+    /*
+    - weapons: what guns to stack
+    
+    Available options:
+    - count: number of guns in the stack
+    - lengthOffset: distance between stack gun lengths
+    - xPosOffset: distance between stack gun x positions
+    - delayIncrement: delay increment between stack guns
+    - delayOverflow: whether the gun delay can exceed 1 or not, default false
+    */
+
+    if (!Array.isArray(weapons)) {
+        weapons = [weapons]
+    }
+    let isTurret = weapons[0].TYPE != undefined;
+    let lengthKey = 0;
+    let xPosKey = isTurret ? 1 : 3;
+    let delayKey = 6;
+
+    options.lengthOffset ??= 0
+    options.xPosOffset ??= 0
+    options.delayIncrement ??= 0
+    options.delayOverflow ??= false
+
+    let output = [];
+    for (let weapon of weapons) {
+        for (let i = 0; i < count; i++) {
+            let delay = options.delayIncrement * i;
+            let newWeapon = exports.dereference(weapon);
+
+            if (!Array.isArray(newWeapon.POSITION)) {
+                lengthKey = "LENGTH";
+                xPosKey = "X";
+                delayKey = "DELAY";
+            }
+
+            newWeapon.POSITION[lengthKey] = (newWeapon.POSITION[lengthKey] ?? 0) - (i * options.lengthOffset);
+            newWeapon.POSITION[xPosKey] = (newWeapon.POSITION[xPosKey] ?? 0) - (i * options.xPosOffset);
+            newWeapon.POSITION[delayKey] = (newWeapon.POSITION[delayKey] ?? 0) + delay;
+            if (!options.delayOverflow) {
+                newWeapon.POSITION[delayKey] %= 1;
+            }
+            output.push(newWeapon);
+        }
+    }
+    return output;
+}
+function rotatePoint(px, py, cx, cy, degrees) {
+    const radians = degrees * (Math.PI / 180);
+
+    const x = px - cx;
+    const y = py - cy;
+
+    let rotatedX = x * Math.cos(radians) - y * Math.sin(radians);
+    let rotatedY = x * Math.sin(radians) + y * Math.cos(radians);
+    if (Math.abs(rotatedX) < 0.01) {
+        rotatedX = 0
+    }
+    if (Math.abs(rotatedY) < 0.01) {
+        rotatedY = 0
+    }
+    return {
+        x: rotatedX + cx,
+        y: rotatedY + cy
+    };
+}
+let pslazyRealSizes = [1, 1, 1];
+for (let i = 3; i < 17; i++) {
+    // We say that the real size of a 0-gon, 1-gon, 2-gon is one, then push the real sizes of triangles, squares, etc...
+    let circum = (2 * Math.PI) / i;
+    pslazyRealSizes.push(Math.sqrt(circum * (1 / Math.sin(circum))));
+}
+exports.makePolygon = (options = {}) => {
+    let svgPoints = [];
+    let svgPoints2 = [];
+    let svgPoints3 = [];
+    options.sides ??= 3
+    options.size ??= 1
+    options.fixSize ??= false
+    options.fixSize = options.fixedSize
+    options.curvy ??= false
+    options.curve ??= 1
+    options.hollow ??= false
+    options.hollowMultiplier ??= 0.5
+    options.rotation ??= 0
+    if (options.fixSize === true) {
+        if (pslazyRealSizes.length > Math.abs(options.sides)) {
+            options.size = pslazyRealSizes[options.sides]
+        }
+    }
+    if (options.curvy === true) {
+        for(let i = 0; i < options.sides + 1; i++) {
+            svgPoints.push(rotatePoint(options.size, 0, 0, 0, options.rotation+(360/options.sides)*i))
+        }
+    } else {
+        for(let i = 0; i < options.sides; i++) {
+            svgPoints.push(rotatePoint(options.size, 0, 0, 0, options.rotation+(360/options.sides)*i))
+        }
+    }
+    if (options.hollow === true) {
+        if (options.curvy === true) {
+            for(let i = 0; i < options.sides + 1; i++) {
+                svgPoints.push(rotatePoint(options.size * options.hollowMultiplier, 0, 0, 0, options.rotation-(360/options.sides)*i))
+            }
+        } else {
+            for(let i = 0; i < options.sides; i++) {
+                svgPoints.push(rotatePoint(options.size * options.hollowMultiplier, 0, 0, 0, options.rotation-(360/options.sides)*i))
+            }
+        }
+    }
+    if (options.curvy === true) {
+        for(let i = 0; i < options.sides + 1; i++) {
+            if (i !== 0) {
+                svgPoints2.push("A " + options.curve + " " + options.curve + " 0 0 0", svgPoints[i].x);
+                svgPoints2.push(svgPoints[i].y);
+            } else {
+                svgPoints2.push("L", svgPoints[i].x);
+                svgPoints2.push(svgPoints[i].y);
+            }
+        }
+    } else {
+        for(let i = 0; i < options.sides; i++) {
+            svgPoints2.push("L", svgPoints[i].x);
+            svgPoints2.push(svgPoints[i].y);
+        }
+    }
+    if (options.hollow === true) {
+        if (options.curvy === true) {
+            for(let i = 0; i < options.sides + 1; i++) {
+                if (i !== 0) {
+                    svgPoints3.push("A " + options.curve + " " + options.curve + " 0 0 0", svgPoints[i].x);
+                    svgPoints3.push(svgPoints[i+options.sides].y);
+                } else {
+                    svgPoints3.push("L", svgPoints[i].x);
+                    svgPoints3.push(svgPoints[i+options.sides].y);
+                }
+            }
+        } else {
+            for(let i = 0; i < options.sides; i++) {
+                svgPoints3.push("L", svgPoints[i+options.sides].x);
+                svgPoints3.push(svgPoints[i+options.sides].y);
+            }
+        }
+    }
+    if (options.hollow === true) {
+        return "M " + svgPoints2.toString().replaceAll(",", " ").slice(2) + " Z" +  " M " + svgPoints3.toString().replaceAll(",", " ").slice(2) + " Z"
+    } else {
+        return "M " + svgPoints2.toString().replaceAll(",", " ").slice(2) + " Z"
+    }
+}
+
 class LayeredBoss {
     constructor(identifier, NAME, PARENT = "celestial", SHAPE = 9, COLOR = 0, trapTurretType = "baseTrapTurret", trapTurretSize = 6.5, layerScale = 5, noSizeAn = false, BODY, SIZE, VALUE) {
         this.identifier = identifier ?? NAME.charAt(0).toLowerCase() + NAME.slice(1);
@@ -738,14 +1129,14 @@ exports.makeRelic = (type, scale = 1, gem, SIZE, yBase = 8.25) => {
     let relicCasing = {
         PARENT: 'genericEntity',
         LABEL: 'Relic Casing',
-        level_cap: 45,
+        LEVEL_CAP: 45,
         COLOR: type.COLOR,
         MIRROR_MASTER_ANGLE: true,
         SHAPE: [[-0.4,-1],[0.4,-0.25],[0.4,0.25],[-0.4,1]].map(r => r.map(s => s * scale))
     }, relicBody = {
         PARENT: 'genericEntity',
         LABEL: 'Relic Mantle',
-        level_cap: 45,
+        LEVEL_CAP: 45,
         COLOR: type.COLOR,
         MIRROR_MASTER_ANGLE: true,
         SHAPE: type.SHAPE
@@ -830,10 +1221,10 @@ exports.makeCrasher = type => ({
     HAS_NO_MASTER: true,
     VALUE: type.VALUE * 5,
     BODY: {
-        SPEED: 1 + 5 / Math.max(2, (type.TURRETS.length ?? 0) + type.SHAPE),
-        HEALTH: Math.pow(type.BODY.HEALTH, 2 / 3),
-        DAMAGE: Math.pow(type.BODY.HEALTH, 1 / 3) * type.BODY.DAMAGE,
-        ACCELERATION: 1,
+        SPEED: 1 + 5 / Math.max(2, (type.PROPS.length ?? 0) + type.SHAPE),
+        HEALTH: Math.pow(type.BODY.HEALTH, 2/3),
+        DAMAGE: Math.pow(type.BODY.HEALTH, 1/3) * type.BODY.DAMAGE,
+        ACCELERATION: 5,
         PUSHABILITY: 0.5,
         DENSITY: 10
     },
@@ -842,47 +1233,34 @@ exports.makeCrasher = type => ({
     }
 });
 
-const rarityColors = ["lightGreen", "teal", "darkGrey", "rainbow", "trans"];
-rarityColors.push(
-    ...Array.from({ length: 95 }, (_, i) => ({
-        BASE: ["lightGreen", "teal", "rainbow"][i % 3],
-        BRIGHTNESS_SHIFT: (i % 2 === 1 ? -1 : 1) * (i / 10),
-        HUE_SHIFT: 20 + 3 * i
-    }))
-);
-
 exports.makeRare = (type, level) => {
     type = ensureIsClass(type);
     return {
         PARENT: "food",
-        LABEL:
-            (["Shiny", "Legendary", "Shadow", "Rainbow", "Trans"][level] ??
-                `${level}% Rarity`) +
-            " " +
-            type.LABEL,
-        VALUE:
-            ([100, 500, 2000, 2500, 2500][level] ?? 500 * (level + 1)) *
-            type.VALUE,
+        LABEL: ["Shiny", "Legendary", "Shadow", "Rainbow", "Trans"][level] + " " + type.LABEL,
+        VALUE: [100, 500, 2000, 4000, 5000][level] * type.VALUE,
         SHAPE: type.SHAPE,
         SIZE: type.SIZE,
-        COLOR: rarityColors[level],
-        ALPHA: level === 2 ? 0.25 : 1,
+        GLOW:  {
+            RADIUS: 2,
+            STRENGTH: 25,
+            COLOR: ["lime", "teal", "darkGrey", "rainbow", "trans"][level],
+            ALPHA: 0.6
+        },
+        COLOR: ["lime", "teal", "darkGrey", "rainbow", "trans"][level],
+        ALPHA: level == 2 ? 0.25 : 1,
         BODY: {
-            DAMAGE:
-                ([1, 1, 2, 2.5, 2.5][level] ?? 1.5 + Math.sqrt(level)) *
-                type.BODY.DAMAGE,
-            DENSITY: ([1, 1, 2, 2.5, 2.5][level] ?? 2.5) * type.BODY.DENSITY,
-            HEALTH:
-                ([2, 4, 4, 6, 8][level] ?? (level - 1) * 2) * type.BODY.HEALTH,
-            PENETRATION:
-                ([1.5, 1.5, 2, 2.5, 2.5][level] ?? 3) * type.BODY.PENETRATION,
+            DAMAGE: [1, 1, 2, 2.5, 2.5][level] * type.BODY.DAMAGE,
+            DENSITY: [1, 1, 2, 2.5, 2.5][level] * type.BODY.DENSITY,
+            HEALTH: [2, 4, 4, 6, 8][level] * type.BODY.HEALTH,
+            PENETRATION: [1.5, 1.5, 2, 2.5, 2.5][level] * type.BODY.PENETRATION,
             ACCELERATION: type.BODY.ACCELERATION
         },
         DRAW_HEALTH: true,
         INTANGIBLE: type.INTANGIBLE,
-        GIVE_KILL_MESSAGE: true
-    };
-};
+        GIVE_KILL_MESSAGE: true,
+    }
+}
 
 const labyTierToHealth = {
     0: 0.25,
@@ -892,50 +1270,51 @@ const labyTierToHealth = {
     4: 300
 };
 
+// not accurate values
 const labyRarityToScore = {
-    0: 1,
-    1: 100,
-    2: 500,
-    3: 2000,
-    4: 2500,
-    5: 2500
+    1: 5,
+    2: 10,
+    3: 40,
+    4: 100,
+    5: 250
+};
+
+const labyRarityToHealth = {
+    1: 2,
+    2: 4,
+    3: 6,
+    4: 8,
+    5: 10
 };
 
 exports.makeLaby = (type, tier, rarity, level, baseScale = 1) => {
     type = ensureIsClass(type);
-    const usableSHAPE = Math.max(type.SHAPE, 3);
-    const downscale = Math.cos(Math.PI / usableSHAPE);
-    const healthMultiplier =
-        Math.pow(5, level) -
-        (level > 2 ? Math.pow(5, level) / Math.pow(5, level - 2) : 0);
+    let usableSHAPE = Math.max(type.SHAPE, 3),
+        downscale = Math.cos(Math.PI / usableSHAPE),
+        healthMultiplier = Math.pow(5, level) - (level > 2 ? Math.pow(5, level) / Math.pow(5, level - 2) : 0);
     return {
-        PARENT: "food",
-        LABEL:
-            (["", "Beta ", "Alpha ", "Omega ", "Gamma ", "Delta "][level] ??
-                `${level}-Layered `) + type.LABEL,
+        PARENT: 'food',
+        LABEL: ['', 'Beta ', 'Alpha ', 'Omega ', 'Gamma ', 'Delta '][level] + type.LABEL,
         VALUE: util.getReversedJackpot(
             Math.min(
                 5e6,
-                (tier === 0
+                (tier == 0
                     ? 30 * (level > 1 ? Math.pow(6, level - 1) : level) + 8
                     : 30 * Math.pow(5, tier + level - 1)) *
-                    (labyRarityToScore[rarity] ||
-                        Math.pow(rarity * 30 + 5, 1.5))
+                    (labyRarityToScore[rarity] || 1)
             )
         ),
         SHAPE: type.SHAPE,
-        SIZE: (type.SIZE * baseScale) / Math.pow(downscale, level),
+        SIZE: (type.SIZE * baseScale) / downscale ** level,
         COLOR: type.COLOR,
         ALPHA: type.ALPHA ?? 1,
         BODY: {
-            DAMAGE: (type.BODY.DAMAGE || 0) * 2,
+            DAMAGE: type.BODY.DAMAGE,
             DENSITY: type.BODY.DENSITY,
             HEALTH:
-                ((labyTierToHealth[tier] ??
-                    Math.max(1, Math.sqrt(200_000 * (tier - 5)))) *
-                    healthMultiplier *
-                    Math.max(1, rarity * 2)) /
-                (type.BODY.DAMAGE || 1),
+                (labyTierToHealth[tier] || 1) *
+                healthMultiplier *
+                (labyRarityToHealth[rarity] || 1),
             PENETRATION: type.BODY.PENETRATION,
             PUSHABILITY: type.BODY.PUSHABILITY / (level + 1) || 0,
             ACCELERATION: type.BODY.ACCELERATION,
@@ -944,22 +1323,20 @@ exports.makeLaby = (type, tier, rarity, level, baseScale = 1) => {
         },
         INTANGIBLE: type.INTANGIBLE,
         VARIES_IN_SIZE: false,
-        DRAW_HEALTH: type.DRAW_HEALTH && tier !== 0,
+        DRAW_HEALTH: type.DRAW_HEALTH && tier != 0,
         GIVE_KILL_MESSAGE: type.GIVE_KILL_MESSAGE || level > 1,
         GUNS: type.GUNS ?? [],
-        TURRETS: Array(level)
-            .fill()
-            .map((_, i) => ({
-                POSITION: [
-                    20 * downscale ** (i + 1),
-                    0,
-                    0,
-                    !(i & 1) ? 180 / usableSHAPE : 0,
-                    0,
-                    1
-                ],
-                TYPE: [type, { COLOR: "mirror" }]
-            }))
+        TURRETS: type.TURRETS ?? [],
+        PROPS: Array(level).fill().map((_, i) => ({
+            POSITION: [
+                20 * downscale ** (i + 1),
+                0,
+                0,
+                !(i & 1) ? 180 / usableSHAPE : 0,
+                1
+            ],
+            TYPE: [type, { COLOR: 'mirror' }]
+        }))
     };
 };
 exports.makeRarities = (type) => {
@@ -971,7 +1348,7 @@ exports.makeRarities = (type) => {
     }
 }
 
-//merry Christmas
+// Merry Christmas and happy holidays!
 exports.makePresent = (outcolor, wrapcolor) => {
     return {
         PARENT: "food",
@@ -991,24 +1368,18 @@ exports.makePresent = (outcolor, wrapcolor) => {
         DRAW_HEALTH: true,
         PROPS: [
             {
-                POSITION: [19.5, 0, 0, 0, 360, 1],
-                TYPE: ["healerSymbol", { COLOR: wrapcolor}]
+                TYPE: ["healerHat", {COLOR: wrapcolor}],
+                POSITION: {
+                    SIZE: 19.5,
+                    LAYER: 1
+                }
             }
         ]
     }
 }
 
-// Facilitate sharing health pools between a bound turret/prop and its master.
-exports.sharedHealth = (type) => {
-    type = ensureIsClass(type);
-    const output = exports.dereference(type);
-    output.SHARED_HEALTH = true;
-    output.DRAW_HEALTH = false;
-    return output;
-};
-
+// Created by DenisC!!!
 /**
- * Encode a 3D polyhedron into a compact string shape representation.
  * @param {{
  *   VERTEXES?: [number, number, number][],
  *   FACES: number[] | [number, number, number][][],
@@ -1017,14 +1388,13 @@ exports.sharedHealth = (type) => {
  * }} info
  * @returns {`3d=${string}`}
  */
-exports.encode3d = function (info) {
-    let vertexes;
-    let faces;
+exports.makePolyhedron = function (info) {
+    let vertexes, faces;
 
     if (info.VERTEXES) vertexes = info.VERTEXES;
 
     if (!info.FACES) {
-        throw new Error("FACES are not set");
+        throw new Error('FACES are not set');
     } else if (!vertexes) {
         vertexes = [];
         faces = [];
@@ -1032,9 +1402,9 @@ exports.encode3d = function (info) {
             const current = [];
             for (const vertex of face) {
                 let index = vertexes.findIndex(
-                    (x) => x[0] === vertex[0] && x[1] === vertex[1] && x[2] === vertex[2]
+                    x => x[0] == vertex[0] && x[1] == vertex[1] && x[2] == vertex[2]
                 );
-                if (index === -1) {
+                if (index == -1) {
                     index = vertexes.push(vertex) - 1;
                 }
                 current.push(index);
@@ -1046,8 +1416,9 @@ exports.encode3d = function (info) {
     }
 
     const vertScale = info.VERTEXES_SCALE || 1;
-    if (vertScale !== 1) {
-        vertexes = vertexes.map((x) => [
+
+    if (vertScale != 1) {
+        vertexes = vertexes.map(x => [
             x[0] * vertScale,
             x[1] * vertScale,
             x[2] * vertScale
@@ -1055,17 +1426,16 @@ exports.encode3d = function (info) {
     }
 
     return (
-        "3d=" +
-        vertexes.flat().join(",") +
-        "/" +
-        faces.map((i) => i.join(",")).join(";") +
-        "/" +
+        '3d=' +
+        vertexes.flat().join(',') +
+        '/' +
+        faces.map(i => i.join(',')).join(';') +
+        '/' +
         (info.SCALE || 1)
     );
 };
 
 /**
- * Encode a 4D polytope into a compact string shape representation.
  * @param {{
  *   VERTEXES?: [number, number, number, number][],
  *   FACES: number[] | [number, number, number, number][][],
@@ -1074,14 +1444,13 @@ exports.encode3d = function (info) {
  * }} info
  * @returns {`4d=${string}`}
  */
-exports.encode4d = function (info) {
-    let vertexes;
-    let faces;
+exports.makePolychoron = function (info) {
+    let vertexes, faces;
 
     if (info.VERTEXES) vertexes = info.VERTEXES;
 
     if (!info.FACES) {
-        throw new Error("FACES are not set");
+        throw new Error('FACES are not set');
     } else if (!vertexes) {
         vertexes = [];
         faces = [];
@@ -1089,13 +1458,9 @@ exports.encode4d = function (info) {
             const current = [];
             for (const vertex of face) {
                 let index = vertexes.findIndex(
-                    (x) =>
-                        x[0] === vertex[0] &&
-                        x[1] === vertex[1] &&
-                        x[2] === vertex[2] &&
-                        x[3] === vertex[3]
+                    x => x[0] == vertex[0] && x[1] == vertex[1] && x[2] == vertex[2] && x[3] == vertex[3]
                 );
-                if (index === -1) {
+                if (index == -1) {
                     index = vertexes.push(vertex) - 1;
                 }
                 current.push(index);
@@ -1107,8 +1472,9 @@ exports.encode4d = function (info) {
     }
 
     const vertScale = info.VERTEXES_SCALE || 1;
-    if (vertScale !== 1) {
-        vertexes = vertexes.map((x) => [
+
+    if (vertScale != 1) {
+        vertexes = vertexes.map(x => [
             x[0] * vertScale,
             x[1] * vertScale,
             x[2] * vertScale,
@@ -1117,11 +1483,103 @@ exports.encode4d = function (info) {
     }
 
     return (
-        "4d=" +
-        vertexes.flat().join(",") +
-        "/" +
-        faces.map((i) => i.join(",")).join(";") +
-        "/" +
+        '4d=' +
+        vertexes.flat().join(',') +
+        '/' +
+        faces.map(i => i.join(',')).join(';') +
+        '/' +
         (info.SCALE || 1)
     );
 };
+
+// tgs
+exports.makeAutoArray = (type, options = {}) => {
+    suffix = options.suffix ?? ""
+    for (const types of type) {
+        name = ensureIsClass(types)
+        label = name.LABEL
+        classLabel = label.replaceAll(' ', '').replaceAll('-', '').replaceAll("'n", 'N') // delete whitespaces and hyphens + special case for halfnhalf
+
+        Class["auto" + classLabel + suffix] = exports.makeAuto(types)
+        if (options.tier >= 1) {
+            Class["megaAuto" + classLabel + suffix] = exports.makeAuto(types, `Mega Auto-${label}`, {type: "megaAutoTurret", size: 12})
+            Class["tripleAuto" + classLabel + suffix] = exports.makeAuto(types, `Triple Auto-${label}`, {size: 6.5, x: 5.2, angle: 0, total: 3})
+            if (options.tier >= 2) {
+                Class["ultraAuto" + classLabel + suffix] = exports.makeAuto(types, `Ultra Auto-${label}`, {type: "ultraAutoTurret", size: 14})
+                Class["tripleMegaAuto" + classLabel + suffix] = exports.makeAuto(types, `Triple Mega Auto-${label}`, {type: "megaAutoTurret", size: 7.5, x: 5.2, angle: 0, total: 3})
+                Class["pentaAuto" + classLabel + suffix] = exports.makeAuto(types, `Penta Auto-${label}`, {size: 5.2, x: 6.5, angle: 0, total: 5})
+                if (options.tier >= 3) {
+                    Class["heptaAuto" + classLabel + suffix] = exports.makeAuto(types, `Hepta Auto-${label}`, {size: 4, x: 6.5, angle: 0, total: 7})
+                }
+            }
+        }
+    }
+}
+exports.deleteUpgrades = (type, tier, upgrades = []) => {
+    typeUpgrades = Class[type]['UPGRADES_TIER_' + tier]
+    for (let i = 0; i < typeUpgrades.length; i++) {
+        let string = typeUpgrades[i];
+        for (const upgrade of upgrades) if (string === upgrade) {
+            typeUpgrades.splice(i, 1)
+        }
+    }
+}
+exports.makeSnake = (type, count = 2, name = -1, options = {}) => {
+    type = ensureIsClass(type);
+
+    let segment = exports.dereference(type);
+    segment.CAN_BE_ON_LEADERBOARD = false;
+    segment.CLEAR_ON_MASTER_UPGRADE = true;
+    segment.DISPLAY_NAME = false;
+    segment.COLOR = 'mirror';
+    segment.GUNS = options.segmentGuns ??= segment.GUNS
+    segment.PROPS = options.segmentProps ??= segment.PROPS
+    segment.TURRETS = options.segmentTurrets ??= segment.TURRETS
+
+    let output = exports.dereference(type);
+    output.LABEL = name == -1 ? "Snake " + type.LABEL : name;
+    output.DANGER = options.danger ??= output.DANGER + 1
+    output.ON = [
+        {
+            event: 'tick',
+            handler: ({body}) => {
+                const numOfSegments = count;
+                const segmentClass = segment;
+
+                body.store.snakeSegments ??= [];
+                body.tick ??= 0;
+                body.tick++
+
+                if (body.store.snakeSegments.length < numOfSegments) {
+                    if (body.tick % 30 == 0) {
+                        let seg = new Entity(body, body);
+                        seg.master = body;
+                        seg.source = body;
+                        seg.skill.score = body.skill.score;
+                        seg.define(segmentClass);
+                        body.store.snakeSegments.push(seg);
+                    }
+                }
+                body.store.snakeSegments = body.store.snakeSegments.filter((x)=>!x.isDead())
+
+                let previous = body;
+                const children = body.store.snakeSegments;
+
+                for (const child of children) {
+                    const dx = child.x - previous.x;
+                    const dy = child.y - previous.y;
+                    const distance = Math.hypot(dx, dy) || 1; // /0 possible ig
+                    const factor = (child.size + previous.size) * 1 / distance;
+        
+                    child.x = previous.x + dx * factor;
+                    child.y = previous.y + dy * factor;
+                    child.velocity.x = 0; // No natural move!
+                    child.velocity.y = 0; // No natural move!
+                    child.life();
+                    previous = child;
+                }
+            }
+        }
+    ];
+    return output;
+}

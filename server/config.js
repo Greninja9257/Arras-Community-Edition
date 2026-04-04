@@ -274,6 +274,8 @@ module.exports = {
 
     // Seasonal
     spooky_theme: false, // Toggles the seasonal Halloween theme (adds eyes to walls and replaces rocks to pumpkins)
+    fireworks: false, // Toggles fireworks (automatic around July 4 in US-region servers)
+    thanksgiving: false, // Toggles the seasonal thanksgiving theme (replaces Motherships with Turkeys)
 
     // Gameplay
     game_speed: 1, // General game speed.
@@ -311,7 +313,7 @@ module.exports = {
     level_cap_cheat: 45, // Maximum level via the level-up key and auto-level-up.
 
     skill_cap: 9, // Default skill caps.
-    tier_cap: 9, // Amount of tank tiers.
+    tier_cap: 17, // Amount of tank tiers.
     tier_multiplier: 15, // Level difference between each tier.
 
     // Bots
@@ -371,7 +373,8 @@ module.exports = {
     food_group_cap: 6, // Number of foods that random food groups spawn with
 
     // Bosses
-    bosses_spawn: true,
+    enable_bosses: true,
+    bosses_spawn: true, // legacy alias
     boss_spawn_cooldown: 260, // The delay (in seconds) between boss spawns.
     boss_spawn_delay: 6, // The delay (in seconds) between the boss spawn being announced and the boss(es) actually spawning.
     boss_types: [{
@@ -418,6 +421,9 @@ module.exports = {
     blackout_minimap_color: "pureBlack",
     space_physics: false,
     arms_race: false,
+    march_madness: false,
+    diep: false,
+    retrograde: false,
     clan_wars: false,
     growth: false,
     harvest: false,

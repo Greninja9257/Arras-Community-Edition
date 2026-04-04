@@ -2,7 +2,7 @@ const {
     normal: ____,
     nest,
     rock,
-    roid
+    roid,
 } = tileClass;
 
 

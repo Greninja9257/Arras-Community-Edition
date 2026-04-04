@@ -510,16 +510,20 @@ class Entity extends EventEmitter {
             this.turrets.clear();
             for (let i = 0; i < set.TURRETS.length; i++) {
                 let def = set.TURRETS[i],
-                    o = new turretEntity(def.POSITION, this, this.master),
-                    turretDanger = false,
-                    type = Array.isArray(def.TYPE) ? def.TYPE : [def.TYPE];
-                for (let j = 0; j < type.length; j++) {
-                    o.define(type[j]);
-                    if (type.TURRET_DANGER) turretDanger = true;
+                    turretDanger = false;
+                try {
+                    let o = new turretEntity(def.POSITION, this, this.master),
+                        type = Array.isArray(def.TYPE) ? def.TYPE : [def.TYPE];
+                    for (let j = 0; j < type.length; j++) {
+                        o.define(type[j]);
+                        if (type.TURRET_DANGER) turretDanger = true;
+                    }
+                    if (!turretDanger) o.define({ DANGER: 0 });
+                    o.collidingBond = def.VULNERABLE;
+                    o.fixFacing();
+                } catch (error) {
+                    console.warn(`[WARNING]: Skipping missing turret definition on "${this.label ?? this.name ?? "Entity"}".`);
                 }
-                if (!turretDanger) o.define({ DANGER: 0 });
-                o.collidingBond = def.VULNERABLE;
-                o.fixFacing();
             }
         }
         if (set.ON != null) {
@@ -839,8 +843,8 @@ class Entity extends EventEmitter {
         // Account for upgrades that are too high level for the player to access
         let upgraded = false;
         if (number.isDailyUpgrade) {
-            let hasWatchedAd = this.socket.status.daily_tank_watched_ad;
-            if (!Config.daily_tank.ads.enabled) hasWatchedAd = true;
+            const adRequired = !!(Config.daily_tank && Config.daily_tank.ads && Config.daily_tank.ads.enabled);
+            let hasWatchedAd = !adRequired || !!(this.socket && this.socket.status && this.socket.status.daily_tank_watched_ad);
             let requestedIndex = parseInt(number.tank);
             if (requestedIndex === ensureIsClass(Config.daily_tank.tank).index && this.skill.level >= Config.tier_multiplier * Config.daily_tank.tier) {
                 if (hasWatchedAd) {

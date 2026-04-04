@@ -1,3 +1,5 @@
+// Disabled: celestials are now defined in groups/bosses/celestials.js
+return;
 const { generateProceduralClasses } = require('../procedural.js');
 const { makeTurret, combineStats } = require('../facilitators.js');
 const { base } = require('../constants.js');

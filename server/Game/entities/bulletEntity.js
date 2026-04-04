@@ -30,7 +30,6 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
         this.activation = new Activation(this);
         this.controllers = [];
         // Initalize
-        this.guns = [];
         this.skill = new Skill();
         this.health = new HealthType(1, 'static', 0);
         this.shield = new HealthType(0, 'dynamic');
@@ -39,7 +38,6 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
         this.settings = {};
         this.aiSettings = {};
         this.guns = new Map();
-        this.gunsArrayed = [];
         this.children = [];
         this.bulletchildren = [];
         this.glow = { radius: null, color: new Color(-1).compiled, alpha: 1, recursion: 1 };
@@ -161,7 +159,7 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
                 }
                 this.addController(toAdd);
             } catch (e) {
-                console.error(addedSuccess ? `Controller ${set.CONTROLLERS} ran into an error!` : `Controller ${set.CONTROLLERS} is attempted to be gotten but does not exist!`);
+                console.error(addedSuccess ? `Controller ${set.CONTROLLERS} ran into an error!` : `Controller "${set.CONTROLLERS}" was attempted to be gotten but does not exist!`);
                 throw new Error(e);
             }
         }
@@ -193,7 +191,6 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
         if (set.ACCEPTS_SCORE != null) this.settings.acceptsScore = set.ACCEPTS_SCORE;
         if (set.GIVE_KILL_MESSAGE != null) this.settings.givesKillMessage = set.GIVE_KILL_MESSAGE;
         if (set.CAN_GO_OUTSIDE_ROOM != null) this.settings.canGoOutsideRoom = set.CAN_GO_OUTSIDE_ROOM;
-        if (set.INFINITE_MAX_SPEED != null) this.settings.infiniteMaxSpeed = set.INFINITE_MAX_SPEED;
         if (set.HITS_OWN_TYPE != null) this.settings.hitsOwnType = set.HITS_OWN_TYPE;
         if (set.DIE_AT_LOW_SPEED != null) this.settings.diesAtLowSpeed = set.DIE_AT_LOW_SPEED;
         if (set.DIE_AT_RANGE != null) this.settings.diesAtRange = set.DIE_AT_RANGE;
@@ -236,9 +233,6 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
         if (set.HEALER) this.healer = true;
         if (set.DAMAGE_CLASS != null) this.settings.damageClass = set.DAMAGE_CLASS;
         if (set.BUFF_VS_FOOD != null) this.settings.buffVsFood = set.BUFF_VS_FOOD;
-        if (set.DAMAGE_MULTIPLIER_VS_PLAYERS != null) this.settings.damageMultiplierVsPlayers = set.DAMAGE_MULTIPLIER_VS_PLAYERS;
-        if (set.DAMAGE_MULTIPLIER_VS_PROJECTILES != null) this.settings.damageMultiplierVsProjectiles = set.DAMAGE_MULTIPLIER_VS_PROJECTILES;
-        if (set.DAMAGE_CAP != null) this.settings.damageCap = set.DAMAGE_CAP;
         if (set.INTANGIBLE != null) this.intangibility = set.INTANGIBLE;
         if (set.IS_SMASHER != null) this.settings.reloadToAcceleration = set.IS_SMASHER;
         if (set.AI != null) this.aiSettings = set.AI;
@@ -290,7 +284,6 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
             for (let guns of newGuns) {
                 this.guns.set(guns.id, guns);
             }
-            this.gunsArrayed = newGuns;
         }
         if (set.EXTRA_SKILL != null) this.skill.points += set.EXTRA_SKILL;
         if (set.BODY != null) {
@@ -341,6 +334,7 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
         this.acceleration = (1 * global.gameManager.runSpeed * this.ACCELERATION) / speedReduce;
         if (this.settings.reloadToAcceleration) this.acceleration *= this.skill.acl;
         this.topSpeed = (1 * global.gameManager.runSpeed * this.SPEED * this.skill.mob) / speedReduce;
+        if (this.settings.reloadToAcceleration) this.topSpeed /= Math.sqrt(this.skill.acl);
         this.health.set(((this.settings.healthWithLevel ? 2 * this.level : 0) + this.HEALTH) * this.skill.hlt * 1);
         this.health.resist = 1 - 1 / Math.max(1, this.RESIST + this.skill.brst);
         this.shield.set(((this.settings.healthWithLevel ? 0.6 * this.level : 0) + this.SHIELD) * this.skill.shi, Math.max(0, ((this.settings.healthWithLevel ? 0.006 * this.level : 0) + 1) * this.REGEN * this.skill.rgn * 1));
@@ -371,7 +365,7 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
         return {
             type: 0x10,
             id: this.id,
-            index: this.index || this.label || "Bullet",
+            index: this.index,
             x: this.x,
             y: this.y,
             vx: this.velocity.x,
@@ -385,7 +379,7 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
             vfacing: this.vfacing,
             layer: this.layerID ? this.layerID : this.type === "wall" ? 11 : this.type === "food" ? 10 : this.type === "tank" ? 5 : this.type === "crasher" ? 1 : 0,
             color: this.color.compiled,
-            guns: Array.from(this.guns).map(gun => gun[1].getPhotoInfo()),
+            guns: Array.from(this.guns.values()).map(gun => gun.getPhotoInfo()),
             turrets: [],
         };
     };
@@ -438,20 +432,6 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
             return 0;
         }
         if (!this.settings.canGoOutsideRoom) {
-            if (Config.wrap_room) {
-                const width = global.gameManager.room.width;
-                const height = global.gameManager.room.height;
-                const halfWidth = width / 2;
-                const halfHeight = height / 2;
-
-                if (this.x < -halfWidth) this.x += width;
-                else if (this.x > halfWidth) this.x -= width;
-
-                if (this.y < -halfHeight) this.y += height;
-                else if (this.y > halfHeight) this.y -= height;
-
-                return;
-            }
             if (Config.arena_shape === "circle") {
                 let centerPoint = {
                     x: global.gameManager.room.width - global.gameManager.room.width,
@@ -521,8 +501,13 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
     destroy() {
         // Remove this from views
         global.gameManager.views.forEach(v => v.remove(this));
-        // Remove bullet from bullet list if needed and the only reason it exists is for bacteria.
-        if (this.bulletparent != null) util.remove(this.bulletparent.bulletchildren, this.bulletparent.bulletchildren.indexOf(this))
+        // Remove from bullet lists if needed
+        if (this.bulletparent != null) {
+            util.remove(this.bulletparent.bulletchildren, this.bulletparent.bulletchildren.indexOf(this)); // the only reason this exists is for bacteria.
+            for (let gun of this.bulletparent.guns.values()) {
+                util.remove(gun.bulletchildren, gun.bulletchildren.indexOf(this));
+            }
+        }
         // Remove from parent lists if needed
         if (this.parent != null) util.remove(this.parent.children, this.parent.children.indexOf(this));
         // Kill all of its children
@@ -541,6 +526,15 @@ class bulletEntity { // Basically an (Entity) but with heavy limitations to impr
                 if (this.master.label !== "Bacteria") {
                     instance.kill();
                     instance.master = instance;
+                }
+            }
+        }
+        // Clear all of the gun bullet children
+        for (const gun of this.guns.values()) {
+            for (const bullet of gun.bulletchildren) {
+                if (bullet.isDead()) {
+                    bullet.collisionArray.splice(0, bullet.collisionArray.length);
+                    bullet.destroy(); // idk if i need to
                 }
             }
         }

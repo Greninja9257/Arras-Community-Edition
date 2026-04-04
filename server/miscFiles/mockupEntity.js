@@ -113,7 +113,7 @@ class MockupEntityProp {
             layer: position.LAYER,
         };
         // Initalize.
-        this.setAngle = def.ANGLE ?? null;
+        this.forceAngle = def.FORCE_ANGLE ?? null;
         this.facing = 0;
         this.x = 0;
         this.y = 0;
@@ -254,6 +254,7 @@ class MockupEntity {
         this.settings.ratioEffects = set.RATIO_EFFECTS ?? true;
         this.settings.motionEffects = set.MOTION_EFFECTS ?? true;
         this.sendAllMockups = set.SEND_ALL_MOCKUPS ?? false;
+        this.displayScore = set.DISPLAY_SCORE ?? true;
         if (set.VISIBLE_ON_BLACKOUT) this.visibleOnBlackout = set.VISIBLE_ON_BLACKOUT;
         if (set.REROOT_UPGRADE_TREE) this.rerootUpgradeTree = set.REROOT_UPGRADE_TREE;
         if (Array.isArray(this.rerootUpgradeTree)) {
@@ -291,7 +292,7 @@ class MockupEntity {
             }
         }
         else if (set.LEVEL != null) level = set.LEVEL;
-        this.size = (set.SIZE ?? 1) * (set.VARIES_IN_SIZE ? ran.randomRange(0.8, 1.2) : 1) * (1 + Math.min(set.level_cap ?? Config.level_cap, level) / 45);
+        this.size = (set.SIZE ?? 1) * (set.VARIES_IN_SIZE ? ran.randomRange(0.8, 1.2) : 1) * (1 + Math.min(set.LEVEL_CAP ?? Config.level_cap, level) / 45);
         this.realSize = util.rounder(this.size * lazyRealSizes[Math.floor(Math.abs(this.shape))]);
         this.size = util.rounder(this.size);
         if (set.BRANCH_LABEL != null) this.branchLabel = set.BRANCH_LABEL;
@@ -305,12 +306,21 @@ class MockupEntity {
                     if (!Array.isArray(upgrades)) upgrades = [upgrades];
                     let redefineAll = upgrades.includes(true);
                     let trueUpgrades = upgrades.slice(0, upgrades.length - redefineAll); // Ignore last element if it's true
+                    let resolvedUpgrades = [];
                     for (let k of trueUpgrades) {
-                        let e = ensureIsClass(k);
-                        index += e.index + "-";
+                        try {
+                            let e = ensureIsClass(k);
+                            index += e.index + "-";
+                            resolvedUpgrades.push(k);
+                        } catch (error) {
+                            console.warn(`[WARNING]: Skipping missing upgrade definition "${k}" while building mockup "${set.LABEL ?? set.NAME ?? "Unknown"}".`);
+                        }
+                    }
+                    if (!resolvedUpgrades.length) {
+                        continue;
                     }
                     this.upgrades.push({
-                        class: trueUpgrades,
+                        class: resolvedUpgrades,
                         level: Config.tier_multiplier * i,
                         index: index.substring(0, index.length - 1),
                         tier: i,
@@ -326,7 +336,12 @@ class MockupEntity {
         for (let def of vclass) this.defs.push(def);
         if (this.batchUpgrades) handleBatchUpgradeSplit(this); // Batch upgrades
         for (let branch = 1; branch < this.defs.length; branch++) { // Define additional stats for other split upgrades (And fix class tree too)
-            set = ensureIsClass(this.defs[branch]);
+            try {
+                set = ensureIsClass(this.defs[branch]);
+            } catch (error) {
+                console.warn(`[WARNING]: Skipping missing branch definition "${this.defs[branch]}" while building mockup.`);
+                continue;
+            }
             if (set.index != null) this.index += "-" + set.index;
             if (set.PARENT != null) {
                 if (Array.isArray(set.PARENT)) {
@@ -347,12 +362,21 @@ class MockupEntity {
                         if (!Array.isArray(upgrades)) upgrades = [upgrades];
                         let redefineAll = upgrades.includes(true);
                         let trueUpgrades = upgrades.slice(0, upgrades.length - redefineAll); // Ignore last element if it's true
+                        let resolvedUpgrades = [];
                         for (let k of trueUpgrades) {
-                            let e = ensureIsClass(k);
-                            index += e.index + "-";
+                            try {
+                                let e = ensureIsClass(k);
+                                index += e.index + "-";
+                                resolvedUpgrades.push(k);
+                            } catch (error) {
+                                console.warn(`[WARNING]: Skipping missing upgrade definition "${k}" while building mockup "${set.LABEL ?? set.NAME ?? "Unknown"}".`);
+                            }
+                        }
+                        if (!resolvedUpgrades.length) {
+                            continue;
                         }
                         this.upgrades.push({
-                            class: trueUpgrades,
+                            class: resolvedUpgrades,
                             level: Config.tier_multiplier * i,
                             index: index.substring(0, index.length - 1),
                             tier: i,
@@ -383,14 +407,18 @@ class MockupEntity {
             for (let i = 0; i < set.TURRETS.length; i++) {
                 let def = set.TURRETS[i];
                 let o = new MockupEntity();
-                if (Array.isArray(def.TYPE)) {
-                    for (let j = 0; j < def.TYPE.length; j++) {
-                        o.set(def.TYPE[j]);
+                try {
+                    if (Array.isArray(def.TYPE)) {
+                        for (let j = 0; j < def.TYPE.length; j++) {
+                            o.set(def.TYPE[j]);
+                        }
+                    } else {
+                        o.set(def.TYPE);
                     }
-                } else {
-                    o.set(def.TYPE);
+                    o.bindToMaster(def.POSITION, this);
+                } catch (error) {
+                    console.warn(`[WARNING]: Skipping missing turret definition while building mockup "${set.LABEL ?? set.NAME ?? "Unknown"}".`);
                 }
-                o.bindToMaster(def.POSITION, this);
             }
         }
         if (set.PROPS != null) {
@@ -400,7 +428,11 @@ class MockupEntity {
                     type = Array.isArray(def.TYPE) ? def.TYPE : [def.TYPE],
                     o = new MockupEntityProp(def, this);
                 for (let j = 0; j < type.length; j++) {
-                    o.define(type[j]);
+                    try {
+                        o.define(type[j]);
+                    } catch (error) {
+                        console.warn(`[WARNING]: Skipping missing prop definition while building mockup "${set.LABEL ?? set.NAME ?? "Unknown"}".`);
+                    }
                 }
             }
         }
@@ -435,9 +467,6 @@ class MockupEntity {
             arc: position.ARC * Math.PI / 180,
             layer: position.LAYER
         };
-    }
-    clear() {
-        delete this;
     }
 }
 

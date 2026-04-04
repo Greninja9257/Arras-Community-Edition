@@ -16,11 +16,3 @@ tileClass.sabase2 = new Tile({
         tile.isSanctuary = true;
     },
 });
-tileClass.assaultNest = new Tile({
-    COLOR: "white",
-    NAME: "Assault Nest Tile",
-    INIT: (tile, room) => {
-        if (!room.spawnable[TEAM_ENEMIES]) room.spawnable[TEAM_ENEMIES] = [];
-        room.spawnable[TEAM_ENEMIES].push(tile);
-    },
-});

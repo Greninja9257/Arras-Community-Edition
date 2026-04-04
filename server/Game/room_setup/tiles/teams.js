@@ -81,3 +81,67 @@ tileClass.baseprotected4 = new Tile({
     },
     TICK: tile => teamCheck(tile, TEAM_PURPLE)
 })
+
+// Team -5 (Yellow)
+tileClass.base5 = new Tile({
+    COLOR: "mustard",
+    INIT: (tile, room) => teamRoomCheck(tile, TEAM_YELLOW, room),
+    TICK: tile => teamCheck(tile, TEAM_YELLOW)
+})
+tileClass.baseprotected5 = new Tile({
+    COLOR: "mustard",
+    VISIBLE_FROM_BLACKOUT: true,
+    INIT: (tile, room) => {
+        teamRoomCheck(tile, TEAM_YELLOW, room),
+        spawnPermanentBaseProtector(tile.loc, TEAM_YELLOW);
+    },
+    TICK: tile => teamCheck(tile, TEAM_YELLOW)
+})
+
+// Team -6 (Orange)
+tileClass.base6 = new Tile({
+    COLOR: "tangerine",
+    INIT: (tile, room) => teamRoomCheck(tile, TEAM_ORANGE, room),
+    TICK: tile => teamCheck(tile, TEAM_ORANGE)
+})
+tileClass.baseprotected6 = new Tile({
+    COLOR: "tangerine",
+    VISIBLE_FROM_BLACKOUT: true,
+    INIT: (tile, room) => {
+        teamRoomCheck(tile, TEAM_ORANGE, room),
+        spawnPermanentBaseProtector(tile.loc, TEAM_ORANGE);
+    },
+    TICK: tile => teamCheck(tile, TEAM_ORANGE)
+})
+
+// Team -7 (Brown)
+tileClass.base7 = new Tile({
+    COLOR: "brown",
+    INIT: (tile, room) => teamRoomCheck(tile, TEAM_BROWN, room),
+    TICK: tile => teamCheck(tile, TEAM_BROWN)
+})
+tileClass.baseprotected7 = new Tile({
+    COLOR: "brown",
+    VISIBLE_FROM_BLACKOUT: true,
+    INIT: (tile, room) => {
+        teamRoomCheck(tile, TEAM_BROWN, room),
+        spawnPermanentBaseProtector(tile.loc, TEAM_BROWN);
+    },
+    TICK: tile => teamCheck(tile, TEAM_BROWN)
+})
+
+// Team -8 (Cyan)
+tileClass.base8 = new Tile({
+    COLOR: "cyan",
+    INIT: (tile, room) => teamRoomCheck(tile, TEAM_CYAN, room),
+    TICK: tile => teamCheck(tile, TEAM_CYAN)
+})
+tileClass.baseprotected8 = new Tile({
+    COLOR: "cyan",
+    VISIBLE_FROM_BLACKOUT: true,
+    INIT: (tile, room) => {
+        teamRoomCheck(tile, TEAM_CYAN, room),
+        spawnPermanentBaseProtector(tile.loc, TEAM_CYAN);
+    },
+    TICK: tile => teamCheck(tile, TEAM_CYAN)
+})
