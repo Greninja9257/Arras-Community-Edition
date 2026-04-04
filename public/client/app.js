@@ -3255,9 +3255,8 @@ import * as socketStuff from "./socketinit.js";
             const barStart = x + height / 2;
             const barEnd = x + height / 2 + len * ska(cap) - gap;
             const barWidth = Math.max(0, barEnd - barStart);
-            const step = cap > 0 ? barWidth / cap : 0;
             const safeLevel = Math.max(0, Math.min(level, cap));
-            const dividerXFor = (j) => Math.round((barStart + step * j) * 2) / 2;
+            const dividerXFor = (j) => barStart + barWidth * (j / cap);
             const fillEnd = safeLevel > 0 ? Math.max(barStart, dividerXFor(safeLevel) - 1) : barStart;
 
             drawBar(x + height / 2, x - height / 2 + len * ska(cap) - 14, y + height / 2, height - 2.8 + config.graphical.barChunk, color.black);
@@ -3278,7 +3277,7 @@ import * as socketStuff from "./socketinit.js";
             // Vertical dividers
             ctx[2].strokeStyle = color.black;
             ctx[2].lineWidth = 1;
-            for (let j = 1; j < level + 1; j++) {
+            for (let j = 1; j < safeLevel; j++) {
                 const lineX = dividerXFor(j);
                 drawGuiLine(lineX, y + 1.5, lineX, y - 3 + height);
             }
