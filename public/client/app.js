@@ -1413,6 +1413,8 @@ import * as socketStuff from "./socketinit.js";
 
     // Init stuff
     function arrayifyText(rawText) {
+        if (rawText == null) rawText = "";
+        else if (typeof rawText !== "string") rawText = String(rawText);
         //we want people to be able to use the section sign in writing too
         // string with double §           txt   col   txt                      txt
         // "...§text§§text§..." => [..., "text", "", "text", ...] => [..., "text§text", ...]
