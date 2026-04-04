@@ -17,30 +17,23 @@ const defineIfMissing = (name, def) => {
 
 // Common utility bodies/symbols used by dev menus and custom tanks.
 defineIfMissing('smasherBody', {
-  PARENT: 'genericEntity',
   LABEL: '',
-  COLOR: 'mirror',
+  FACING_TYPE: ['spin', { speed: 0.16 }],
+  COLOR: 'black',
   SHAPE: 6,
+  SIZE: 12,
   INDEPENDENT: true,
-  HITS_OWN_TYPE: 'hardOnlyTanks',
 });
 
 defineIfMissing('spikeBody', {
-  PARENT: 'genericEntity',
-  LABEL: '',
-  COLOR: 'mirror',
+  PARENT: 'smasherBody',
   SHAPE: 3,
-  INDEPENDENT: true,
-  HITS_OWN_TYPE: 'hardOnlyTanks',
 });
 
 defineIfMissing('healerSymbol', {
-  PARENT: 'genericEntity',
-  LABEL: '',
-  COLOR: 'mirror',
-  SHAPE: 0,
-  CONTROLLERS: [['spin', { speed: 0.04 }]],
-  INDEPENDENT: true,
+  SHAPE: [[0.3, -0.3], [1, -0.3], [1, 0.3], [0.3, 0.3], [0.3, 1], [-0.3, 1], [-0.3, 0.3], [-1, 0.3], [-1, -0.3], [-0.3, -0.3], [-0.3, -1], [0.3, -1]],
+  SIZE: 13,
+  COLOR: 'red',
 });
 
 // Boss/menu aliases expected by some local dev menus.
@@ -106,7 +99,7 @@ if (!Class.oneShot) {
   Class.oneShot = {
     PARENT: 'smasher',
     LABEL: 'One-Shot',
-    UPGRADE_TOOLTIP: 'One Shot anything at the cost of your life',
+    UPGRADE_TOOLTIP: 'One Shot anything a the cost of Your Life',
     IGNORE_BODY_DAMAGE_RESIST: true,
     SELF_DESTRUCT_ON_COLLIDE: true,
     DANGER: 8,
@@ -128,7 +121,7 @@ if (!Class.oneShot) {
     },
     BODY: {
       SPEED: base.SPEED * 3.45,
-      DAMAGE: 1e9,
+      DAMAGE: 1e22,
       HEALTH: 1,
       SHIELD: 0,
       REGEN: 0,
