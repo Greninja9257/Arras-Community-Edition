@@ -3251,18 +3251,24 @@ import * as socketStuff from "./socketinit.js";
                 max = cap;
             }
 
+            // Keep overall bar geometry, but split level segments evenly.
+            const fullBarWidth = Math.max(0, len * ska(cap) - gap);
+            const levelRatio = cap > 0 ? Math.min(level, cap) / cap : 0;
+            const levelBarWidth = fullBarWidth * levelRatio;
+            const levelSplitX = (j) => x + height / 2 + fullBarWidth * (j / cap);
+
             //bar fills
             drawBar(x + height / 2, x - height / 2 + len * ska(cap) - 14, y + height / 2, height - 2.8 + config.graphical.barChunk, color.black);
-            drawBar(x + height / 2, x + height / 2 + len * ska(cap) - gap, y + height / 2, height - 3, color.grey);
-            drawBar(x + height / 2, x + height / 2 + len * ska(level) - gap, y + height / 2, height - 5.5 + config.graphical.barChunk, color.black);
-            drawBar(x + height / 2, x + height / 2 + len * ska(level) - gap, y + height / 2, height - 3.5, col);
+            drawBar(x + height / 2, x + height / 2 + fullBarWidth, y + height / 2, height - 3, color.grey);
+            drawBar(x + height / 2, x + height / 2 + levelBarWidth, y + height / 2, height - 5.5 + config.graphical.barChunk, color.black);
+            drawBar(x + height / 2, x + height / 2 + levelBarWidth, y + height / 2, height - 3.5, col);
 
             // Blocked-off area
             if (blocking) {
                 ctx[2].lineWidth = 1;
                 ctx[2].strokeStyle = color.grey;
                 for (let j = cap + 1; j < max; j++) {
-                    drawGuiLine(x + len * ska(j) - gap, y + 1.5, x + len * ska(j) - gap, y - 3 + height);
+                    drawGuiLine(levelSplitX(j), y + 1.5, levelSplitX(j), y - 3 + height);
                 }
             }
 
@@ -3270,7 +3276,7 @@ import * as socketStuff from "./socketinit.js";
             ctx[2].strokeStyle = color.black;
             ctx[2].lineWidth = 1;
             for (let j = 1; j < level + 1; j++) {
-                drawGuiLine(x + len * ska(j) - gap, y + 1.5, x + len * ska(j) - gap, y - 3 + height);
+                drawGuiLine(levelSplitX(j), y + 1.5, levelSplitX(j), y - 3 + height);
             }
 
             // Skill name
