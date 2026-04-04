@@ -157,19 +157,29 @@ server = require("http").createServer((req, res) => {
             readString = "true";
         } break;
 
+        const publicRootReal = fs.realpathSync(publicRoot);
+
         case selectedHeader: {
             // For all other routes, serve static files from the public directory
             ok = false;
             const parsedUrl = url.parse(req.url);
             const requestPath = parsedUrl.pathname || "/";
-            let fileToGet = path.resolve(publicRoot, "." + requestPath);
+            let fileToGet = path.resolve(publicRootReal, "." + requestPath);
+
+            try {
+                // Resolve symlinks and normalize the requested path
+                fileToGet = fs.realpathSync(fileToGet);
+            } catch (e) {
+                // If the path cannot be resolved, fall back to the default index file
+                fileToGet = path.join(publicRootReal, `${selectedHeader}/index.html`);
+            }
 
             // Ensure the resolved path is within the public root to prevent directory traversal
-            if (!fileToGet.startsWith(publicRoot)) {
-                fileToGet = path.join(publicRoot, `${selectedHeader}/index.html`);
+            if (!fileToGet.startsWith(publicRootReal)) {
+                fileToGet = path.join(publicRootReal, `${selectedHeader}/index.html`);
             } else if (!fs.existsSync(fileToGet) || !fs.lstatSync(fileToGet).isFile()) {
                 // If the requested file doesn't exist or isn't a file, default to the INDEX_HTML file
-                fileToGet = path.join(publicRoot, `${selectedHeader}/index.html`);
+                fileToGet = path.join(publicRootReal, `${selectedHeader}/index.html`);
             }
 
             // Determine the file's MIME type based on its extension and serve the file stream
@@ -183,14 +193,22 @@ server = require("http").createServer((req, res) => {
             ok = false;
             const parsedUrl = url.parse(req.url);
             const requestPath = parsedUrl.pathname || "/";
-            let fileToGet = path.resolve(publicRoot, "." + requestPath);
+            let fileToGet = path.resolve(publicRootReal, "." + requestPath);
+
+            try {
+                // Resolve symlinks and normalize the requested path
+                fileToGet = fs.realpathSync(fileToGet);
+            } catch (e) {
+                // If the path cannot be resolved, fall back to the main_menu file
+                fileToGet = path.join(publicRootReal, Config.main_menu);
+            }
 
             // Ensure the resolved path is within the public root to prevent directory traversal
-            if (!fileToGet.startsWith(publicRoot)) {
-                fileToGet = path.join(publicRoot, Config.main_menu);
+            if (!fileToGet.startsWith(publicRootReal)) {
+                fileToGet = path.join(publicRootReal, Config.main_menu);
             } else if (!fs.existsSync(fileToGet) || !fs.lstatSync(fileToGet).isFile()) {
                 // If the requested file doesn't exist or isn't a file, default to the main_menu file
-                fileToGet = path.join(publicRoot, Config.main_menu);
+                fileToGet = path.join(publicRootReal, Config.main_menu);
             }
 
             // Determine the file's MIME type based on its extension and serve the file stream
