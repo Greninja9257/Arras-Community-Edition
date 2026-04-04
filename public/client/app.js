@@ -3253,19 +3253,25 @@ import * as socketStuff from "./socketinit.js";
 
             //bar fills
             const barStart = x + height / 2;
-            const fillEndRaw = x + height / 2 + len * ska(level) - gap;
-            const fillEnd = Math.max(barStart, fillEndRaw - 1);
+            const barEnd = x + height / 2 + len * ska(cap) - gap;
+            const barWidth = Math.max(0, barEnd - barStart);
+            const step = cap > 0 ? barWidth / cap : 0;
+            const safeLevel = Math.max(0, Math.min(level, cap));
+            const dividerXFor = (j) => Math.round((barStart + step * j) * 2) / 2;
+            const fillEnd = safeLevel > 0 ? Math.max(barStart, dividerXFor(safeLevel) - 1) : barStart;
+
             drawBar(x + height / 2, x - height / 2 + len * ska(cap) - 14, y + height / 2, height - 2.8 + config.graphical.barChunk, color.black);
-            drawBar(x + height / 2, x + height / 2 + len * ska(cap) - gap, y + height / 2, height - 3, color.grey);
-            drawBar(x + height / 2, fillEnd, y + height / 2, height - 5.5 + config.graphical.barChunk, color.black);
-            drawBar(x + height / 2, fillEnd, y + height / 2, height - 3.5, col);
+            drawBar(barStart, barEnd, y + height / 2, height - 3, color.grey);
+            drawBar(barStart, fillEnd, y + height / 2, height - 5.5 + config.graphical.barChunk, color.black);
+            drawBar(barStart, fillEnd, y + height / 2, height - 3.5, col);
 
             // Blocked-off area
             if (blocking) {
                 ctx[2].lineWidth = 1;
                 ctx[2].strokeStyle = color.grey;
                 for (let j = cap + 1; j < max; j++) {
-                    drawGuiLine(x + len * ska(j) - gap, y + 1.5, x + len * ska(j) - gap, y - 3 + height);
+                    const lineX = dividerXFor(j);
+                    drawGuiLine(lineX, y + 1.5, lineX, y - 3 + height);
                 }
             }
 
@@ -3273,7 +3279,8 @@ import * as socketStuff from "./socketinit.js";
             ctx[2].strokeStyle = color.black;
             ctx[2].lineWidth = 1;
             for (let j = 1; j < level + 1; j++) {
-                drawGuiLine(x + len * ska(j) - gap, y + 1.5, x + len * ska(j) - gap, y - 3 + height);
+                const lineX = dividerXFor(j);
+                drawGuiLine(lineX, y + 1.5, lineX, y - 3 + height);
             }
 
             // Skill name
