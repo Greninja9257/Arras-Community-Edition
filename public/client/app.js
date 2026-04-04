@@ -3252,10 +3252,13 @@ import * as socketStuff from "./socketinit.js";
             }
 
             //bar fills
+            const barStart = x + height / 2;
+            const fillEndRaw = x + height / 2 + len * ska(level) - gap;
+            const fillEnd = Math.max(barStart, fillEndRaw - 1);
             drawBar(x + height / 2, x - height / 2 + len * ska(cap) - 14, y + height / 2, height - 2.8 + config.graphical.barChunk, color.black);
             drawBar(x + height / 2, x + height / 2 + len * ska(cap) - gap, y + height / 2, height - 3, color.grey);
-            drawBar(x + height / 2, x + height / 2 + len * ska(level) - gap, y + height / 2, height - 5.5 + config.graphical.barChunk, color.black);
-            drawBar(x + height / 2, x + height / 2 + len * ska(level) - gap, y + height / 2, height - 3.5, col);
+            drawBar(x + height / 2, fillEnd, y + height / 2, height - 5.5 + config.graphical.barChunk, color.black);
+            drawBar(x + height / 2, fillEnd, y + height / 2, height - 3.5, col);
 
             // Blocked-off area
             if (blocking) {
