@@ -69,6 +69,7 @@ server = require("http").createServer((req, res) => {
     let serversIP = [];
     let clientHeaders = ["/ext/custom-shape"];
     let selectedHeader = null;
+    const publicRootReal = fs.realpathSync(publicRoot);
 
     // Set CORS headers if enabled in the configuration or allow only the children servers.
     for (let server of global.servers) if (server.ip !== Config.host && server.ip) {
@@ -156,8 +157,6 @@ server = require("http").createServer((req, res) => {
         case "/isOnline": {
             readString = "true";
         } break;
-
-        const publicRootReal = fs.realpathSync(publicRoot);
 
         case selectedHeader: {
             // For all other routes, serve static files from the public directory
