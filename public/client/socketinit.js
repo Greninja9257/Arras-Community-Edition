@@ -1241,7 +1241,33 @@ let incoming = async function(message, socket) {
         } break;
         case 'CHAT_MESSAGE_ENTITY': {
             if (!global.chats) global.chats = {};
-            for (let data of JSON.parse(m[0])) {
+            let chatPayload = [];
+            if (typeof m[0] === "string") {
+                try {
+                    const parsed = JSON.parse(m[0]);
+                    if (Array.isArray(parsed)) chatPayload = parsed;
+                } catch { }
+            }
+
+            // Compatibility with flat packet format:
+            // [spammerCount, id, msgCount, message, expires, ...]
+            if (!chatPayload.length && typeof m[0] === "number") {
+                let idx = 0;
+                let spammerCount = m[idx++] | 0;
+                for (let s = 0; s < spammerCount; s++) {
+                    let id = m[idx++];
+                    let msgCount = m[idx++] | 0;
+                    let messages = [];
+                    for (let i = 0; i < msgCount; i++) {
+                        let text = m[idx++];
+                        let expires = Number(m[idx++]) || Date.now();
+                        messages.push({ text, id: expires });
+                    }
+                    chatPayload.push({ id, messages });
+                }
+            }
+
+            for (let data of chatPayload) {
                 if (!global.chats[data.id]) global.chats[data.id] = [];
                 for (let e of data.messages) {
                     const alreadyExists = global.chats[data.id].find(msg => msg.id === e.id);

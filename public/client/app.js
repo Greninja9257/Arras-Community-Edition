@@ -211,6 +211,7 @@ import * as socketStuff from "./socketinit.js";
             document.getElementById("optRenderHealth").checked = true;
             document.getElementById("optRenderScores").checked = true;
             document.getElementById("optRenderPlayerBars").checked = true;
+            localStorage.setItem("optChatMessagesChecked", "true");
             document.getElementById("optFancy").checked = true;
             document.getElementById("optInterpolation").checked = true;
             document.getElementById("optFancy").checked = true;
@@ -1013,6 +1014,16 @@ import * as socketStuff from "./socketinit.js";
     }
 
     function loadSettings() {
+        const getOptionChecked = (id, defaultValue = false) => {
+            const doc = document.getElementById(id);
+            if (doc) return doc.checked;
+            const option = global.optionsCheckboxes?.find((entry) => entry.id === id);
+            if (option && typeof option.value === "boolean") return option.value;
+            const stored = localStorage.getItem(id + "Checked");
+            if (stored === "true") return true;
+            if (stored === "false") return false;
+            return defaultValue;
+        };
         config.graphical.fancyAnimations = document.getElementById("optFancy").checked;
         config.graphical.interpolation = document.getElementById("optInterpolation").checked;
         config.graphical.lerpAnimations = document.getElementById("optLerpAnim").checked;
@@ -1040,6 +1051,7 @@ import * as socketStuff from "./socketinit.js";
         global.GUIStatus.renderPlayerBars = document.getElementById("optRenderPlayerBars").checked;
         global.GUIStatus.renderPlayerKillbar = document.getElementById("optRenderKillbar").checked;
         global.GUIStatus.renderhealth = document.getElementById("optRenderHealth").checked;
+        global.GUIStatus.renderChatMessages = getOptionChecked("optChatMessages", true);
         global.GUIStatus.minimapReducedInfo = document.getElementById("optReducedInfo").checked;
         global.GUIStatus.fullHDMode = document.getElementById("optFullHD").checked;
         global.mobileStatus.enableCrosshair = document.getElementById("showCrosshair").checked;
@@ -3070,6 +3082,7 @@ import * as socketStuff from "./socketinit.js";
     }
 
     function drawChatMessages(x, y, py, instance, ratio, alpha, isize) {
+        if (!global.GUIStatus.renderChatMessages) return;
         if (!(instance.id === gui.playerid) && instance.alpha < 0.25) return;
         let size = isize * ratio,
             g = Math.max(20, size);
@@ -4596,7 +4609,15 @@ import * as socketStuff from "./socketinit.js";
 
                 for (const cb of global.optionsCheckboxes) {
                     let doc = document.getElementById(cb.id);
-                    if (doc) cb.value = doc.checked, cb.lastValue = cb.value;
+                    if (doc) {
+                        cb.value = doc.checked;
+                        cb.lastValue = cb.value;
+                        continue;
+                    }
+                    const stored = localStorage.getItem(cb.id + "Checked");
+                    if (stored !== null) cb.value = stored === "true";
+                    else if (cb.id === "optChatMessages") cb.value = true;
+                    cb.lastValue = cb.value;
                 }
             }
 

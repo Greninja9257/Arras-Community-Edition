@@ -288,6 +288,7 @@ const global = {
         renderUpgrades: false,
         renderMinimap: false,
         renderhealth: false,
+        renderChatMessages: true,
         renderPlayerNames: false,
         renderPlayerScores: false,
         renderPlayerBars: false,

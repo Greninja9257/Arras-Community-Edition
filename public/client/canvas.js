@@ -451,6 +451,7 @@ class Canvas {
                     box.value = !box.value;
                     if (doc) doc.checked = box.value;
                     if (doc) util.submitToLocalStorage(box.id);
+                    else localStorage.setItem(box.id + "Checked", box.value ? "true" : "false");
                     break;
                 }
                 // Stop dragging class tree
