@@ -1307,8 +1307,10 @@ import * as socketStuff from "./socketinit.js";
 
     // The skill bar dividers
     let skas = [];
+    const skillScaleCap = 9;
+    const skillScaleAtCap = (skillScaleCap - 2) * 0.01 + Math.log(4 * (skillScaleCap / 9) + 1) / 1.513;
     for (let i = 1; i <= 256; i++) { //if you want to have more skill levels than 255, then update this
-        skas.push((i - 2) * 0.01 + Math.log(4 * (i / 9) + 1) / 1.513);
+        skas.push((i / skillScaleCap) * skillScaleAtCap);
     }
     const ska = (x) => skas[x];
     var getClassUpgradeKey = function (number) {
@@ -3251,24 +3253,18 @@ import * as socketStuff from "./socketinit.js";
                 max = cap;
             }
 
-            // Keep overall bar geometry, but split level segments evenly.
-            const fullBarWidth = Math.max(0, len * ska(cap) - gap);
-            const levelRatio = cap > 0 ? Math.min(level, cap) / cap : 0;
-            const levelBarWidth = fullBarWidth * levelRatio;
-            const levelSplitX = (j) => x + height / 2 + fullBarWidth * (j / cap);
-
             //bar fills
             drawBar(x + height / 2, x - height / 2 + len * ska(cap) - 14, y + height / 2, height - 2.8 + config.graphical.barChunk, color.black);
-            drawBar(x + height / 2, x + height / 2 + fullBarWidth, y + height / 2, height - 3, color.grey);
-            drawBar(x + height / 2, x + height / 2 + levelBarWidth, y + height / 2, height - 5.5 + config.graphical.barChunk, color.black);
-            drawBar(x + height / 2, x + height / 2 + levelBarWidth, y + height / 2, height - 3.5, col);
+            drawBar(x + height / 2, x + height / 2 + len * ska(cap) - gap, y + height / 2, height - 3, color.grey);
+            drawBar(x + height / 2, x + height / 2 + len * ska(level) - gap, y + height / 2, height - 5.5 + config.graphical.barChunk, color.black);
+            drawBar(x + height / 2, x + height / 2 + len * ska(level) - gap, y + height / 2, height - 3.5, col);
 
             // Blocked-off area
             if (blocking) {
                 ctx[2].lineWidth = 1;
                 ctx[2].strokeStyle = color.grey;
                 for (let j = cap + 1; j < max; j++) {
-                    drawGuiLine(levelSplitX(j), y + 1.5, levelSplitX(j), y - 3 + height);
+                    drawGuiLine(x + len * ska(j) - gap, y + 1.5, x + len * ska(j) - gap, y - 3 + height);
                 }
             }
 
@@ -3276,7 +3272,7 @@ import * as socketStuff from "./socketinit.js";
             ctx[2].strokeStyle = color.black;
             ctx[2].lineWidth = 1;
             for (let j = 1; j < level + 1; j++) {
-                drawGuiLine(levelSplitX(j), y + 1.5, levelSplitX(j), y - 3 + height);
+                drawGuiLine(x + len * ska(j) - gap, y + 1.5, x + len * ska(j) - gap, y - 3 + height);
             }
 
             // Skill name
