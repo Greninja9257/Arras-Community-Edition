@@ -1,5 +1,5 @@
-const { combineStats, makeGuard, makeFlank, makeGunner } = require('../facilitators.js');
-const { base, statnames } = require('../constants.js');
+const { combineStats, makeGunner } = require('../facilitators.js');
+const { base } = require('../constants.js');
 const g = require('../gunvals.js');
 
 // Lightweight compatibility layer for mixed upstream/local definition sets.
@@ -13,6 +13,17 @@ const aliasIfMissing = (name, parent, label) => {
 
 const defineIfMissing = (name, def) => {
   if (!Class[name]) Class[name] = def;
+};
+
+const spawnRamChild = (x, y, parent, type, vx = 0, vy = 0) => {
+  const { Entity } = require('../../../Game/entities/entity.js');
+  const { Vector } = require('../../../Game/entities/vector.js');
+  const child = new Entity({ x, y });
+  child.define(type);
+  child.team = parent.team;
+  child.color = parent.color;
+  child.velocity = new Vector(vx, vy);
+  return child;
 };
 
 // Common utility bodies/symbols used by dev menus and custom tanks.
@@ -128,19 +139,141 @@ if (!Class.oneShot) {
     },
   };
 
+  Class.oneShotSwarm = {
+    PARENT: 'swarm',
+    LABEL: 'One-Shot Swarm',
+    PERSISTS_AFTER_DEATH: true,
+    BODY: {
+      ACCELERATION: 5,
+      PENETRATION: 4,
+      HEALTH: 2.2,
+      DAMAGE: 14,
+      SPEED: 7,
+      RESIST: 3,
+      RANGE: 320,
+      DENSITY: 18,
+      PUSHABILITY: 0.4,
+      FOV: 2,
+    },
+  };
+  Class.oneShotCrasher = {
+    PARENT: 'crasher',
+    LABEL: 'Bloom Crasher',
+    PERSISTS_AFTER_DEATH: true,
+    BODY: {
+      SPEED: 7.5,
+      ACCELERATION: 2.4,
+      HEALTH: 3,
+      DAMAGE: 18,
+      PENETRATION: 3,
+      PUSHABILITY: 0.35,
+      DENSITY: 18,
+      RESIST: 3,
+    },
+  };
+  Class.shardShot = {
+    PARENT: 'oneShot',
+    LABEL: 'Shard',
+    PERSISTS_AFTER_DEATH: true,
+    ACCEPTS_SCORE: false,
+    CAN_BE_ON_LEADERBOARD: false,
+    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    AI: { NO_LEAD: true },
+    SIZE: 0.8,
+    BODY: {
+      SPEED: base.SPEED * 2.9,
+      DAMAGE: base.DAMAGE * 18,
+      HEALTH: 1,
+      SHIELD: 0,
+      REGEN: 0,
+      FOV: base.FOV * 1.2,
+    },
+  };
+  Class.hunterShot = {
+    PARENT: 'oneShot',
+    LABEL: 'Hunter',
+    PERSISTS_AFTER_DEATH: true,
+    ACCEPTS_SCORE: false,
+    CAN_BE_ON_LEADERBOARD: false,
+    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    AI: { NO_LEAD: true },
+    SIZE: 1,
+    SELF_DESTRUCT_ON_COLLIDE: false,
+    SELF_DESTRUCT_ON_COLLIDE_COUNT: 2,
+    COLLIDE_SPEED_BOOST: 1.6,
+    COLLIDE_SPEED_BOOST_TIME: 1200,
+    BODY: {
+      SPEED: base.SPEED * 2.5,
+      DAMAGE: base.DAMAGE * 24,
+      HEALTH: 1,
+      SHIELD: 0,
+      REGEN: 0,
+      FOV: base.FOV * 1.35,
+    },
+  };
+  Class.splinterShot = {
+    PARENT: 'oneShot',
+    LABEL: 'Splinter',
+    PERSISTS_AFTER_DEATH: true,
+    ACCEPTS_SCORE: false,
+    CAN_BE_ON_LEADERBOARD: false,
+    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    AI: { NO_LEAD: true },
+    SIZE: 0.75,
+    SELF_DESTRUCT_ON_COLLIDE: false,
+    SELF_DESTRUCT_ON_COLLIDE_COUNT: 2,
+    SHRINK_ON_COLLIDE_FACTOR: 0.55,
+    BODY: {
+      SPEED: base.SPEED * 2.7,
+      DAMAGE: base.DAMAGE * 14,
+      HEALTH: 1,
+      SHIELD: 0,
+      REGEN: 0,
+      FOV: base.FOV * 1.1,
+    },
+  };
+  Class.bruiserShot = {
+    PARENT: 'oneShot',
+    LABEL: 'Bruiser',
+    PERSISTS_AFTER_DEATH: true,
+    ACCEPTS_SCORE: false,
+    CAN_BE_ON_LEADERBOARD: false,
+    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    AI: { NO_LEAD: true },
+    SIZE: 1.2,
+    BODY: {
+      SPEED: base.SPEED * 2.1,
+      DAMAGE: base.DAMAGE * 32,
+      HEALTH: 1,
+      SHIELD: 0,
+      REGEN: 0,
+      DENSITY: base.DENSITY * 1.8,
+      FOV: base.FOV * 1.4,
+    },
+  };
   Class.dualShot = {
     PARENT: 'oneShot',
     LABEL: 'Dual-Shot',
     DANGER: 9,
     SELF_DESTRUCT_ON_COLLIDE: false,
     SELF_DESTRUCT_ON_COLLIDE_COUNT: 2,
+    TOOLTIP: 'Survives one ram. Dies on the second.',
+    BODY: {
+      SPEED: base.SPEED * 3.2,
+      FOV: base.FOV * 1.1,
+    },
   };
   Class.tripleShotOne = {
     PARENT: 'oneShot',
-    LABEL: 'Triple-Shot',
+    LABEL: 'Triple Shot',
     DANGER: 9,
     SELF_DESTRUCT_ON_COLLIDE: false,
     SELF_DESTRUCT_ON_COLLIDE_COUNT: 3,
+    TOOLTIP: 'Gets three lethal touches before breaking.',
+    BODY: {
+      SPEED: base.SPEED * 3,
+      FOV: base.FOV * 1.12,
+    },
   };
   Class.quarterOff = {
     PARENT: 'oneShot',
@@ -148,26 +281,214 @@ if (!Class.oneShot) {
     DANGER: 9,
     SELF_DESTRUCT_ON_COLLIDE: false,
     SELF_DESTRUCT_ON_COLLIDE_COUNT: 4,
+    SHRINK_ON_COLLIDE_FACTOR: 0.75,
+    TOOLTIP: 'Each ram cuts away a quarter of the tank before the fourth one kills it.',
+    BODY: {
+      SPEED: base.SPEED * 3.3,
+      FOV: base.FOV * 1.08,
+    },
   };
-  Class.droneShot = makeGuard({
+  Class.droneShot = {
     PARENT: 'oneShot',
     LABEL: 'Drone-Shot',
-    STAT_NAMES: statnames.drone,
-    GUNS: [{
-      POSITION: [7, 11, 1, 7, 0, 0, 0],
-      PROPERTIES: {
-        SHOOT_SETTINGS: combineStats([g.drone, g.overseer]),
-        TYPE: 'drone',
-        AUTOFIRE: true,
-        SYNCS_SKILLS: true,
-        STAT_CALCULATOR: 'drone',
-        MAX_CHILDREN: 3,
-        WAIT_TO_CYCLE: true,
+    DANGER: 9,
+    TOOLTIP: 'Dies on impact, but releases a hunting swarm.',
+    BODY: {
+      SPEED: base.SPEED * 2.8,
+      FOV: base.FOV * 1.2,
+    },
+    ON: [
+      {
+        event: 'death',
+        handler: ({ body }) => {
+          const variants = ['shardShot', 'hunterShot', 'splinterShot', 'bruiserShot'];
+          for (let i = 0; i < 4; i++) {
+            spawnRamChild(
+              body.x,
+              body.y,
+              body,
+              variants[i],
+              Math.cos((Math.PI * 2 * i) / 4) * 8,
+              Math.sin((Math.PI * 2 * i) / 4) * 8,
+            );
+          }
+        },
       },
-    }],
-  });
+    ],
+  };
+  Class.doubleTap = {
+    PARENT: 'dualShot',
+    LABEL: 'Double-Tap',
+    DANGER: 10,
+    COLLIDE_SPEED_BOOST: 1.8,
+    COLLIDE_SPEED_BOOST_TIME: 1400,
+    TOOLTIP: 'First hit is free and launches you into a second faster one.',
+    BODY: {
+      SPEED: base.SPEED * 3.15,
+    },
+  };
+  Class.splitDecision = {
+    PARENT: 'dualShot',
+    LABEL: 'Split Decision',
+    DANGER: 10,
+    TOOLTIP: 'On death, breaks into two last-chance One-Shots.',
+    BODY: {
+      SPEED: base.SPEED * 3.4,
+    },
+    ON: [
+      {
+        event: 'death',
+        handler: ({ body }) => {
+          for (const dir of [-1, 1]) {
+            spawnRamChild(body.x + dir * 20, body.y, body, 'oneShot', dir * 12, 0);
+          }
+        },
+      },
+    ],
+  };
+  Class.executioner = {
+    PARENT: 'tripleShotOne',
+    LABEL: 'Executioner',
+    DANGER: 10,
+    IGNORE_TANK_BODY_DAMAGE: true,
+    SELF_DESTRUCT_ON_COLLIDE: false,
+    SELF_DESTRUCT_ON_COLLIDE_COUNT: 1,
+    TOOLTIP: 'Ignores enemy tank body damage. Player kills add 1 life.',
+    BODY: {
+      SPEED: base.SPEED * 2.9,
+      DAMAGE: 20000000000000000000000,
+      DENSITY: base.DENSITY * 2,
+    },
+    ON: [
+      {
+        event: 'define',
+        handler: ({ body }) => {
+          body.store.remainingCollisionLives = body.settings.selfDestructOnCollideCount ?? 1;
+        },
+      },
+      {
+        event: 'kill',
+        handler: ({ body, entity }) => {
+          if (!(entity?.isPlayer || entity?.isBot)) return;
+          body.store.remainingCollisionLives ??= body.settings.selfDestructOnCollideCount ?? 1;
+          body.store.remainingCollisionLives++;
+          body.sendMessage(`Executioner gained a life. Remaining lives: ${body.store.remainingCollisionLives}.`);
+        },
+      },
+    ],
+  };
+  Class.glassburst = {
+    PARENT: 'tripleShotOne',
+    LABEL: 'Glassburst',
+    DANGER: 10,
+    TOOLTIP: 'Shatters into a ring of swarms when it dies.',
+    BODY: {
+      SPEED: base.SPEED * 3.25,
+    },
+    ON: [
+      {
+        event: 'death',
+        handler: ({ body }) => {
+          const variants = ['shardShot', 'splinterShot', 'hunterShot', 'shardShot', 'bruiserShot', 'splinterShot'];
+          for (let i = 0; i < 6; i++) {
+            spawnRamChild(
+              body.x,
+              body.y,
+              body,
+              variants[i],
+              Math.cos((Math.PI * 2 * i) / 6) * 10,
+              Math.sin((Math.PI * 2 * i) / 6) * 10,
+            );
+          }
+        },
+      },
+    ],
+  };
+  Class.crossCut = {
+    PARENT: 'quarterOff',
+    LABEL: 'Cross-Cut',
+    DANGER: 10,
+    SELF_DESTRUCT_ON_COLLIDE_COUNT: 2,
+    SHRINK_ON_COLLIDE_FACTOR: 0.5,
+    TOOLTIP: 'The first hit cuts the tank in half. The second destroys it.',
+    BODY: {
+      SPEED: base.SPEED * 3.2,
+    },
+  };
+  Class.shatterDrive = {
+    PARENT: 'quarterOff',
+    LABEL: 'Shatter Drive',
+    DANGER: 10,
+    COLLIDE_SPEED_BOOST: 2.2,
+    COLLIDE_SPEED_BOOST_TIME: 1800,
+    TOOLTIP: 'Every surviving hit overdrives the next dash.',
+    BODY: {
+      SPEED: base.SPEED * 3.8,
+      FOV: base.FOV * 1.15,
+    },
+  };
+  Class.hiveShot = {
+    PARENT: 'droneShot',
+    LABEL: 'Hive-Shot',
+    DANGER: 10,
+    TOOLTIP: 'Releases a larger hive on death.',
+    BODY: {
+      SPEED: base.SPEED * 2.75,
+      FOV: base.FOV * 1.25,
+    },
+    ON: [
+      {
+        event: 'death',
+        handler: ({ body }) => {
+          const variants = ['shardShot', 'splinterShot', 'hunterShot', 'shardShot', 'bruiserShot', 'splinterShot', 'hunterShot', 'shardShot'];
+          for (let i = 0; i < 8; i++) {
+            spawnRamChild(
+              body.x,
+              body.y,
+              body,
+              variants[i],
+              Math.cos((Math.PI * 2 * i) / 8) * 11,
+              Math.sin((Math.PI * 2 * i) / 8) * 11,
+            );
+          }
+        },
+      },
+    ],
+  };
+  Class.deathBloom = {
+    PARENT: 'droneShot',
+    LABEL: 'Death Bloom',
+    DANGER: 10,
+    TOOLTIP: 'Blooms into orbiting crashers when destroyed.',
+    BODY: {
+      SPEED: base.SPEED * 2.9,
+      FOV: base.FOV * 1.3,
+    },
+    ON: [
+      {
+        event: 'death',
+        handler: ({ body }) => {
+          const variants = ['bruiserShot', 'hunterShot', 'splinterShot', 'shardShot'];
+          for (let i = 0; i < 4; i++) {
+            spawnRamChild(
+              body.x,
+              body.y,
+              body,
+              variants[i],
+              Math.cos((Math.PI * 2 * i) / 4) * 9,
+              Math.sin((Math.PI * 2 * i) / 4) * 9,
+            );
+          }
+        },
+      },
+    ],
+  };
 
   Class.oneShot.UPGRADES_TIER_2 = ['dualShot', 'tripleShotOne', 'quarterOff', 'droneShot'];
+  Class.dualShot.UPGRADES_TIER_3 = ['doubleTap', 'splitDecision'];
+  Class.tripleShotOne.UPGRADES_TIER_3 = ['executioner', 'glassburst'];
+  Class.quarterOff.UPGRADES_TIER_3 = ['crossCut', 'shatterDrive'];
+  Class.droneShot.UPGRADES_TIER_3 = ['hiveShot', 'deathBloom'];
 }
 
 // Class used by a boss turret in elites definitions when Arms Race is disabled.
