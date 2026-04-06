@@ -93,11 +93,13 @@ exports.chooseChance = (...arg) => {
 
 exports.nameLists = {
     bots: ["Alice", "Bob", "Carmen", "David", "Edith", "Freddy", "Gustav", "Helga", "Janet", "Lorenzo", "Mary", "Nora", "Olivia", "Peter", "Queen", "Roger", "Suzanne", "Tommy", "Ursula", "Vincent", "Wilhelm", "Xerxes", "Yvonne", "Zachary", "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Hotel", "India", "Juliet", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-Ray", "Yankee", "Zulu"],
+    clans: ["ALPHA", "BETA", "GAMMA", "DELTA", "OMEGA", "NOVA", "VOID", "RUNE", "WOLF", "DRGN", "SPRK", "PHNX"],
     a: ["Archimedes", "Akilina", "Anastasios", "Athena", "Alkaios", "Amyntas", "Aniketos", "Artemis", "Anaxagoras", "Apollon"],
     castle: ["Berezhany", "Lutsk", "Dobromyl", "Akkerman", "Palanok", "Zolochiv", "Palanok", "Mangup", "Olseko", "Brody", "Isiaslav", "Kaffa", "Bilhorod"],
     legion: ["Vesta", "Juno", "Orcus", "Janus", "Minerva", "Ceres"]
 }
 
 exports.chooseBotName = () => exports.choose(exports.nameLists.bots)
+exports.chooseClanName = () => `[${exports.choose(exports.nameLists.clans)}]`
 
 exports.chooseBossName = (code, amount) => code in exports.nameLists ? exports.chooseN(exports.nameLists[code], amount) : []
