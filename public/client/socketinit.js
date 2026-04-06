@@ -384,9 +384,10 @@ const GunContainer = n => {
         }),
         setConfig: (ind, c) => {
             let g = a[ind];
+            // Color can change at runtime (e.g. Magician barrel state), so always refresh it.
+            g.color = c.color;
             if (!g.configLoaded) {
                 g.configLoaded = true;
-                g.color = c.color;
                 g.borderless = c.borderless; 
                 g.alpha = c.alpha;
                 g.strokeWidth = c.strokeWidth;

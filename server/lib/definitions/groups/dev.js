@@ -286,7 +286,7 @@ const magicianStates = [
     { color: "red", name: "Red", mods: { damage: 1.35, reload: 1.25 } },                 // stronger but slower
     { color: "blue", name: "Blue", mods: { speed: 1.35, maxSpeed: 1.35, damage: 0.85 } }, // faster bullets, lower damage
     { color: "green", name: "Green", mods: { pen: 1.35, range: 1.35, health: 1.2 } },     // better sustain
-    { color: "yellow", name: "Yellow", mods: { spray: 2.3, shudder: 1.9, damage: 0.92 } }, // wider spread, less accuracy
+    { color: "yellow", name: "Yellow", mods: { spray: 0, shudder: 0, damage: 1 / 3 } },    // 3-shot same-direction volley, each bullet weaker
 ];
 
 Class.magician = {
@@ -318,7 +318,7 @@ Class.magician = {
             if (!body._magicianDescriptionShown) {
                 body._magicianDescriptionShown = true;
                 body.sendMessage?.(
-                    "Magician: right-click to cycle barrel color/state: Red (damage), Blue (speed), Green (penetration/range), Yellow (spread)."
+                    "Magician: right-click to cycle barrel color/state: Red (damage), Blue (speed), Green (penetration/range), Yellow (3-shot volley, each bullet weaker)."
                 );
                 body.sendMessage?.(`Current state: ${state.name}.`);
             }
@@ -346,6 +346,20 @@ Class.magician = {
             if (state) {
                 body.sendMessage?.(`Magician switched to ${state.name}.`);
             }
+        },
+    }, {
+        event: "fire",
+        handler: ({ body, gun }) => {
+            if (!body || !gun) return;
+            if (body._magicianStateIndex == null) return;
+            if (magicianStates[body._magicianStateIndex]?.name !== "Yellow") return;
+            if (gun._magicianVolleyGuard) return;
+
+            // Yellow state: shoot 2 additional same-direction bullets for a 3-shot volley total.
+            gun._magicianVolleyGuard = true;
+            gun.shoot();
+            gun.shoot();
+            gun._magicianVolleyGuard = false;
         },
     }],
 };
