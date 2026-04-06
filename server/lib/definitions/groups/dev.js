@@ -262,6 +262,7 @@ Class.menu_dailyTanks.UPGRADE_COLOR = "rainbow"
 Class.menu_dailyTanks.UPGRADE_TOOLTIP = "Tanks that were part of arras.io's December 2023 Daily Tanks event, in the order they were first made available. \n" +
                                         "The Daily Tank for a server can be added or changed in config."
 Class.menu_dailyTanks.UPGRADES_TIER_0 = [
+    "magician",
     "laser",
     "whirlwind", // dec 13/21
     "master", // dec 14/22
@@ -280,6 +281,66 @@ Class.menu_unusedDailyTanks.UPGRADE_TOOLTIP = "Daily tank candidates or configs 
 Class.menu_unusedDailyTanks.UPGRADES_TIER_0 = [
     "oneShot",
 ]
+
+Class.magician = {
+    PARENT: "genericTank",
+    LABEL: "Magician",
+    DANGER: 6,
+    COLOR: "red",
+    GUNS: [{
+        POSITION: [18, 8, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.sniper]),
+            TYPE: "bullet",
+        },
+    }],
+    ON: [{
+        event: "tick",
+        handler: ({ body }) => {
+            if (!body || !body.gunsArrayed?.length) return;
+
+            // Initialize per-gun baseline settings once.
+            if (!body._magicianBaseGunSettings) {
+                body._magicianBaseGunSettings = body.gunsArrayed.map(gun => JSON.parse(JSON.stringify(gun.settings || {})));
+            }
+
+            const states = [
+                { color: "red",    mods: { damage: 1.35, reload: 1.25 } },                    // stronger but slower
+                { color: "blue",   mods: { speed: 1.35, maxSpeed: 1.35, damage: 0.85 } },     // faster bullets, lower damage
+                { color: "green",  mods: { pen: 1.35, range: 1.35, health: 1.2 } },           // better sustain
+                { color: "yellow", mods: { spray: 2.3, shudder: 1.9, damage: 0.92 } },        // wider spread, less accuracy
+            ];
+
+            const now = Date.now();
+            if (body._magicianStateIndex == null) body._magicianStateIndex = -1;
+            if (!body._magicianNextShiftAt) body._magicianNextShiftAt = 0;
+
+            if (now >= body._magicianNextShiftAt) {
+                body._magicianStateIndex = (body._magicianStateIndex + 1) % states.length;
+                body._magicianNextShiftAt = now + 2000;
+            }
+
+            const state = states[body._magicianStateIndex];
+            if (!state) return;
+
+            body.color.base = state.color;
+            body.minimapColor = state.color;
+            body.leaderboardColor = state.color;
+
+            for (let i = 0; i < body.gunsArrayed.length; i++) {
+                const gun = body.gunsArrayed[i];
+                const base = body._magicianBaseGunSettings[i] || {};
+                gun.settings = { ...base };
+                for (const [key, mult] of Object.entries(state.mods)) {
+                    if (typeof gun.settings[key] === "number") {
+                        gun.settings[key] = gun.settings[key] * mult;
+                    }
+                }
+                gun.trueRecoil = gun.settings.recoil;
+            }
+        },
+    }],
+};
 
 Class.menu_fun = makeMenu("Fun")
 Class.menu_fun.UPGRADE_TOOLTIP = "Tanks that, let's be honest, aren't used for a good reason.\n" +
