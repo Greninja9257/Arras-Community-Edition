@@ -282,6 +282,13 @@ Class.menu_unusedDailyTanks.UPGRADES_TIER_0 = [
     "oneShot",
 ]
 
+const magicianStates = [
+    { color: "red", name: "Red", mods: { damage: 1.35, reload: 1.25 } },                 // stronger but slower
+    { color: "blue", name: "Blue", mods: { speed: 1.35, maxSpeed: 1.35, damage: 0.85 } }, // faster bullets, lower damage
+    { color: "green", name: "Green", mods: { pen: 1.35, range: 1.35, health: 1.2 } },     // better sustain
+    { color: "yellow", name: "Yellow", mods: { spray: 2.3, shudder: 1.9, damage: 0.92 } }, // wider spread, less accuracy
+];
+
 Class.magician = {
     PARENT: "genericTank",
     LABEL: "Magician",
@@ -304,39 +311,40 @@ Class.magician = {
                 body._magicianBaseGunSettings = body.gunsArrayed.map(gun => JSON.parse(JSON.stringify(gun.settings || {})));
             }
 
-            const states = [
-                { color: "red",    mods: { damage: 1.35, reload: 1.25 } },                    // stronger but slower
-                { color: "blue",   mods: { speed: 1.35, maxSpeed: 1.35, damage: 0.85 } },     // faster bullets, lower damage
-                { color: "green",  mods: { pen: 1.35, range: 1.35, health: 1.2 } },           // better sustain
-                { color: "yellow", mods: { spray: 2.3, shudder: 1.9, damage: 0.92 } },        // wider spread, less accuracy
-            ];
-
-            const now = Date.now();
-            if (body._magicianStateIndex == null) body._magicianStateIndex = -1;
-            if (!body._magicianNextShiftAt) body._magicianNextShiftAt = 0;
-
-            if (now >= body._magicianNextShiftAt) {
-                body._magicianStateIndex = (body._magicianStateIndex + 1) % states.length;
-                body._magicianNextShiftAt = now + 2000;
-            }
-
-            const state = states[body._magicianStateIndex];
+            if (body._magicianStateIndex == null) body._magicianStateIndex = 0;
+            const state = magicianStates[body._magicianStateIndex];
             if (!state) return;
 
-            body.color.base = state.color;
-            body.minimapColor = state.color;
-            body.leaderboardColor = state.color;
+            if (!body._magicianDescriptionShown) {
+                body._magicianDescriptionShown = true;
+                body.sendMessage?.(
+                    "Magician: right-click to cycle barrel color/state: Red (damage), Blue (speed), Green (penetration/range), Yellow (spread)."
+                );
+                body.sendMessage?.(`Current state: ${state.name}.`);
+            }
 
             for (let i = 0; i < body.gunsArrayed.length; i++) {
                 const gun = body.gunsArrayed[i];
                 const base = body._magicianBaseGunSettings[i] || {};
                 gun.settings = { ...base };
+                gun.color.interpret({ base: state.color });
                 for (const [key, mult] of Object.entries(state.mods)) {
                     if (typeof gun.settings[key] === "number") {
                         gun.settings[key] = gun.settings[key] * mult;
                     }
                 }
                 gun.trueRecoil = gun.settings.recoil;
+            }
+        },
+    }, {
+        event: "mousedown",
+        handler: ({ body, button }) => {
+            if (!body || button !== "right") return;
+            if (body._magicianStateIndex == null) body._magicianStateIndex = 0;
+            body._magicianStateIndex = (body._magicianStateIndex + 1) % magicianStates.length;
+            const state = magicianStates[body._magicianStateIndex];
+            if (state) {
+                body.sendMessage?.(`Magician switched to ${state.name}.`);
             }
         },
     }],
