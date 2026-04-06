@@ -8,7 +8,11 @@ class Train {
     loop () {
         let trainable = [];
         for (let instance of entities.values()) {
-            if (instance.isPlayer || instance.isBot) trainable.push(instance);
+            // Only include fully spawned, active tanks in train logic.
+            if (!(instance.isPlayer || instance.isBot)) continue;
+            if (instance.isGhost || instance.isDead?.()) continue;
+            if (instance.invuln) continue;
+            trainable.push(instance);
         }
 
         // In clan wars, each clan is its own train. Fallback to team grouping for non-clan entities.
