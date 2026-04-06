@@ -3732,6 +3732,30 @@ import * as socketStuff from "./socketinit.js";
                 drawText("Daily Tank!", xStart + 50, initialY + height + internalSpacing + 67, 12, gameDraw.getColor(36), "center");
                 global.clickables.dailyTankUpgrade.set(xStart * clickableRatio, (initialY + height + internalSpacing + 50) * clickableRatio, len * clickableRatio, height * clickableRatio);
                 gui.dailyTank.ads && drawButton(xStart + 50, initialY + height + internalSpacing + 160, m, h, 1, "rect", "Watch An Ad", textScale - 3.3, false, false, false, true, "dailyTankAd", clickableRatio, false);
+
+                // Daily tank hover tooltip (same style as normal upgrade tooltips).
+                if (hover > -1 && !global.mobile && image.upgradeTooltip && image.upgradeTooltip.length > 0) {
+                    let boxWidth = measureText(image.name, alcoveSize / 10),
+                        boxX = global.mouse.x * global.screenWidth / global.canvas.width + 2,
+                        boxY = global.mouse.y * global.screenHeight / global.canvas.height + 2,
+                        boxPadding = 6,
+                        splitTooltip = image.upgradeTooltip.split("\n"),
+                        textY = boxY + boxPadding + alcoveSize / 10;
+
+                    for (let line of splitTooltip) boxWidth = Math.max(boxWidth, measureText(line, alcoveSize / 15));
+
+                    gameDraw.setColor(ctx[2], color.dgrey);
+                    ctx[2].lineWidth /= 1.5;
+                    drawGuiRect(boxX, boxY, boxWidth + boxPadding * 3, alcoveSize * (splitTooltip.length + 1) / 10 + boxPadding * 3, false);
+                    drawGuiRect(boxX, boxY, boxWidth + boxPadding * 3, alcoveSize * (splitTooltip.length + 1) / 10 + boxPadding * 3, true);
+                    ctx[2].lineWidth *= 1.5;
+                    drawText(image.name, boxX + boxPadding * 1.5, textY, alcoveSize / 10, color.guiwhite);
+
+                    for (let t of splitTooltip) {
+                        textY += boxPadding + alcoveSize / 15;
+                        drawText(t, boxX + boxPadding * 1.5, textY, alcoveSize / 15, color.guiwhite);
+                    }
+                }
             }
 
             // Upgrade tooltip
