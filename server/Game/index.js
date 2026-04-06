@@ -501,10 +501,10 @@ class gameHandler {
 
     spawnBots(loc, team, countsTowardsBotCap = true) {
         let botName;
-        // In clan wars mode, use clan tag instead of [AI] prefix
+        // In clan wars mode, bots should belong to a real clan tag.
         if (Config.clan_wars) {
             let clanTag = ran.chooseClanName();
-            botName = "[AI] " + clanTag + " " + ran.chooseBotName();
+            botName = clanTag + " " + ran.chooseBotName();
             // Register clan and get player info
             Config.clan_wars_ft.add(botName);
         } else {

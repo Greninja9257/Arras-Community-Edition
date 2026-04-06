@@ -2,19 +2,59 @@
 // https://discord.com/channels/366661839620407297/508125275675164673/1114907447195349074
 
 class Train {
-    constructor () {}
+    constructor () {
+        this.directions = new Map();
+    }
     loop () {
-        let train_able = [];
-            for (let instance of entities.values()) if (instance.isPlayer || instance.isBot) train_able.push(instance);
-            let teams = new Set(train_able.map(r => r.team));
-        for (let team of teams) {
-            let train = train_able.filter(r => r.team === team).sort((a, b) => b.skill.score - a.skill.score);
+        let trainable = [];
+        for (let instance of entities.values()) {
+            if (instance.isPlayer || instance.isBot) trainable.push(instance);
+        }
 
-            for (let [i, player] of train.entries()) {
-                if (i === 0) continue;
+        // In clan wars, each clan is its own train. Fallback to team grouping for non-clan entities.
+        let groups = new Map();
+        for (let entity of trainable) {
+            let key = entity.clan || `team:${entity.team}`;
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(entity);
+        }
 
-                player.velocity.x = util.clamp(train[i - 1].x - player.x, -90, 90) * player.damp * 1.35;
-                player.velocity.y = util.clamp(train[i - 1].y - player.y, -90, 90) * player.damp * 1.35;
+        for (let [groupKey, train] of groups) {
+            train.sort((a, b) => b.skill.score - a.skill.score);
+            if (!train.length) continue;
+
+            let leader = train[0];
+            let target = leader.control?.target ?? { x: 0, y: 0 };
+            let targetLen = Math.hypot(target.x, target.y);
+            let lastDir = this.directions.get(groupKey);
+            let dirX = targetLen > 0.01 ? target.x / targetLen : lastDir?.x ?? Math.cos(leader.facing);
+            let dirY = targetLen > 0.01 ? target.y / targetLen : lastDir?.y ?? Math.sin(leader.facing);
+            if (targetLen > 0.01) this.directions.set(groupKey, { x: dirX, y: dirY });
+
+            let trainSpeed = 18;
+            let leaderVelX = dirX * trainSpeed;
+            let leaderVelY = dirY * trainSpeed;
+            leader.velocity.x += (leaderVelX - leader.velocity.x) * 0.35;
+            leader.velocity.y += (leaderVelY - leader.velocity.y) * 0.35;
+
+            for (let i = 1; i < train.length; i++) {
+                let player = train[i];
+                let prev = train[i - 1];
+                let prevVel = Math.hypot(prev.velocity.x, prev.velocity.y);
+                let prevDirX = prevVel > 0.01 ? prev.velocity.x / prevVel : Math.cos(prev.facing);
+                let prevDirY = prevVel > 0.01 ? prev.velocity.y / prevVel : Math.sin(prev.facing);
+                let followDistance = 80;
+                let targetX = prev.x - prevDirX * followDistance;
+                let targetY = prev.y - prevDirY * followDistance;
+                let dx = targetX - player.x;
+                let dy = targetY - player.y;
+                let dist = Math.hypot(dx, dy) || 1;
+                let pull = Math.min(90, dist);
+                let desiredX = (dx / dist) * pull * player.damp * 1.1 + prevDirX * trainSpeed * 0.7;
+                let desiredY = (dy / dist) * pull * player.damp * 1.1 + prevDirY * trainSpeed * 0.7;
+
+                player.velocity.x += (desiredX - player.velocity.x) * 0.35;
+                player.velocity.y += (desiredY - player.velocity.y) * 0.35;
             }
         }
     }
