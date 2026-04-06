@@ -334,8 +334,10 @@ Class.magician = {
                 const buddy = new Entity({ x: body.x, y: body.y }, body);
                 buddy.define("magicianBunnyBuddy");
                 buddy.team = body.team;
-                buddy.source = body; // Copy firing/aim input from Magician.
-                buddy.color.base = body.color.base;
+                buddy.source = buddy;
+                buddy.color.base = "white";
+                buddy.settings.no_collisions = true;
+                buddy.alwaysActive = true;
                 buddy.refreshBodyAttributes();
                 buddy.life();
                 body._magicianBuddy = buddy;
@@ -344,11 +346,21 @@ Class.magician = {
             if (body._magicianBuddy && !body._magicianBuddy.isDead?.()) {
                 body._magicianBuddyAngle = (body._magicianBuddyAngle ?? 0) + 0.075;
                 const orbitRadius = Math.max(22, body.size * 1.35);
-                body._magicianBuddy.x = body.x + Math.cos(body._magicianBuddyAngle) * orbitRadius;
-                body._magicianBuddy.y = body.y + Math.sin(body._magicianBuddyAngle) * orbitRadius;
-                body._magicianBuddy.velocity.x = body.velocity.x;
-                body._magicianBuddy.velocity.y = body.velocity.y;
-                body._magicianBuddy.facing = body.facing;
+                const targetX = body.x + Math.cos(body._magicianBuddyAngle) * orbitRadius;
+                const targetY = body.y + Math.sin(body._magicianBuddyAngle) * orbitRadius;
+
+                // Smooth orbit movement to avoid jittery teleport behavior.
+                body._magicianBuddy.x += (targetX - body._magicianBuddy.x) * 0.35;
+                body._magicianBuddy.y += (targetY - body._magicianBuddy.y) * 0.35;
+                body._magicianBuddy.velocity.x = body.velocity.x * 0.2;
+                body._magicianBuddy.velocity.y = body.velocity.y * 0.2;
+
+                // Mirror Magician shooting actions and shot direction.
+                body._magicianBuddy.control.target = { x: body.control.target.x, y: body.control.target.y };
+                body._magicianBuddy.control.fire = body.control.fire;
+                body._magicianBuddy.control.main = body.control.main;
+                body._magicianBuddy.control.alt = body.control.alt;
+                body._magicianBuddy.facing = Math.atan2(body.control.target.y, body.control.target.x);
             }
 
             // Initialize per-gun baseline settings once.
@@ -410,36 +422,43 @@ Class.magicianBunnyBuddy = {
     LABEL: "Bunny Buddy",
     TYPE: "tank",
     SHAPE: 0,
-    SIZE: 9,
+    COLOR: "white",
+    SIZE: 7,
     DANGER: 0,
     ACCEPTS_SCORE: false,
     CAN_BE_ON_LEADERBOARD: false,
     DRAW_HEALTH: false,
     HITS_OWN_TYPE: "never",
+    IGNORED_BY_AI: true,
+    MOTION_TYPE: "motor",
+    FACING_TYPE: "withMotion",
     CLEAR_ON_MASTER_UPGRADE: true,
     BODY: {
-        SPEED: 0.001,
-        ACCELERATION: 0.001,
+        SPEED: 0.35,
+        ACCELERATION: 0.35,
         HEALTH: 0.8,
         SHIELD: 0,
         REGEN: 0,
-        DAMAGE: 0.7,
+        DAMAGE: 0.6,
         DENSITY: 0.5,
         FOV: 1.1,
     },
     GUNS: [{
-        POSITION: [16, 6, 1, 0, 0, 0, 0],
+        POSITION: [12, 4.2, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, { reload: 1.05, damage: 0.7, size: 0.85 }]),
+            SHOOT_SETTINGS: combineStats([g.basic, { reload: 1.1, damage: 0.6, size: 0.7, speed: 1.1, maxSpeed: 1.1 }]),
             TYPE: "bullet",
         },
     }],
     TURRETS: [{
-        POSITION: [8, -4.2, 3.2, 0, 360, 1],
-        TYPE: ["circleHat", { COLOR: "white", SHAPE: 0, SIZE: 3 }],
+        POSITION: [7, -4.5, 2.8, -18, 360, 1],
+        TYPE: ["triangleHat", { COLOR: "white", SHAPE: 3, SIZE: 3 }],
     }, {
-        POSITION: [8, -4.2, -3.2, 0, 360, 1],
-        TYPE: ["circleHat", { COLOR: "white", SHAPE: 0, SIZE: 3 }],
+        POSITION: [7, -4.5, -2.8, 18, 360, 1],
+        TYPE: ["triangleHat", { COLOR: "white", SHAPE: 3, SIZE: 3 }],
+    }, {
+        POSITION: [4.6, 2.1, 1.45, 0, 360, 1],
+        TYPE: ["circleHat", { COLOR: "pink", SHAPE: 0, SIZE: 1.4 }],
     }],
 };
 
