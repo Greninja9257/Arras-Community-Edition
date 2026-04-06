@@ -3727,14 +3727,15 @@ import * as socketStuff from "./socketinit.js";
             if (gui.dailyTank && gui.dailyTank.tank) {
                 let image = util.requestEntityImage(gui.dailyTank.tank, gui.color);
                 let hover = global.clickables.dailyTankUpgrade.check({ x: global.mouse.x, y: global.mouse.y });
+                const isDailyTankHovered = hover === true || hover === 0;
                 image.upgradeColor = "36 0 1 0 false";
-                drawEntityIcon(image, xStart, initialY + height + internalSpacing + 50, len, height, 1, upgradeSpin, 0.4, 10, false, hover);
+                drawEntityIcon(image, xStart, initialY + height + internalSpacing + 50, len, height, 1, upgradeSpin, 0.4, 10, false, isDailyTankHovered);
                 drawText("Daily Tank!", xStart + 50, initialY + height + internalSpacing + 67, 12, gameDraw.getColor(36), "center");
                 global.clickables.dailyTankUpgrade.set(xStart * clickableRatio, (initialY + height + internalSpacing + 50) * clickableRatio, len * clickableRatio, height * clickableRatio);
                 gui.dailyTank.ads && drawButton(xStart + 50, initialY + height + internalSpacing + 160, m, h, 1, "rect", "Watch An Ad", textScale - 3.3, false, false, false, true, "dailyTankAd", clickableRatio, false);
 
                 // Daily tank hover tooltip (same style as normal upgrade tooltips).
-                if (hover > -1 && !global.mobile && image.upgradeTooltip && image.upgradeTooltip.length > 0) {
+                if (isDailyTankHovered && !global.mobile && image.upgradeTooltip && image.upgradeTooltip.length > 0) {
                     let boxWidth = measureText(image.name, alcoveSize / 10),
                         boxX = global.mouse.x * global.screenWidth / global.canvas.width + 2,
                         boxY = global.mouse.y * global.screenHeight / global.canvas.height + 2,
