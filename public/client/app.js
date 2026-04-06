@@ -4370,10 +4370,17 @@ import * as socketStuff from "./socketinit.js";
 
 
     function drawOptionsMenu() {
-        // Initialize tab offset for sliding animation and menu height animation
-        if (!global.optionsMenu_Anim.tabOffset) {
-            global.optionsMenu_Anim.tabOffset = Smoothbar(global.optionsMenu_Anim.activeTab || 0, 2, 3, 0.08, 0.025, true);
-        }
+        // Ensure options animation state exists before using .get()/.set().
+        if (!global.optionsMenu_Anim) global.optionsMenu_Anim = { isOpened: false };
+        if (!global.optionsMenu_Anim.switchMenu_button) global.optionsMenu_Anim.switchMenu_button = Smoothbar(0, 2, 3, 0.08, 0.025, true);
+        if (!global.optionsMenu_Anim.optionsButtonProgress) global.optionsMenu_Anim.optionsButtonProgress = Smoothbar(0, 2, 0.1, 0.08, 0.025, true);
+        if (!global.optionsMenu_Anim.mainMenu) global.optionsMenu_Anim.mainMenu = Smoothbar(-500, 2, 3, 0.08, 0.025, true);
+        if (!global.optionsMenu_Anim.mainMenuHeight) global.optionsMenu_Anim.mainMenuHeight = Smoothbar(730, 2, 3, 0.08, 0.025, true);
+        if (!global.optionsMenu_Anim.tabClickables) global.optionsMenu_Anim.tabClickables = Region(10);
+        if (!global.optionsMenu_Anim.themeClickables) global.optionsMenu_Anim.themeClickables = Region(100);
+        if (!global.optionsMenu_Anim.tabs) global.optionsMenu_Anim.tabs = [["Options", 730], ["Theme", 610], ["Keybinds", 730]];
+        if (global.optionsMenu_Anim.activeTab == null) global.optionsMenu_Anim.activeTab = 0;
+        if (!global.optionsMenu_Anim.tabOffset) global.optionsMenu_Anim.tabOffset = Smoothbar(global.optionsMenu_Anim.activeTab || 0, 2, 3, 0.08, 0.025, true);
 
         const RENDERX = global.optionsMenu_Anim.switchMenu_button.get();
         const BTN_SIZE = 30;
