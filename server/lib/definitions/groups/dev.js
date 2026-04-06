@@ -293,7 +293,7 @@ const magicianStates = [
 Class.magician = {
     PARENT: "genericTank",
     LABEL: "Magician",
-    TOOLTIP: "I had a lot of fun building this tank.",
+    UPGRADE_TOOLTIP: "I had a lot of fun building this tank.",
     DANGER: 6,
     COLOR: "red",
     GUNS: [{
