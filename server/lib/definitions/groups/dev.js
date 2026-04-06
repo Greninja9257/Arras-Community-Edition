@@ -334,7 +334,7 @@ Class.magician = {
                 const buddy = new Entity({ x: body.x, y: body.y }, body);
                 buddy.define("magicianBunnyBuddy");
                 buddy.team = body.team;
-                buddy.source = buddy;
+                buddy.source = body;
                 buddy.color.base = "white";
                 buddy.settings.no_collisions = true;
                 buddy.alwaysActive = true;
@@ -345,7 +345,7 @@ Class.magician = {
             }
             if (body._magicianBuddy && !body._magicianBuddy.isDead?.()) {
                 body._magicianBuddyAngle = (body._magicianBuddyAngle ?? 0) + 0.075;
-                const orbitRadius = Math.max(22, body.size * 1.35);
+                const orbitRadius = Math.max(38, body.size * 2.2);
                 const targetX = body.x + Math.cos(body._magicianBuddyAngle) * orbitRadius;
                 const targetY = body.y + Math.sin(body._magicianBuddyAngle) * orbitRadius;
 
@@ -355,12 +355,7 @@ Class.magician = {
                 body._magicianBuddy.velocity.x = body.velocity.x * 0.2;
                 body._magicianBuddy.velocity.y = body.velocity.y * 0.2;
 
-                // Mirror Magician shooting actions and shot direction.
-                body._magicianBuddy.control.target = { x: body.control.target.x, y: body.control.target.y };
-                body._magicianBuddy.control.fire = body.control.fire;
-                body._magicianBuddy.control.main = body.control.main;
-                body._magicianBuddy.control.alt = body.control.alt;
-                body._magicianBuddy.facing = Math.atan2(body.control.target.y, body.control.target.x);
+                body._magicianBuddy.facing = body.facing;
             }
 
             // Initialize per-gun baseline settings once.
@@ -430,8 +425,7 @@ Class.magicianBunnyBuddy = {
     DRAW_HEALTH: false,
     HITS_OWN_TYPE: "never",
     IGNORED_BY_AI: true,
-    MOTION_TYPE: "motor",
-    FACING_TYPE: "withMotion",
+    FACING_TYPE: "toTarget",
     CLEAR_ON_MASTER_UPGRADE: true,
     BODY: {
         SPEED: 0.35,
@@ -451,14 +445,20 @@ Class.magicianBunnyBuddy = {
         },
     }],
     TURRETS: [{
-        POSITION: [7, -4.5, 2.8, -18, 360, 1],
-        TYPE: ["triangleHat", { COLOR: "white", SHAPE: 3, SIZE: 3 }],
+        POSITION: [4.4, -5.1, 2.1, 0, 360, 1],
+        TYPE: ["circleHat", { COLOR: "white", SIZE: 1.9 }],
     }, {
-        POSITION: [7, -4.5, -2.8, 18, 360, 1],
-        TYPE: ["triangleHat", { COLOR: "white", SHAPE: 3, SIZE: 3 }],
+        POSITION: [4.4, -5.1, -2.1, 0, 360, 1],
+        TYPE: ["circleHat", { COLOR: "white", SIZE: 1.9 }],
+    }, {
+        POSITION: [3.2, -0.85, 1.7, 0, 360, 1],
+        TYPE: ["circleHat", { COLOR: "black", SIZE: 0.62 }],
+    }, {
+        POSITION: [3.2, -0.85, -1.7, 0, 360, 1],
+        TYPE: ["circleHat", { COLOR: "black", SIZE: 0.62 }],
     }, {
         POSITION: [4.6, 2.1, 1.45, 0, 360, 1],
-        TYPE: ["circleHat", { COLOR: "pink", SHAPE: 0, SIZE: 1.4 }],
+        TYPE: ["circleHat", { COLOR: "pink", SIZE: 1.2 }],
     }],
 };
 
