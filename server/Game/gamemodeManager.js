@@ -30,20 +30,21 @@ class gamemodeManager {
     }
 
     request(type) {
+        const siegeEnabled = !!(Config.siege || Config.special_boss_spawns);
         if (type == "start") {
-            if (Config.siege) this.gameSiege.start(Config.maze_type ?? false);
+            if (siegeEnabled) this.gameSiege.start(Config.maze_type ?? false);
             if (Config.assault) this.gameAssault.start();
             if (Config.tag) Config.tag_data.initAndStart();
             if (Config.domination) this.gameDomination.start();
             if (Config.mothership) this.gameMothership.start();
-            if (Config.maze_type !== undefined && !Config.siege) this.gameMaze.generate();
+            if (Config.maze_type !== undefined && !siegeEnabled) this.gameMaze.generate();
             if (Config.outbreak) this.gameOutbreak.start();
             if (Config.harvest) this.gameHarvest.start();
             if (Config.mode === "matrix") this.gameMatrix.start();
         }
         if (type == "loop") {
             global.gameManager.lagLogger.set();
-            if (Config.siege) this.gameSiege.loop();
+            if (siegeEnabled) this.gameSiege.loop();
             if (Config.mothership) this.gameMothership.loop();
             if (Config.harvest) this.gameHarvest.loop();
             if (Config.mode === "matrix") this.gameMatrix.loop();
@@ -62,7 +63,7 @@ class gamemodeManager {
     }
 
     terminate() {
-        if (Config.siege) this.gameSiege.reset();
+        if (Config.siege || Config.special_boss_spawns) this.gameSiege.reset();
         if (Config.assault) this.gameAssault.reset();
         if (Config.tag) Config.tag_data.resetAndStop();
         if (Config.domination) this.gameDomination.reset();

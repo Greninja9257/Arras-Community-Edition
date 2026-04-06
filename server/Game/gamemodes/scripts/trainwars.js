@@ -34,8 +34,8 @@ class Train {
             let trainSpeed = 18;
             let leaderVelX = dirX * trainSpeed;
             let leaderVelY = dirY * trainSpeed;
-            leader.velocity.x += (leaderVelX - leader.velocity.x) * 0.35;
-            leader.velocity.y += (leaderVelY - leader.velocity.y) * 0.35;
+            leader.velocity.x = leaderVelX;
+            leader.velocity.y = leaderVelY;
 
             for (let i = 1; i < train.length; i++) {
                 let player = train[i];

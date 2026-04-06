@@ -201,14 +201,19 @@ class io_listenToPlayer extends IO {
             }
         }
         this.body.autoOverride = this.player.command.override;
+        const ignoreMovementInput = !!Config.train;
         return {
             target,
             fire,
             alt,
-            goal: this.static ? null : {
-                x: this.body.x + this.player.command.right - this.player.command.left,
-                y: this.body.y + this.player.command.down - this.player.command.up,
-            },
+            goal: this.static
+                ? null
+                : ignoreMovementInput
+                    ? { x: this.body.x, y: this.body.y }
+                    : {
+                        x: this.body.x + this.player.command.right - this.player.command.left,
+                        y: this.body.y + this.player.command.down - this.player.command.up,
+                    },
             main: fire || this.player.command.autospin
         };
     }
