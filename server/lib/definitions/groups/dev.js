@@ -329,33 +329,39 @@ Class.magician = {
         handler: ({ body }) => {
             if (!body || !body.gunsArrayed?.length) return;
 
-            // Ensure the bunny companion exists and orbits around Magician.
-            if (!body._magicianBuddy || body._magicianBuddy.isDead?.()) {
-                const buddy = new Entity({ x: body.x, y: body.y }, body);
-                buddy.define("magicianBunnyBuddy");
-                buddy.team = body.team;
-                buddy.source = body;
-                buddy.color.base = body.color.base;
-                buddy.settings.no_collisions = true;
-                buddy.alwaysActive = true;
-                buddy.refreshBodyAttributes();
-                buddy.life();
-                body._magicianBuddy = buddy;
-                body._magicianBuddyAngle = 0;
+            // Ensure 5 companions exist and orbit evenly around Magician.
+            const buddyCount = 5;
+            if (!Array.isArray(body._magicianBuddies)) body._magicianBuddies = [];
+            for (let i = 0; i < buddyCount; i++) {
+                if (!body._magicianBuddies[i] || body._magicianBuddies[i].isDead?.()) {
+                    const buddy = new Entity({ x: body.x, y: body.y }, body);
+                    buddy.define("magicianBunnyBuddy");
+                    buddy.team = body.team;
+                    buddy.source = body;
+                    buddy.color.base = body.color.base;
+                    buddy.settings.no_collisions = true;
+                    buddy.alwaysActive = true;
+                    buddy.refreshBodyAttributes();
+                    buddy.life();
+                    body._magicianBuddies[i] = buddy;
+                }
             }
-            if (body._magicianBuddy && !body._magicianBuddy.isDead?.()) {
-                body._magicianBuddyAngle = (body._magicianBuddyAngle ?? 0) + 0.075;
-                const orbitRadius = Math.max(38, body.size * 2.2);
-                const targetX = body.x + Math.cos(body._magicianBuddyAngle) * orbitRadius;
-                const targetY = body.y + Math.sin(body._magicianBuddyAngle) * orbitRadius;
+
+            body._magicianBuddyAngle = (body._magicianBuddyAngle ?? 0) + 0.075;
+            const orbitRadius = Math.max(38, body.size * 2.2);
+            for (let i = 0; i < buddyCount; i++) {
+                const buddy = body._magicianBuddies[i];
+                if (!buddy || buddy.isDead?.()) continue;
+                const phase = body._magicianBuddyAngle + i * (Math.PI * 2 / buddyCount);
+                const targetX = body.x + Math.cos(phase) * orbitRadius;
+                const targetY = body.y + Math.sin(phase) * orbitRadius;
 
                 // Smooth orbit movement to avoid jittery teleport behavior.
-                body._magicianBuddy.x += (targetX - body._magicianBuddy.x) * 0.35;
-                body._magicianBuddy.y += (targetY - body._magicianBuddy.y) * 0.35;
-                body._magicianBuddy.velocity.x = body.velocity.x * 0.2;
-                body._magicianBuddy.velocity.y = body.velocity.y * 0.2;
-
-                body._magicianBuddy.facing = body.facing;
+                buddy.x += (targetX - buddy.x) * 0.35;
+                buddy.y += (targetY - buddy.y) * 0.35;
+                buddy.velocity.x = body.velocity.x * 0.2;
+                buddy.velocity.y = body.velocity.y * 0.2;
+                buddy.facing = body.facing;
             }
 
             // Initialize per-gun baseline settings once.
