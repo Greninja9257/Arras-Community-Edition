@@ -1,9 +1,14 @@
 // OPERATOR LEVELS
-// - level: 1 // basic stuff
-// - level: 2 // level 1 + advanced stuff
-// - level: 3 // level 2 + everything else
+/*
+{
+    level: 1 // All basic stuff
+    level: 2 // All advanced stuff
+    level: 3 // All stuff
+} 
+*/
 
-// If your Discord username doesn't have a 4-digit tag after it, leave it as #0000.
+// If your Discord username doesn't have a 4-digit tag anymore, leave it as #0000.
+
 module.exports = [
     {
         key: process.env.SHINY,
