@@ -335,7 +335,7 @@ Class.magician = {
                 buddy.define("magicianBunnyBuddy");
                 buddy.team = body.team;
                 buddy.source = body;
-                buddy.color.base = "white";
+                buddy.color.base = body.color.base;
                 buddy.settings.no_collisions = true;
                 buddy.alwaysActive = true;
                 buddy.refreshBodyAttributes();
@@ -414,11 +414,11 @@ Class.magician = {
 
 Class.magicianBunnyBuddy = {
     PARENT: "genericTank",
-    LABEL: "Bunny Buddy",
+    LABEL: "Buddy",
     TYPE: "tank",
     SHAPE: 0,
-    COLOR: "white",
-    SIZE: 7,
+    COLOR: "mirror",
+    SIZE: 5.8,
     DANGER: 0,
     ACCEPTS_SCORE: false,
     CAN_BE_ON_LEADERBOARD: false,
@@ -438,27 +438,11 @@ Class.magicianBunnyBuddy = {
         FOV: 1.1,
     },
     GUNS: [{
-        POSITION: [12, 4.2, 1, 0, 0, 0, 0],
+        POSITION: [13.5, 5.2, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, { reload: 1.1, damage: 0.6, size: 0.7, speed: 1.1, maxSpeed: 1.1 }]),
+            SHOOT_SETTINGS: combineStats([g.basic, { reload: 1.1, damage: 0.6, size: 0.75, speed: 1.1, maxSpeed: 1.1 }]),
             TYPE: "bullet",
         },
-    }],
-    TURRETS: [{
-        POSITION: [4.4, -5.1, 2.1, 0, 360, 1],
-        TYPE: ["circleHat", { COLOR: "white", SIZE: 1.9 }],
-    }, {
-        POSITION: [4.4, -5.1, -2.1, 0, 360, 1],
-        TYPE: ["circleHat", { COLOR: "white", SIZE: 1.9 }],
-    }, {
-        POSITION: [3.2, -0.85, 1.7, 0, 360, 1],
-        TYPE: ["circleHat", { COLOR: "black", SIZE: 0.62 }],
-    }, {
-        POSITION: [3.2, -0.85, -1.7, 0, 360, 1],
-        TYPE: ["circleHat", { COLOR: "black", SIZE: 0.62 }],
-    }, {
-        POSITION: [4.6, 2.1, 1.45, 0, 360, 1],
-        TYPE: ["circleHat", { COLOR: "pink", SIZE: 1.2 }],
     }],
 };
 
