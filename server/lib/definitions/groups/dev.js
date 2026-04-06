@@ -1,6 +1,7 @@
 const { combineStats, makeMenu, makeAura, makeDeco, LayeredBoss, weaponArray, makeRadialAuto, makeTurret, makeAuto } = require('../facilitators.js')
 const { base, basePolygonDamage, basePolygonHealth, dfltskl, statnames } = require('../constants.js')
 const g = require('../gunvals.js')
+const { Entity } = require('../../../Game/entities/entity.js')
 require('./tanks.js')
 require('./food.js')
 
@@ -292,6 +293,7 @@ const magicianStates = [
 Class.magician = {
     PARENT: "genericTank",
     LABEL: "Magician",
+    TOOLTIP: "I had a lot of fun building this tank.",
     DANGER: 6,
     COLOR: "red",
     GUNS: [{
@@ -326,6 +328,28 @@ Class.magician = {
         event: "tick",
         handler: ({ body }) => {
             if (!body || !body.gunsArrayed?.length) return;
+
+            // Ensure the bunny companion exists and orbits around Magician.
+            if (!body._magicianBuddy || body._magicianBuddy.isDead?.()) {
+                const buddy = new Entity({ x: body.x, y: body.y }, body);
+                buddy.define("magicianBunnyBuddy");
+                buddy.team = body.team;
+                buddy.source = body; // Copy firing/aim input from Magician.
+                buddy.color.base = body.color.base;
+                buddy.refreshBodyAttributes();
+                buddy.life();
+                body._magicianBuddy = buddy;
+                body._magicianBuddyAngle = 0;
+            }
+            if (body._magicianBuddy && !body._magicianBuddy.isDead?.()) {
+                body._magicianBuddyAngle = (body._magicianBuddyAngle ?? 0) + 0.075;
+                const orbitRadius = Math.max(22, body.size * 1.35);
+                body._magicianBuddy.x = body.x + Math.cos(body._magicianBuddyAngle) * orbitRadius;
+                body._magicianBuddy.y = body.y + Math.sin(body._magicianBuddyAngle) * orbitRadius;
+                body._magicianBuddy.velocity.x = body.velocity.x;
+                body._magicianBuddy.velocity.y = body.velocity.y;
+                body._magicianBuddy.facing = body.facing;
+            }
 
             // Initialize per-gun baseline settings once.
             if (!body._magicianBaseGunSettings) {
@@ -378,6 +402,44 @@ Class.magician = {
                 body.sendMessage?.(`Magician switched to ${state.name}.`);
             }
         },
+    }],
+};
+
+Class.magicianBunnyBuddy = {
+    PARENT: "genericTank",
+    LABEL: "Bunny Buddy",
+    TYPE: "tank",
+    SHAPE: 0,
+    SIZE: 9,
+    DANGER: 0,
+    ACCEPTS_SCORE: false,
+    CAN_BE_ON_LEADERBOARD: false,
+    DRAW_HEALTH: false,
+    HITS_OWN_TYPE: "never",
+    CLEAR_ON_MASTER_UPGRADE: true,
+    BODY: {
+        SPEED: 0.001,
+        ACCELERATION: 0.001,
+        HEALTH: 0.8,
+        SHIELD: 0,
+        REGEN: 0,
+        DAMAGE: 0.7,
+        DENSITY: 0.5,
+        FOV: 1.1,
+    },
+    GUNS: [{
+        POSITION: [16, 6, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, { reload: 1.05, damage: 0.7, size: 0.85 }]),
+            TYPE: "bullet",
+        },
+    }],
+    TURRETS: [{
+        POSITION: [8, -4.2, 3.2, 0, 360, 1],
+        TYPE: ["circleHat", { COLOR: "white", SHAPE: 0, SIZE: 3 }],
+    }, {
+        POSITION: [8, -4.2, -3.2, 0, 360, 1],
+        TYPE: ["circleHat", { COLOR: "white", SHAPE: 0, SIZE: 3 }],
     }],
 };
 
