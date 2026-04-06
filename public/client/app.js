@@ -4369,6 +4369,35 @@ import * as socketStuff from "./socketinit.js";
     }
 
 
+    const createLocalRegion = (size) => {
+        const data = Array.from({ length: size }, () => ({
+            active: false,
+            x: 0,
+            y: 0,
+            w: 0,
+            h: 0,
+        }));
+        return {
+            place: (index, x, y, w, h) => {
+                if (index < 0 || index >= data.length) return;
+                data[index].active = true;
+                data[index].x = x * global.ratio;
+                data[index].y = y * global.ratio;
+                data[index].w = w * global.ratio;
+                data[index].h = h * global.ratio;
+            },
+            hide: () => {
+                for (const region of data) region.active = false;
+            },
+            check: (target) => data.findIndex((r) => {
+                if (!r.active) return false;
+                const dx = Math.round(target.x - r.x);
+                const dy = Math.round(target.y - r.y);
+                return dx >= 0 && dy >= 0 && dx <= r.w && dy <= r.h;
+            }),
+        };
+    };
+
     function drawOptionsMenu() {
         // Ensure options animation state exists before using .get()/.set().
         if (!global.optionsMenu_Anim) global.optionsMenu_Anim = { isOpened: false };
@@ -4376,8 +4405,8 @@ import * as socketStuff from "./socketinit.js";
         if (!global.optionsMenu_Anim.optionsButtonProgress) global.optionsMenu_Anim.optionsButtonProgress = Smoothbar(0, 2, 0.1, 0.08, 0.025, true);
         if (!global.optionsMenu_Anim.mainMenu) global.optionsMenu_Anim.mainMenu = Smoothbar(-500, 2, 3, 0.08, 0.025, true);
         if (!global.optionsMenu_Anim.mainMenuHeight) global.optionsMenu_Anim.mainMenuHeight = Smoothbar(730, 2, 3, 0.08, 0.025, true);
-        if (!global.optionsMenu_Anim.tabClickables) global.optionsMenu_Anim.tabClickables = Region(10);
-        if (!global.optionsMenu_Anim.themeClickables) global.optionsMenu_Anim.themeClickables = Region(100);
+        if (!global.optionsMenu_Anim.tabClickables) global.optionsMenu_Anim.tabClickables = createLocalRegion(10);
+        if (!global.optionsMenu_Anim.themeClickables) global.optionsMenu_Anim.themeClickables = createLocalRegion(100);
         if (!global.optionsMenu_Anim.tabs) global.optionsMenu_Anim.tabs = [["Options", 730], ["Theme", 610], ["Keybinds", 730]];
         if (global.optionsMenu_Anim.activeTab == null) global.optionsMenu_Anim.activeTab = 0;
         if (!global.optionsMenu_Anim.tabOffset) global.optionsMenu_Anim.tabOffset = Smoothbar(global.optionsMenu_Anim.activeTab || 0, 2, 3, 0.08, 0.025, true);
