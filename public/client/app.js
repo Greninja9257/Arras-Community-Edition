@@ -706,6 +706,14 @@ import * as socketStuff from "./socketinit.js";
         if (value < 0) value += size;
         return value;
     };
+    const getWrapOffsets = () => {
+        if (!global.wrapRoom) return [{ x: 0, y: 0 }];
+        return [
+            { x: -1, y: -1 }, { x: 0, y: -1 }, { x: 1, y: -1 },
+            { x: -1, y: 0 },  { x: 0, y: 0 },  { x: 1, y: 0 },
+            { x: -1, y: 1 },  { x: 0, y: 1 },  { x: 1, y: 1 },
+        ];
+    };
     const isMatrixWallTile = (x, y) => {
         if (!global.roomSetup.length) return true;
         const row = global.roomSetup[wrapIndex(y, global.roomSetup.length)];
