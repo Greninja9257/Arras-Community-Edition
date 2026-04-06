@@ -4,5 +4,5 @@ module.exports = {
     level_cap: 90,
     level_cap_cheat: 0,
     disable_auto_level: true,
-    spawn_class: "dreadnought_dreadsV2",
+    spawn_class: "dreadOfficialV2",
 };
