@@ -3727,7 +3727,7 @@ import * as socketStuff from "./socketinit.js";
             if (gui.dailyTank && gui.dailyTank.tank) {
                 let image = util.requestEntityImage(gui.dailyTank.tank, gui.color);
                 let hover = global.clickables.dailyTankUpgrade.check({ x: global.mouse.x, y: global.mouse.y });
-                const isDailyTankHovered = hover === true || hover === 0;
+                const isDailyTankHovered = hover === 0;
                 image.upgradeColor = "36 0 1 0 false";
                 drawEntityIcon(image, xStart, initialY + height + internalSpacing + 50, len, height, 1, upgradeSpin, 0.4, 10, false, isDailyTankHovered);
                 drawText("Daily Tank!", xStart + 50, initialY + height + internalSpacing + 67, 12, gameDraw.getColor(36), "center");
