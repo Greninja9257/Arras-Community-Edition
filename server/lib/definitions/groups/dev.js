@@ -295,10 +295,31 @@ Class.magician = {
     DANGER: 6,
     COLOR: "red",
     GUNS: [{
+        // Primary visible barrel
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper]),
             TYPE: "bullet",
+        },
+    }, {
+        // Hidden side barrel for Yellow's parallel volley
+        POSITION: [18, 8, 1, 0, 2.5, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.sniper]),
+            TYPE: "bullet",
+            ALPHA: 0,
+            BORDERLESS: true,
+            DRAW_FILL: false,
+        },
+    }, {
+        // Hidden side barrel for Yellow's parallel volley
+        POSITION: [18, 8, 1, 0, -2.5, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.sniper]),
+            TYPE: "bullet",
+            ALPHA: 0,
+            BORDERLESS: true,
+            DRAW_FILL: false,
         },
     }],
     ON: [{
@@ -326,6 +347,16 @@ Class.magician = {
             for (let i = 0; i < body.gunsArrayed.length; i++) {
                 const gun = body.gunsArrayed[i];
                 const base = body._magicianBaseGunSettings[i] || {};
+                const isPrimaryGun = i === 0;
+                const isYellow = state.name === "Yellow";
+
+                // Only enable the hidden side barrels while in Yellow state.
+                gun.canShoot = isPrimaryGun || isYellow;
+                if (!gun.canShoot) {
+                    gun.cycleTimer = 0;
+                    continue;
+                }
+
                 gun.settings = { ...base };
                 gun.color.interpret({ base: state.color });
                 for (const [key, mult] of Object.entries(state.mods)) {
@@ -346,20 +377,6 @@ Class.magician = {
             if (state) {
                 body.sendMessage?.(`Magician switched to ${state.name}.`);
             }
-        },
-    }, {
-        event: "fire",
-        handler: ({ body, gun }) => {
-            if (!body || !gun) return;
-            if (body._magicianStateIndex == null) return;
-            if (magicianStates[body._magicianStateIndex]?.name !== "Yellow") return;
-            if (gun._magicianVolleyGuard) return;
-
-            // Yellow state: shoot 2 additional same-direction bullets for a 3-shot volley total.
-            gun._magicianVolleyGuard = true;
-            gun.shoot();
-            gun.shoot();
-            gun._magicianVolleyGuard = false;
         },
     }],
 };
