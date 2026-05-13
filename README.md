@@ -11,7 +11,8 @@
   <img src="https://img.shields.io/github/all-contributors/Greninja9257/Arras-Community-Edition?color=ee8449&style=flat-square">   
 </p>
 
-> ⚠️ **Beta Warning**  
+> ⚠️ **Warning**
+> This Project is now **Outdated**. It remains for historical purposes only. Open Source Arras has done a good job of catching up.
 > Arras Community Edition is beta software. This build is not representative of the final product. Expect bugs, breaking changes, and incomplete features.
 
 ---
