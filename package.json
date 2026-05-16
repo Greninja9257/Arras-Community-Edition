@@ -6,7 +6,7 @@
     "start": "node --max-old-space-size=4096 --no-lazy index"
   },
   "dependencies": {
-    "ws": "^8.20.0"
+    "ws": "^8.20.1"
   },
   "engines": {
     "node": ">=18.0.0"
